@@ -50,7 +50,7 @@ function baseTemplate(title, bodyHtml) {
   </div>
   <div class="body">${bodyHtml}</div>
   <div class="footer">
-    <p>Questions? Reply to this email or visit <a href="https://linkedinai.tech">linkedinai.tech</a></p>
+    <p>Questions? Reply to this email or visit <a href="https://propostly.com">propostly.com</a></p>
     <p style="margin-top:8px;">© 2026 LinkedIn AI Assistant. All rights reserved.</p>
   </div>
 </div>
@@ -73,7 +73,7 @@ export async function sendWelcomeEmail(email) {
       <li>Viral Post Rewriter — Turn your draft into a high-engagement post</li>
     </ul>
     <p>Your free plan includes <strong>10 AI generations per month</strong>. When you're ready for unlimited access, upgrade to Pro for just $9/month.</p>
-    <a href="https://linkedinai.tech" class="cta">Open LinkedIn to Get Started</a>
+    <a href="https://propostly.com" class="cta">Open LinkedIn to Get Started</a>
     <p style="font-size:13px;color:#888;">The extension works directly inside LinkedIn. Click the extension icon in your browser toolbar to access all features.</p>
   `;
 
@@ -107,7 +107,7 @@ export async function sendPaymentReceiptEmail(email, { userId, amount = "$9.00",
       <li>Advanced AI model for smarter responses</li>
       <li>Priority support</li>
     </ul>
-    <a href="https://linkedinai.tech" class="cta">Start Creating with Pro</a>
+    <a href="https://propostly.com" class="cta">Start Creating with Pro</a>
   `;
 
   await client.emails.send({
@@ -133,7 +133,7 @@ export async function sendUsageWarningEmail(email, { remaining = 2, limit = 10 }
       <li>Advanced AI (smarter, more detailed responses)</li>
       <li>Cancel anytime</li>
     </ul>
-    <a href="https://linkedinai.tech" class="cta">Upgrade to Pro — $9/month</a>
+    <a href="https://propostly.com" class="cta">Upgrade to Pro — $9/month</a>
     <p style="font-size:13px;color:#888;">You can also upgrade directly inside the LinkedIn AI Assistant extension.</p>
   `;
 

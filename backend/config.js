@@ -21,7 +21,7 @@ export const config = {
   dodoSecretKey: process.env.DODO_SECRET_KEY || process.env.DODO_API_KEY || "",
   dodoProductId: (process.env.DODO_PRODUCT_ID || "").trim(),
   dodoWebhookSecret: process.env.DODO_WEBHOOK_SECRET || "",
-  backendUrl: process.env.BACKEND_URL || "https://www.linkedinai.tech",
+  backendUrl: process.env.BACKEND_URL || "https://www.propostly.com",
   resendApiKey: process.env.RESEND_API_KEY || "",
-  fromEmail: process.env.FROM_EMAIL || "support@linkedinai.tech",
+  fromEmail: process.env.FROM_EMAIL || "support@propostly.com",
 };

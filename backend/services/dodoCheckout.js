@@ -1,6 +1,6 @@
 import { config } from "../config.js";
 
-const DEFAULT_RETURN_URL = "https://www.linkedinai.tech";
+const DEFAULT_RETURN_URL = "https://www.propostly.com";
 
 function getDodoApiBase() {
   const override = (process.env.DODO_API_BASE || "").trim();
@@ -22,7 +22,7 @@ function resolveCustomerEmail(userId, customerEmail) {
   const email = (customerEmail || "").trim();
   if (email && email.includes("@")) return email;
   // Valid placeholder so Dodo checkout always has a customer email
-  return `upgrade+${String(userId).slice(0, 8)}@linkedinai.tech`;
+  return `upgrade+${String(userId).slice(0, 8)}@propostly.com`;
 }
 
 function isIndiaCheckout(options = {}) {
