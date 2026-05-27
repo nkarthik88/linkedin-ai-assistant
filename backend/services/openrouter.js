@@ -70,7 +70,7 @@ export async function generateVariations({ feature, data, tone, plan }) {
       Authorization: `Bearer ${config.openRouterApiKey}`,
       "Content-Type": "application/json",
       "HTTP-Referer": "https://linkedin-ai-assistant.local",
-      "X-Title": "LinkedIn AI Assistant",
+      "X-Title": "ProPostly",
     },
     body: JSON.stringify({
       model,

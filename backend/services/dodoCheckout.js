@@ -91,7 +91,7 @@ export function buildStaticCheckoutUrl({
   url.searchParams.set("redirect_url", returnUrl);
 
   url.searchParams.set("email", email);
-  url.searchParams.set("fullName", "LinkedIn AI User");
+  url.searchParams.set("fullName", "ProPostly User");
   url.searchParams.set("country", billing.country);
   url.searchParams.set("addressLine", billing.street);
   url.searchParams.set("city", billing.city);
@@ -172,7 +172,7 @@ export async function createDodoCheckoutSession({
     confirm: false,
     customer: {
       email,
-      name: customerName || "LinkedIn AI User",
+      name: customerName || "ProPostly User",
     },
     billing_address: billing,
     metadata: buildMetadata(userId),
@@ -220,7 +220,7 @@ export async function createDodoPaymentLink({
     product_cart: [{ product_id: productId, quantity: 1 }],
     customer: {
       email,
-      name: customerName || "LinkedIn AI User",
+      name: customerName || "ProPostly User",
     },
     billing,
     metadata: buildMetadata(userId),

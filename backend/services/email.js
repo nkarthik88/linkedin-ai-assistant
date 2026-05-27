@@ -10,7 +10,7 @@ function getResend() {
   return resend;
 }
 
-const FROM = `LinkedIn AI Assistant <${config.fromEmail}>`;
+const FROM = `ProPostly <${config.fromEmail}>`;
 
 function baseTemplate(title, bodyHtml) {
   return `<!DOCTYPE html>
@@ -45,13 +45,13 @@ function baseTemplate(title, bodyHtml) {
 <body>
 <div class="wrapper">
   <div class="header">
-    <h1>LinkedIn AI Assistant</h1>
+    <h1>ProPostly</h1>
     <p>AI-powered content for your LinkedIn presence</p>
   </div>
   <div class="body">${bodyHtml}</div>
   <div class="footer">
     <p>Questions? Reply to this email or visit <a href="https://propostly.com">propostly.com</a></p>
-    <p style="margin-top:8px;">© 2026 LinkedIn AI Assistant. All rights reserved.</p>
+    <p style="margin-top:8px;">© 2026 ProPostly. All rights reserved.</p>
   </div>
 </div>
 </body>
@@ -63,7 +63,7 @@ export async function sendWelcomeEmail(email) {
   if (!client || !email) return;
 
   const body = `
-    <h2>Welcome to LinkedIn AI Assistant! 🎉</h2>
+    <h2>Welcome to ProPostly! 🎉</h2>
     <p>You're all set to supercharge your LinkedIn presence with AI. Here's what you can do:</p>
     <ul class="feature-list">
       <li>Generate Post — Create 3 polished post options from any topic</li>
@@ -80,8 +80,8 @@ export async function sendWelcomeEmail(email) {
   await client.emails.send({
     from: FROM,
     to: email,
-    subject: "Welcome to LinkedIn AI Assistant 🚀",
-    html: baseTemplate("Welcome to LinkedIn AI Assistant", body),
+    subject: "Welcome to ProPostly 🚀",
+    html: baseTemplate("Welcome to ProPostly", body),
   });
 }
 
@@ -113,7 +113,7 @@ export async function sendPaymentReceiptEmail(email, { userId, amount = "$9.00",
   await client.emails.send({
     from: FROM,
     to: email,
-    subject: "Payment confirmed — Welcome to LinkedIn AI Pro! 🎉",
+    subject: "Payment confirmed — Welcome to ProPostly Pro! 🎉",
     html: baseTemplate("Payment Receipt", body),
   });
 }
@@ -134,7 +134,7 @@ export async function sendUsageWarningEmail(email, { remaining = 2, limit = 10 }
       <li>Cancel anytime</li>
     </ul>
     <a href="https://propostly.com" class="cta">Upgrade to Pro — $9/month</a>
-    <p style="font-size:13px;color:#888;">You can also upgrade directly inside the LinkedIn AI Assistant extension.</p>
+    <p style="font-size:13px;color:#888;">You can also upgrade directly inside the ProPostly extension.</p>
   `;
 
   await client.emails.send({
@@ -151,7 +151,7 @@ export async function sendCancellationEmail(email) {
 
   const body = `
     <h2>Your subscription has been cancelled</h2>
-    <p>We've cancelled your LinkedIn AI Assistant Pro subscription as requested. Your account has been moved back to the free plan.</p>
+    <p>We've cancelled your ProPostly Pro subscription as requested. Your account has been moved back to the free plan.</p>
     <p>You still have access to <strong>10 free AI generations per month</strong> — enough to keep building your LinkedIn presence.</p>
     <p>We'd love to know why you cancelled so we can improve. Just reply to this email with any feedback.</p>
     <p style="margin-top:24px;font-size:13px;color:#888;">If you change your mind, you can resubscribe anytime from the extension.</p>
@@ -160,7 +160,7 @@ export async function sendCancellationEmail(email) {
   await client.emails.send({
     from: FROM,
     to: email,
-    subject: "Your LinkedIn AI Pro subscription has been cancelled",
+    subject: "Your ProPostly Pro subscription has been cancelled",
     html: baseTemplate("Subscription Cancelled", body),
   });
 }
