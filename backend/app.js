@@ -6,6 +6,7 @@ import authRouter from "./routes/auth.js";
 import usageRouter from "./routes/usage.js";
 import paymentsRouter from "./routes/payments.js";
 import webhookRouter from "./routes/webhook.js";
+import waitlistRouter from "./routes/waitlist.js";
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.use("/api/usage", usageRouter);
 app.use("/api/payments", paymentsRouter);
 app.use("/api/webhook", webhookRouter);
 app.use("/api/webhooks", webhookRouter);
+app.use("/api/waitlist", waitlistRouter);
 
 app.use(errorHandler);
 
