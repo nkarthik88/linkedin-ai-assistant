@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Privacy Policy for LinkedIn AI Growth Assistant Chrome extension." />
+  <title>Privacy Policy — LinkedIn AI Growth Assistant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            linkedin: '#0A66C2',
+            'linkedin-dark': '#004182',
+            'linkedin-light': '#E8F4FC',
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="font-sans text-slate-800 antialiased bg-white">
+
+  <header class="border-b border-slate-100 bg-white">
+    <nav class="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-2 font-semibold text-linkedin">
+        <svg class="w-8 h-8" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+          <rect width="32" height="32" rx="6" fill="#0A66C2"/>
+          <path d="M8 12h4v12H8V12zm2-6a2.5 2.5 0 110 5 2.5 2.5 0 010-5zm6 6h3.8v1.7h.1c.5-.9 1.8-1.9 3.7-1.9 4 0 4.7 2.6 4.7 6v6.2h-4v-5.5c0-1.3 0-3-1.8-3s-2.1 1.4-2.1 2.9V24h-4V12z" fill="white"/>
+        </svg>
+        <span class="hidden sm:inline">AI Growth Assistant</span>
+      </a>
+      <a href="index.html" class="text-sm font-medium text-slate-600 hover:text-linkedin transition-colors">← Back to home</a>
+    </nav>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+    <h1 class="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">Privacy Policy</h1>
+    <p class="mt-3 text-slate-600">Last updated: May 26, 2026</p>
+
+    <div class="mt-10 prose prose-slate max-w-none space-y-10 text-slate-700 leading-relaxed">
+
+      <section>
+        <p>
+          This Privacy Policy describes how <strong>LinkedIn AI Growth Assistant</strong> (“we,” “us,” or “our”) collects, uses, and protects information when you use our Chrome browser extension and related services (collectively, the “Service”).
+        </p>
+        <p class="mt-4">
+          We are committed to protecting your privacy. We collect only the minimum data needed to operate the Service, we do not sell your personal information, and we design our practices to align with applicable privacy laws, including the General Data Protection Regulation (GDPR) where it applies.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900">1. What Data We Collect</h2>
+        <p class="mt-4">We collect limited information necessary to provide the Service:</p>
+        <ul class="mt-4 list-disc pl-6 space-y-2">
+          <li><strong>User identifiers</strong> — A unique user ID assigned when you use the extension, used to associate your account with usage limits and preferences.</li>
+          <li><strong>Usage counts</strong> — The number of AI generations you use per billing period (for example, monthly quota tracking on the Free plan).</li>
+        </ul>
+        <p class="mt-4 font-medium text-slate-900">What we do not collect:</p>
+        <ul class="mt-3 list-disc pl-6 space-y-2">
+          <li>LinkedIn passwords or login credentials</li>
+          <li>Personal LinkedIn profile data (such as your name, connections, messages, feed content, or browsing history on LinkedIn)</li>
+          <li>Payment card numbers stored by us (if billing is added in the future, payments would be handled by a certified payment processor)</li>
+        </ul>
+        <p class="mt-4">
+          When you request AI-generated content, the text you provide as input (for example, a post topic or comment context) is sent to our servers only to fulfill that request. We do not store your LinkedIn content or profile information in our database.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900">2. Why We Collect It</h2>
+        <p class="mt-4">We use the data described above for the following purposes:</p>
+        <ul class="mt-4 list-disc pl-6 space-y-2">
+          <li><strong>Monthly quotas</strong> — To enforce plan limits (for example, 10 free AI generations per month) and prevent abuse of the Service.</li>
+          <li><strong>Service delivery</strong> — To authenticate your session and provide AI content generation features.</li>
+          <li><strong>Improvement</strong> — To understand aggregate usage patterns and improve reliability, performance, and features of the extension.</li>
+        </ul>
+        <p class="mt-4">
+          We process this data based on our legitimate interest in operating the Service and, where required, your consent when you install and use the extension.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900">3. Where Data Is Stored</h2>
+        <p class="mt-4">
+          Account and usage data (user IDs and usage counts) are stored in a <strong>Supabase</strong> database. Supabase provides industry-standard security measures, including encryption in transit (TLS) and encryption at rest for stored data. Access to production data is restricted to authorized systems required to run the Service.
+        </p>
+        <p class="mt-4">
+          We retain your data only for as long as needed to provide the Service or as required by law. If you request deletion, we will remove your stored data within a reasonable timeframe (see Section 6).
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900">4. Third Parties</h2>
+        <p class="mt-4">We share data with third parties only as described below:</p>
+        <ul class="mt-4 list-disc pl-6 space-y-2">
+          <li>
+            <strong>OpenRouter API</strong> — When you generate AI content (posts, comments, or profile copy), the text you submit for that request is sent to OpenRouter solely to produce the generated output. OpenRouter acts as our AI processing provider. We do not send your LinkedIn password, profile data, or stored usage records to OpenRouter.
+          </li>
+          <li>
+            <strong>Supabase</strong> — Hosts our database infrastructure as described in Section 3.
+          </li>
+        </ul>
+        <p class="mt-4">
+          We do not sell, rent, or trade your personal information to advertisers or data brokers. We do not use your data for third-party marketing.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900">5. Chrome Extension Permissions</h2>
+        <p class="mt-4">
+          The extension requests permissions needed to function on LinkedIn.com (for example, access to active tabs on linkedin.com domains). These permissions are used only to inject the assistant UI and communicate with our backend when you choose to generate content. We do not read or collect your LinkedIn feed, messages, or connections beyond what you explicitly type into the extension.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900">6. Your Rights</h2>
+        <p class="mt-4">Depending on your location, you may have the following rights regarding your personal data:</p>
+        <ul class="mt-4 list-disc pl-6 space-y-2">
+          <li><strong>Access</strong> — Request a copy of the data we hold about you.</li>
+          <li><strong>Correction</strong> — Request correction of inaccurate data.</li>
+          <li><strong>Deletion</strong> — Request deletion of your data at any time.</li>
+          <li><strong>Restriction or objection</strong> — Request restriction of processing or object to certain processing, where applicable under GDPR.</li>
+          <li><strong>Portability</strong> — Receive your data in a structured, commonly used format where technically feasible.</li>
+          <li><strong>Withdraw consent</strong> — Where processing is based on consent, you may withdraw it at any time without affecting the lawfulness of prior processing.</li>
+        </ul>
+        <p class="mt-4">
+          To exercise any of these rights, including data deletion, contact us at the email below. We will respond within the timeframes required by applicable law (typically within 30 days for GDPR requests). You may also uninstall the extension at any time to stop further data collection.
+        </p>
+        <p class="mt-4">
+          If you are in the European Economic Area or UK, you have the right to lodge a complaint with your local data protection authority.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900">7. Data Security</h2>
+        <p class="mt-4">
+          We implement appropriate technical and organizational measures to protect your information against unauthorized access, alteration, disclosure, or destruction. No method of transmission over the Internet is 100% secure; we cannot guarantee absolute security but we work to maintain safeguards consistent with the nature of the data we process.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900">8. Children’s Privacy</h2>
+        <p class="mt-4">
+          The Service is not directed to individuals under 16 years of age. We do not knowingly collect personal information from children. If you believe we have collected data from a child, please contact us and we will delete it promptly.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900">9. International Transfers</h2>
+        <p class="mt-4">
+          Your data may be processed in countries other than your own, including where our service providers operate. Where required, we rely on appropriate safeguards (such as standard contractual clauses) for transfers of personal data outside the EEA/UK.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900">10. Changes to This Policy</h2>
+        <p class="mt-4">
+          We may update this Privacy Policy from time to time. We will post the revised policy on this page and update the “Last updated” date. Material changes may be communicated through the extension or our website where appropriate. Continued use of the Service after changes constitutes acceptance of the updated policy.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900">11. Contact Us</h2>
+        <p class="mt-4">
+          If you have questions about this Privacy Policy, wish to exercise your rights, or want to request deletion of your data, contact us at:
+        </p>
+        <p class="mt-4">
+          <a href="mailto:naraharikarthik05@gmail.com" class="text-linkedin font-medium hover:text-linkedin-dark underline">naraharikarthik05@gmail.com</a>
+        </p>
+      </section>
+
+      <section class="rounded-xl bg-linkedin-light/50 border border-linkedin/10 p-6">
+        <h2 class="text-lg font-semibold text-slate-900">Summary</h2>
+        <ul class="mt-3 space-y-2 text-sm text-slate-700">
+          <li>We collect user IDs and usage counts only — no passwords, no personal LinkedIn data.</li>
+          <li>Data is stored securely in Supabase; AI requests use OpenRouter for generation only.</li>
+          <li>We do not sell your data. GDPR rights apply, including deletion on request.</li>
+          <li>Contact: <a href="mailto:naraharikarthik05@gmail.com" class="text-linkedin hover:underline">naraharikarthik05@gmail.com</a></li>
+        </ul>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="py-10 px-4 border-t border-slate-100 text-center text-sm text-slate-500">
+    <p>&copy; 2026 LinkedIn AI Growth Assistant. Not affiliated with LinkedIn Corporation.</p>
+    <p class="mt-2">
+      <a href="index.html" class="hover:text-linkedin transition-colors">Home</a>
+      <span class="mx-2 text-slate-300">·</span>
+      <a href="privacy.html" class="text-linkedin font-medium">Privacy Policy</a>
+      <span class="mx-2 text-slate-300">·</span>
+      <a href="terms.html" class="hover:text-linkedin transition-colors">Terms of Service</a>
+    </p>
+  </footer>
+
+</body>
+</html>

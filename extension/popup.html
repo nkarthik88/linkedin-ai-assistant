@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LinkedIn AI Assistant</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <h1>LinkedIn AI Assistant</h1>
+        <p>AI-powered content for your LinkedIn presence</p>
+      </header>
+
+      <section id="account-bar" class="account-bar" aria-live="polite">
+        <div class="account-bar-top">
+          <span id="tier-label" class="tier-badge">Free Tier</span>
+          <span id="usage-label" class="usage-label">Loading usage…</span>
+        </div>
+        <button type="button" id="upgrade-btn" class="upgrade-btn" hidden>
+          Unlock Unlimited - $9/month
+        </button>
+        <p id="upgrade-error" class="upgrade-error" hidden></p>
+      </section>
+
+      <main class="main">
+        <!-- Home: feature buttons -->
+        <div id="view-home" class="view active">
+          <div class="feature-grid">
+            <button class="feature-btn" data-feature="generate_post">
+              <span class="icon">✍️</span>
+              <span class="label">Generate Post</span>
+              <span class="desc">3 post options from a topic</span>
+            </button>
+            <button class="feature-btn" data-feature="personalized_dm">
+              <span class="icon">💬</span>
+              <span class="label">Personalized DM</span>
+              <span class="desc">Reads profile &amp; writes DMs</span>
+            </button>
+            <button class="feature-btn" data-feature="reply_comment">
+              <span class="icon">↩️</span>
+              <span class="label">Reply to Comment</span>
+              <span class="desc">Thoughtful comment replies</span>
+            </button>
+            <button class="feature-btn" data-feature="improve_headline">
+              <span class="icon">🎯</span>
+              <span class="label">Improve Headline</span>
+              <span class="desc">Rewrite your headline</span>
+            </button>
+            <button class="feature-btn wide" data-feature="viral_rewriter">
+              <span class="icon">🚀</span>
+              <span class="label">Viral Post Rewriter</span>
+              <span class="desc">Rewrite your draft for more engagement</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Generate Post -->
+        <div id="view-generate_post" class="view">
+          <button class="back-btn" data-back>← Back</button>
+          <div class="card">
+            <h2 class="form-title">Generate LinkedIn Post</h2>
+            <p class="form-hint">Enter a topic and get 3 post options tailored for LinkedIn.</p>
+            <form id="form-generate_post">
+              <label for="topic">Topic</label>
+              <input type="text" id="topic" name="topic" placeholder="e.g. lessons from my first startup" required />
+              <button type="submit" class="submit-btn">Generate 3 Posts</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Personalized DM -->
+        <div id="view-personalized_dm" class="view">
+          <button class="back-btn" data-back>← Back</button>
+          <div class="card">
+            <h2 class="form-title">Write Personalized DM</h2>
+            <p class="form-hint">Open a LinkedIn profile tab — we read name, headline, about, and posts automatically.</p>
+            <div id="profile-preview-dm" class="profile-preview" hidden></div>
+            <form id="form-personalized_dm">
+              <label for="dm-context">Extra context (optional)</label>
+              <textarea id="dm-context" name="dmContext" placeholder="Why you want to connect, shared interest, etc." rows="3"></textarea>
+              <button type="submit" class="submit-btn">Generate 3 DMs from profile</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Reply to Comment -->
+        <div id="view-reply_comment" class="view">
+          <button class="back-btn" data-back>← Back</button>
+          <div class="card">
+            <h2 class="form-title">Reply to Comment</h2>
+            <p class="form-hint">Paste the comment you want to reply to and get 3 thoughtful responses.</p>
+            <form id="form-reply_comment">
+              <label for="comment-text">Comment to reply to</label>
+              <textarea id="comment-text" name="commentText" placeholder="Paste the comment here..." required rows="4"></textarea>
+              <label for="original-post">Your original post (optional)</label>
+              <textarea id="original-post" name="originalComment" placeholder="Context from your post..." rows="3"></textarea>
+              <button type="submit" class="submit-btn">Generate 3 Replies</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Improve Headline -->
+        <div id="view-improve_headline" class="view">
+          <button class="back-btn" data-back>← Back</button>
+          <div class="card">
+            <h2 class="form-title">Improve Headline</h2>
+            <p class="form-hint">Rewrite your LinkedIn headline — we'll pull it from your profile if you're on it.</p>
+            <div id="profile-preview-headline" class="profile-preview" hidden></div>
+            <form id="form-improve_headline">
+              <label for="headline-input">Current headline</label>
+              <input type="text" id="headline-input" name="headline" placeholder="Your current headline" required />
+              <button type="submit" class="submit-btn">Generate 3 Headlines</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Viral Post Rewriter -->
+        <div id="view-viral_rewriter" class="view">
+          <button class="back-btn" data-back>← Back</button>
+          <div class="card">
+            <h2 class="form-title">Viral Post Rewriter</h2>
+            <p class="form-hint">Paste your draft post and get 3 engagement-optimized versions.</p>
+            <form id="form-viral_rewriter">
+              <label for="draft-post">Draft post</label>
+              <textarea id="draft-post" name="draftPost" placeholder="Paste your draft LinkedIn post..." required rows="6"></textarea>
+              <button type="submit" class="submit-btn">Rewrite for Engagement</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="view-loading" class="view">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Generating with AI…</p>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div id="view-results" class="view">
+          <button class="back-btn" data-back-home>← New request</button>
+          <p class="results-header" id="results-title">Your options</p>
+          <div id="results-container"></div>
+        </div>
+      </main>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>

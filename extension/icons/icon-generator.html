@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinkedIn AI Assistant — Icon Generator</title>
+  <style>
+    :root {
+      --linkedin-blue: #0a66c2;
+      --bg: #f3f6f8;
+      --card: #ffffff;
+      --text: #191919;
+      --muted: #666666;
+      --border: #e0e0e0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 3rem;
+    }
+
+    header {
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      margin: 0 0 0.35rem;
+      font-size: 1.65rem;
+      font-weight: 600;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .preview-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 160px;
+      width: 100%;
+      background: repeating-conic-gradient(#e8e8e8 0% 25%, #f5f5f5 0% 50%) 50% / 16px 16px;
+      border-radius: 8px;
+      padding: 1.25rem;
+    }
+
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    canvas.size-16 {
+      width: 64px;
+      height: 64px;
+    }
+
+    canvas.size-48 {
+      width: 96px;
+      height: 96px;
+    }
+
+    canvas.size-128 {
+      width: 128px;
+      height: 128px;
+    }
+
+    .meta {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .btn {
+      appearance: none;
+      border: none;
+      border-radius: 24px;
+      padding: 0.55rem 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--linkedin-blue);
+      color: #fff;
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+
+    .btn:hover {
+      background: #004182;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-secondary {
+      margin-top: 1.5rem;
+      background: transparent;
+      color: var(--linkedin-blue);
+      border: 1px solid var(--linkedin-blue);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(10, 102, 194, 0.08);
+    }
+
+    footer {
+      margin-top: 2rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    footer code {
+      background: #e8eef3;
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+      font-size: 0.8em;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>LinkedIn AI Assistant — Icons</h1>
+      <p class="subtitle">Blue circle, white “in” mark, sparkle accent. Download PNGs for your extension manifest.</p>
+    </header>
+
+    <div class="grid" id="icon-grid"></div>
+
+    <div style="text-align: center;">
+      <button type="button" class="btn btn-secondary" id="download-all">Download all sizes</button>
+    </div>
+
+    <footer>
+      Save files as <code>icon16.png</code>, <code>icon48.png</code>, and <code>icon128.png</code> in this folder for <code>manifest.json</code>.
+    </footer>
+  </div>
+
+  <script>
+    const LINKEDIN_BLUE = "#0A66C2";
+    const SIZES = [
+      { size: 128, filename: "icon128.png", label: "128 × 128" },
+      { size: 48, filename: "icon48.png", label: "48 × 48" },
+      { size: 16, filename: "icon16.png", label: "16 × 16" },
+    ];
+
+    function drawSparkle(ctx, cx, cy, scale) {
+      const r = scale;
+      const inner = r * 0.38;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.strokeStyle = "#FFE082";
+      ctx.lineWidth = Math.max(0.5, scale * 0.12);
+      ctx.lineJoin = "round";
+
+      ctx.beginPath();
+      for (let i = 0; i < 8; i++) {
+        const angle = (i * Math.PI) / 4 - Math.PI / 2;
+        const radius = i % 2 === 0 ? r : inner;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#FFD54F";
+      ctx.beginPath();
+      ctx.arc(0, 0, inner * 0.55, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawInLogo(ctx, size) {
+      const s = size;
+      const pad = s * 0.22;
+
+      ctx.save();
+      ctx.fillStyle = "#FFFFFF";
+
+      if (s >= 32) {
+        const fontSize = Math.round(s * 0.36);
+        ctx.font = `700 ${fontSize}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.letterSpacing = s >= 48 ? "-0.04em" : "0";
+        ctx.fillText("in", s * 0.5, s * 0.52);
+      } else {
+        const barW = Math.max(1.5, s * 0.14);
+        const x = s * 0.36;
+        const top = s * 0.3;
+        const bottom = s * 0.7;
+        const mid = (top + bottom) / 2;
+
+        ctx.fillRect(x, top + s * 0.06, barW, bottom - top - s * 0.06);
+        ctx.beginPath();
+        ctx.arc(x + barW / 2, top + s * 0.05, barW * 0.55, 0, Math.PI * 2);
+        ctx.fill();
+
+        const nX = s * 0.52;
+        ctx.fillRect(nX, top, barW, bottom - top);
+        ctx.beginPath();
+        ctx.moveTo(nX + barW, top);
+        ctx.lineTo(s * 0.68, mid);
+        ctx.lineTo(s * 0.68, bottom);
+        ctx.lineTo(s * 0.68 - barW, bottom);
+        ctx.lineTo(s * 0.68 - barW, mid + barW * 0.3);
+        ctx.lineTo(nX, top + barW * 1.1);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    function drawIcon(canvas) {
+      const size = canvas.width;
+      const ctx = canvas.getContext("2d");
+      const s = size;
+
+      ctx.clearRect(0, 0, s, s);
+
+      ctx.fillStyle = LINKEDIN_BLUE;
+      ctx.beginPath();
+      ctx.arc(s / 2, s / 2, s / 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      drawInLogo(ctx, s);
+
+      const sparkleR = s * (s <= 16 ? 0.11 : s <= 48 ? 0.1 : 0.09);
+      drawSparkle(ctx, s * 0.78, s * 0.22, sparkleR);
+    }
+
+    function downloadCanvas(canvas, filename) {
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      }, "image/png");
+    }
+
+    const canvases = [];
+
+    function buildUI() {
+      const grid = document.getElementById("icon-grid");
+
+      SIZES.forEach(({ size, filename, label }) => {
+        const card = document.createElement("article");
+        card.className = "card";
+
+        const title = document.createElement("h2");
+        title.textContent = label;
+
+        const preview = document.createElement("div");
+        preview.className = "preview-box";
+
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        canvas.className = `size-${size}`;
+        canvas.id = `icon-${size}`;
+        drawIcon(canvas);
+        canvases.push({ canvas, filename });
+
+        const meta = document.createElement("p");
+        meta.className = "meta";
+        meta.textContent = filename;
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "btn";
+        btn.textContent = `Download ${label} PNG`;
+        btn.addEventListener("click", () => downloadCanvas(canvas, filename));
+
+        preview.appendChild(canvas);
+        card.append(title, preview, meta, btn);
+        grid.appendChild(card);
+      });
+
+      document.getElementById("download-all").addEventListener("click", () => {
+        canvases.forEach(({ canvas, filename }, i) => {
+          setTimeout(() => downloadCanvas(canvas, filename), i * 200);
+        });
+      });
+    }
+
+    buildUI();
+  </script>
+</body>
+</html>
