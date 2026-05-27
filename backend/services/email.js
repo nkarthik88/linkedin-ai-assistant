@@ -10,7 +10,7 @@ function getResend() {
   return resend;
 }
 
-const FROM = "LinkedIn AI Assistant <hello@linkedinai.tech>";
+const FROM = `LinkedIn AI Assistant <${config.fromEmail}>`;
 
 function baseTemplate(title, bodyHtml) {
   return `<!DOCTYPE html>

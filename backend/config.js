@@ -23,4 +23,5 @@ export const config = {
   dodoWebhookSecret: process.env.DODO_WEBHOOK_SECRET || "",
   backendUrl: process.env.BACKEND_URL || "https://www.linkedinai.tech",
   resendApiKey: process.env.RESEND_API_KEY || "",
+  fromEmail: process.env.FROM_EMAIL || "support@linkedinai.tech",
 };
