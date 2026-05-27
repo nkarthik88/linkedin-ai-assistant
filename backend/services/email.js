@@ -104,7 +104,7 @@ export async function sendPaymentReceiptEmail(email, { userId, amount = "$9.00",
     <p>Your Pro benefits:</p>
     <ul class="feature-list">
       <li>Unlimited AI generations every month</li>
-      <li>Access to Claude Sonnet (advanced AI model)</li>
+      <li>Advanced AI model for smarter responses</li>
       <li>Priority support</li>
     </ul>
     <a href="https://linkedinai.tech" class="cta">Start Creating with Pro</a>
@@ -130,7 +130,7 @@ export async function sendUsageWarningEmail(email, { remaining = 2, limit = 10 }
     <p>Don't lose your momentum on LinkedIn. Upgrade to Pro for <strong>unlimited generations</strong> at just $9/month.</p>
     <ul class="feature-list">
       <li>Unlimited posts, DMs, headlines & rewrites</li>
-      <li>Claude Sonnet AI (smarter responses)</li>
+      <li>Advanced AI (smarter, more detailed responses)</li>
       <li>Cancel anytime</li>
     </ul>
     <a href="https://linkedinai.tech" class="cta">Upgrade to Pro — $9/month</a>
