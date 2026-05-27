@@ -34,12 +34,15 @@ router.post(
       return res.status(400).json({ error: "Invalid userId format" });
     }
 
-    // Store email for later use (receipt, cancellation)
+    // Store email for later use (receipt, cancellation) — non-fatal
     if (customerEmail && customerEmail.includes("@")) {
-      await supabaseAdmin
-        .from("extension_accounts")
-        .upsert({ id: userId, email: customerEmail }, { onConflict: "id" })
-        .catch(() => {});
+      try {
+        await supabaseAdmin
+          .from("extension_accounts")
+          .upsert({ id: userId, email: customerEmail }, { onConflict: "id" });
+      } catch {
+        /* non-fatal */
+      }
     }
 
     const { checkoutUrl, method } = await createUpgradeCheckoutUrl({
@@ -72,23 +75,25 @@ router.post(
     let email = String(req.body?.email || "").trim();
 
     if (!email) {
-      const { data } = await supabaseAdmin
-        .from("extension_accounts")
-        .select("email")
-        .eq("id", userId)
-        .maybeSingle()
-        .catch(() => ({ data: null }));
-      email = data?.email || "";
+      try {
+        const { data } = await supabaseAdmin
+          .from("extension_accounts")
+          .select("email")
+          .eq("id", userId)
+          .maybeSingle();
+        email = data?.email || "";
+      } catch {
+        /* non-fatal */
+      }
     }
 
-    // Cancel via Dodo API if we have a subscription ID
+    // Cancel via Dodo API — find subscription by customer metadata
     if (config.dodoSecretKey || config.dodoApiKey) {
       const apiKey = (config.dodoSecretKey || config.dodoApiKey).trim();
       const apiBase = (process.env.DODO_API_BASE || "https://live.dodopayments.com").replace(/\/+$/, "");
 
-      // Find subscription by customer metadata
       try {
-        const subsRes = await fetch(`${apiBase}/subscriptions?limit=5`, {
+        const subsRes = await fetch(`${apiBase}/subscriptions?limit=10`, {
           headers: { Authorization: `Bearer ${apiKey}` },
         });
         if (subsRes.ok) {
@@ -100,7 +105,7 @@ router.post(
               s.metadata?.userId === userId ||
               s.client_reference_id === userId
           );
-          if (sub?.subscription_id || sub?.id) {
+          if (sub) {
             const subId = sub.subscription_id || sub.id;
             await fetch(`${apiBase}/subscriptions/${subId}`, {
               method: "PATCH",
@@ -113,7 +118,7 @@ router.post(
           }
         }
       } catch {
-        // Non-fatal — still downgrade locally
+        /* Non-fatal — still downgrade locally */
       }
     }
 

@@ -43,10 +43,11 @@ router.post(
 
         if (email) {
           // Store email so cancel flow can use it
-          await supabaseAdmin
-            .from("extension_accounts")
-            .upsert({ id: userId, email }, { onConflict: "id" })
-            .catch(() => {});
+          try {
+            await supabaseAdmin
+              .from("extension_accounts")
+              .upsert({ id: userId, email }, { onConflict: "id" });
+          } catch { /* non-fatal */ }
 
           sendPaymentReceiptEmail(email, { userId }).catch(() => {});
         }
