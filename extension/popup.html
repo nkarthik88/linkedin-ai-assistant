@@ -7,10 +7,41 @@
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
+    <!-- Onboarding overlay (shown first time only) -->
+    <div id="onboarding" class="onboarding" hidden>
+      <div class="onboarding-card">
+        <div class="onboarding-logo">🚀</div>
+        <h2>Welcome to LinkedIn AI Assistant</h2>
+        <p>Your AI copilot for LinkedIn — generate posts, write personalized DMs, craft replies, and more.</p>
+        <ul class="onboarding-features">
+          <li><span class="of-icon">✍️</span><span><strong>Generate Post</strong> — 3 options from any topic</span></li>
+          <li><span class="of-icon">💬</span><span><strong>Personalized DM</strong> — reads profiles &amp; writes outreach</span></li>
+          <li><span class="of-icon">↩️</span><span><strong>Reply to Comment</strong> — thoughtful, professional replies</span></li>
+          <li><span class="of-icon">🎯</span><span><strong>Improve Headline</strong> — keyword-optimized rewrites</span></li>
+          <li><span class="of-icon">🚀</span><span><strong>Viral Post Rewriter</strong> — boost your post's engagement</span></li>
+        </ul>
+        <p class="onboarding-free">Free plan: <strong>10 AI generations/month</strong></p>
+        <button id="onboarding-start" class="submit-btn">Get Started →</button>
+      </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast" hidden></div>
+
     <div class="app">
       <header class="header">
-        <h1>LinkedIn AI Assistant</h1>
-        <p>AI-powered content for your LinkedIn presence</p>
+        <div class="header-inner">
+          <div>
+            <h1>LinkedIn AI Assistant</h1>
+            <p>AI-powered content for your LinkedIn</p>
+          </div>
+          <button id="account-tab-btn" class="account-tab-btn" title="Account" aria-label="Account">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </button>
+        </div>
       </header>
 
       <section id="account-bar" class="account-bar" aria-live="polite">
@@ -19,7 +50,7 @@
           <span id="usage-label" class="usage-label">Loading usage…</span>
         </div>
         <button type="button" id="upgrade-btn" class="upgrade-btn" hidden>
-          Unlock Unlimited - $9/month
+          Unlock Unlimited — $9/month
         </button>
         <p id="upgrade-error" class="upgrade-error" hidden></p>
       </section>
@@ -53,6 +84,62 @@
               <span class="label">Viral Post Rewriter</span>
               <span class="desc">Rewrite your draft for more engagement</span>
             </button>
+          </div>
+        </div>
+
+        <!-- Account Page -->
+        <div id="view-account" class="view">
+          <button class="back-btn" data-back>← Back</button>
+          <div class="card account-card">
+            <div class="account-header-row">
+              <div class="account-avatar">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </div>
+              <div>
+                <div id="account-email" class="account-email">—</div>
+                <span id="account-tier-badge" class="tier-badge">Free Tier</span>
+              </div>
+            </div>
+
+            <div class="usage-section">
+              <div class="usage-section-header">
+                <span class="usage-section-label">Usage this month</span>
+                <span id="account-usage-text" class="usage-section-count">—</span>
+              </div>
+              <div class="usage-bar-bg">
+                <div id="account-usage-bar" class="usage-bar-fill" style="width:0%"></div>
+              </div>
+              <p id="account-usage-note" class="usage-note"></p>
+            </div>
+
+            <div id="account-pro-section" class="account-pro-section" hidden>
+              <div class="pro-perks">
+                <div class="pro-perk">✓ Unlimited AI generations</div>
+                <div class="pro-perk">✓ Claude Sonnet (smarter AI)</div>
+                <div class="pro-perk">✓ Priority support</div>
+              </div>
+              <button id="cancel-subscription-btn" class="cancel-btn">Cancel Subscription</button>
+              <p id="cancel-error" class="upgrade-error" hidden></p>
+              <p id="cancel-success" class="cancel-success" hidden>✓ Subscription cancelled. You've been moved to the free plan.</p>
+            </div>
+
+            <div id="account-free-section" class="account-free-section" hidden>
+              <button id="account-upgrade-btn" class="upgrade-btn" style="margin-top:8px;">
+                Upgrade to Pro — $9/month
+              </button>
+            </div>
+
+            <div class="account-email-edit">
+              <label for="account-email-input" style="margin-top:16px;">Email (for receipts &amp; alerts)</label>
+              <div class="email-edit-row">
+                <input type="email" id="account-email-input" placeholder="your@email.com" />
+                <button id="account-email-save" class="email-save-btn">Save</button>
+              </div>
+              <p id="account-email-status" class="email-save-status" hidden></p>
+            </div>
           </div>
         </div>
 
@@ -143,6 +230,23 @@
           <button class="back-btn" data-back-home>← New request</button>
           <p class="results-header" id="results-title">Your options</p>
           <div id="results-container"></div>
+        </div>
+
+        <!-- Upgrade prompt (shown when limit reached) -->
+        <div id="view-upgrade-prompt" class="view">
+          <div class="upgrade-prompt-card">
+            <div class="upgrade-prompt-icon">🔒</div>
+            <h2>You've used all 10 free generations</h2>
+            <p>Upgrade to Pro for <strong>unlimited AI generations</strong> every month — just $9/month.</p>
+            <ul class="upgrade-perks">
+              <li>✓ Unlimited posts, DMs, headlines &amp; rewrites</li>
+              <li>✓ Claude Sonnet AI (smarter responses)</li>
+              <li>✓ Cancel anytime</li>
+            </ul>
+            <button id="upgrade-prompt-btn" class="submit-btn upgrade-prompt-btn-main">Upgrade to Pro — $9/month</button>
+            <button id="upgrade-prompt-back" class="back-link-btn">← Back to home</button>
+            <p id="upgrade-prompt-error" class="upgrade-error" hidden></p>
+          </div>
         </div>
       </main>
     </div>

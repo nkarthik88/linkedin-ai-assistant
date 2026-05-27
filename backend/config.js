@@ -22,4 +22,5 @@ export const config = {
   dodoProductId: (process.env.DODO_PRODUCT_ID || "").trim(),
   dodoWebhookSecret: process.env.DODO_WEBHOOK_SECRET || "",
   backendUrl: process.env.BACKEND_URL || "https://www.linkedinai.tech",
+  resendApiKey: process.env.RESEND_API_KEY || "",
 };

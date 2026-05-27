@@ -13,6 +13,24 @@ const FEATURE_LABELS = {
 
 let lastFeature = null;
 
+// ── Toast ──────────────────────────────────────────────────────────────────
+
+let toastTimer = null;
+
+function showToast(message, type = "default") {
+  const el = document.getElementById("toast");
+  if (!el) return;
+  el.textContent = message;
+  el.className = `toast${type !== "default" ? ` ${type}` : ""}`;
+  el.hidden = false;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    el.hidden = true;
+  }, 3000);
+}
+
+// ── View management ────────────────────────────────────────────────────────
+
 function showView(viewId) {
   document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
   const el = document.getElementById(viewId);
@@ -38,6 +56,8 @@ function clearError(containerId) {
   if (err) err.hidden = true;
 }
 
+// ── User ID & email ────────────────────────────────────────────────────────
+
 async function getUserId() {
   const { userId } = await chrome.storage.local.get("userId");
   if (userId) return userId;
@@ -45,6 +65,29 @@ async function getUserId() {
   await chrome.storage.local.set({ userId: newId });
   return newId;
 }
+
+async function getUserEmail() {
+  const { upgradeEmail } = await chrome.storage.local.get("upgradeEmail");
+  return upgradeEmail || "";
+}
+
+// ── Onboarding ─────────────────────────────────────────────────────────────
+
+async function checkOnboarding() {
+  const { onboardingDone } = await chrome.storage.local.get("onboardingDone");
+  if (!onboardingDone) {
+    const overlay = document.getElementById("onboarding");
+    if (overlay) overlay.hidden = false;
+  }
+}
+
+document.getElementById("onboarding-start")?.addEventListener("click", async () => {
+  await chrome.storage.local.set({ onboardingDone: true });
+  const overlay = document.getElementById("onboarding");
+  if (overlay) overlay.hidden = true;
+});
+
+// ── Account status ─────────────────────────────────────────────────────────
 
 function setUpgradeError(message) {
   const el = document.getElementById("upgrade-error");
@@ -68,17 +111,25 @@ function renderAccountStatus(status) {
   if (!tierEl || !usageEl || !upgradeBtn) return;
 
   const isPro = Boolean(status?.isPro);
-  tierEl.textContent = status?.tierLabel || (isPro ? "Pro Tier" : "Free Tier");
+  const tierLabel = status?.tierLabel || (isPro ? "Pro Tier" : "Free Tier");
+  tierEl.textContent = tierLabel;
   tierEl.classList.toggle("pro", isPro);
 
   if (isPro) {
-    usageEl.textContent = status?.message || "Unlimited uses";
+    usageEl.textContent = "Unlimited uses";
     upgradeBtn.hidden = true;
   } else {
-    usageEl.textContent =
-      status?.message ||
-      `${status?.remaining ?? 0} uses remaining this month`;
+    const remaining = status?.remaining ?? 0;
+    const used = status?.usedThisMonth ?? 0;
+    const limit = status?.limit ?? 10;
+    usageEl.textContent = `${remaining} of ${limit} remaining`;
     upgradeBtn.hidden = false;
+
+    if (remaining === 0) {
+      usageEl.style.color = "var(--error)";
+    } else {
+      usageEl.style.color = "";
+    }
   }
 
   setUpgradeError("");
@@ -102,47 +153,197 @@ async function refreshAccountStatus() {
   const tierEl = document.getElementById("tier-label");
   const usageEl = document.getElementById("usage-label");
   if (tierEl) tierEl.textContent = "…";
-  if (usageEl) usageEl.textContent = "Loading usage…";
+  if (usageEl) usageEl.textContent = "Loading…";
 
   try {
     const status = await fetchAccountStatus();
     renderAccountStatus(status);
     await chrome.storage.local.set({ isPro: Boolean(status.isPro) });
     return status;
-  } catch (err) {
+  } catch {
     if (tierEl) tierEl.textContent = "Free Tier";
-    if (usageEl) usageEl.textContent = "Usage unavailable";
-    setUpgradeError(err.message);
+    if (usageEl) usageEl.textContent = "Offline";
     return null;
   }
 }
 
-async function startUpgrade() {
-  const upgradeBtn = document.getElementById("upgrade-btn");
+// ── Account page ───────────────────────────────────────────────────────────
+
+async function renderAccountPage(status) {
+  const emailEl = document.getElementById("account-email");
+  const badgeEl = document.getElementById("account-tier-badge");
+  const usageText = document.getElementById("account-usage-text");
+  const usageBar = document.getElementById("account-usage-bar");
+  const usageNote = document.getElementById("account-usage-note");
+  const proSection = document.getElementById("account-pro-section");
+  const freeSection = document.getElementById("account-free-section");
+  const emailInput = document.getElementById("account-email-input");
+
+  const email = await getUserEmail();
+  if (emailEl) emailEl.textContent = email || "No email saved";
+  if (emailInput && email) emailInput.value = email;
+
+  if (!status) return;
+
+  const isPro = Boolean(status.isPro);
+  if (badgeEl) {
+    badgeEl.textContent = isPro ? "Pro Tier" : "Free Tier";
+    badgeEl.classList.toggle("pro", isPro);
+  }
+
+  const used = status.usedThisMonth ?? 0;
+  const limit = status.limit ?? 10;
+  const remaining = status.remaining ?? 0;
+  const pct = isPro ? 0 : Math.min(100, Math.round((used / limit) * 100));
+
+  if (usageText) {
+    usageText.textContent = isPro ? "Unlimited" : `${used} / ${limit} used`;
+  }
+
+  if (usageBar) {
+    usageBar.style.width = isPro ? "0%" : `${pct}%`;
+    usageBar.classList.toggle("full", !isPro && remaining === 0);
+  }
+
+  if (usageNote) {
+    if (isPro) {
+      usageNote.textContent = "Unlimited AI generations every month";
+    } else if (remaining === 0) {
+      usageNote.textContent = "Limit reached — upgrade for unlimited access";
+      usageNote.style.color = "var(--error)";
+    } else {
+      usageNote.textContent = `Resets next month`;
+      usageNote.style.color = "";
+    }
+  }
+
+  if (proSection) proSection.hidden = !isPro;
+  if (freeSection) freeSection.hidden = isPro;
+}
+
+document.getElementById("account-tab-btn")?.addEventListener("click", async () => {
+  showView("view-account");
+  const status = await refreshAccountStatus();
+  await renderAccountPage(status);
+});
+
+// Email save
+document.getElementById("account-email-save")?.addEventListener("click", async () => {
+  const input = document.getElementById("account-email-input");
+  const statusEl = document.getElementById("account-email-status");
+  const email = input?.value.trim();
+
+  if (!email || !email.includes("@")) {
+    if (statusEl) {
+      statusEl.textContent = "Please enter a valid email address.";
+      statusEl.style.color = "var(--error)";
+      statusEl.hidden = false;
+    }
+    return;
+  }
+
+  await chrome.storage.local.set({ upgradeEmail: email });
+  const emailEl = document.getElementById("account-email");
+  if (emailEl) emailEl.textContent = email;
+
+  if (statusEl) {
+    statusEl.textContent = "✓ Email saved";
+    statusEl.style.color = "var(--success)";
+    statusEl.hidden = false;
+    setTimeout(() => { statusEl.hidden = true; }, 2500);
+  }
+
+  showToast("Email saved", "success");
+});
+
+// Cancel subscription
+document.getElementById("cancel-subscription-btn")?.addEventListener("click", async () => {
+  const btn = document.getElementById("cancel-subscription-btn");
+  const errorEl = document.getElementById("cancel-error");
+  const successEl = document.getElementById("cancel-success");
+
+  if (!confirm("Are you sure you want to cancel your Pro subscription? You'll be moved back to the free plan immediately.")) {
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Cancelling…";
+  }
+  if (errorEl) errorEl.hidden = true;
+  if (successEl) successEl.hidden = true;
+
+  try {
+    const userId = await getUserId();
+    const email = await getUserEmail();
+
+    const res = await fetch(`${API_BASE}/api/payments/cancel`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, email: email || undefined }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || `Cancellation failed (${res.status})`);
+    }
+
+    await chrome.storage.local.set({ isPro: false });
+    if (successEl) successEl.hidden = false;
+    if (btn) btn.hidden = true;
+
+    // Refresh account bar
+    const status = await refreshAccountStatus();
+    await renderAccountPage(status);
+
+    showToast("Subscription cancelled", "default");
+  } catch (err) {
+    if (errorEl) {
+      errorEl.textContent = err.message;
+      errorEl.hidden = false;
+    }
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Cancel Subscription";
+    }
+  }
+});
+
+// Account page upgrade button
+document.getElementById("account-upgrade-btn")?.addEventListener("click", () => {
+  startUpgrade();
+});
+
+// ── Upgrade flow ───────────────────────────────────────────────────────────
+
+async function startUpgrade(fromPrompt = false) {
+  const upgradeBtn = fromPrompt
+    ? document.getElementById("upgrade-prompt-btn")
+    : document.getElementById("upgrade-btn");
+
   if (!upgradeBtn || upgradeBtn.disabled) return;
 
-  setUpgradeError("");
+  const errorSetter = fromPrompt
+    ? (msg) => {
+        const el = document.getElementById("upgrade-prompt-error");
+        if (el) { el.textContent = msg; el.hidden = !msg; }
+      }
+    : setUpgradeError;
+
+  errorSetter("");
   upgradeBtn.disabled = true;
-  const previousText = upgradeBtn.textContent;
+  const prevText = upgradeBtn.textContent;
   upgradeBtn.textContent = "Opening checkout…";
 
   try {
     const userId = await getUserId();
-    if (!userId || typeof userId !== "string") {
-      throw new Error("Could not identify your account. Reload the extension and try again.");
-    }
+    if (!userId) throw new Error("Could not identify your account. Reload the extension and try again.");
 
-    let customerEmail = "";
-    try {
-      const stored = await chrome.storage.local.get("upgradeEmail");
-      customerEmail = stored.upgradeEmail || "";
-    } catch {
-      /* optional */
-    }
+    let customerEmail = await getUserEmail();
 
     if (!customerEmail) {
       const prompted = window.prompt(
-        "Enter your email for the receipt (required by payment provider):",
+        "Enter your email for the receipt (optional — also used for upgrade alerts):",
         ""
       );
       if (prompted && prompted.includes("@")) {
@@ -151,8 +352,7 @@ async function startUpgrade() {
       }
     }
 
-    const locale =
-      (typeof navigator !== "undefined" && navigator.language) || "";
+    const locale = (typeof navigator !== "undefined" && navigator.language) || "";
     const india =
       locale.toUpperCase().endsWith("-IN") ||
       locale.toUpperCase() === "IN" ||
@@ -163,7 +363,6 @@ async function startUpgrade() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         userId: String(userId),
-        user_id: String(userId),
         email: customerEmail || undefined,
         customerEmail: customerEmail || undefined,
         country: india ? "IN" : undefined,
@@ -178,21 +377,25 @@ async function startUpgrade() {
 
     const data = await res.json();
     const checkoutUrl = data.checkoutUrl || data.payment_link;
-    if (!checkoutUrl) {
-      throw new Error("No checkout URL returned from server.");
-    }
+    if (!checkoutUrl) throw new Error("No checkout URL returned from server.");
 
     await chrome.storage.local.set({ pendingUpgrade: true });
     chrome.windows.create({ url: checkoutUrl, type: "popup", width: 480, height: 720 });
 
-    upgradeBtn.textContent = "Complete payment, then reopen extension";
+    upgradeBtn.textContent = "Complete payment, then reopen";
   } catch (err) {
-    setUpgradeError(err.message);
-    upgradeBtn.textContent = previousText;
+    errorSetter(err.message);
+    upgradeBtn.textContent = prevText;
   } finally {
     upgradeBtn.disabled = false;
   }
 }
+
+document.getElementById("upgrade-btn")?.addEventListener("click", () => startUpgrade(false));
+document.getElementById("upgrade-prompt-btn")?.addEventListener("click", () => startUpgrade(true));
+document.getElementById("upgrade-prompt-back")?.addEventListener("click", () => showView("view-home"));
+
+// ── Profile helpers ────────────────────────────────────────────────────────
 
 async function getActiveLinkedInTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -256,14 +459,14 @@ function renderProfilePreview(elId, profileData) {
       : "";
   const postsHtml =
     posts?.length > 0
-      ? `<span style="display:block;margin-top:4px"><strong>Recent posts:</strong> ${escapeHtml(posts[0].slice(0, 100))}${posts[0].length > 100 ? "…" : ""}</span>`
+      ? `<span style="display:block;margin-top:4px"><strong>Recent post:</strong> ${escapeHtml(posts[0].slice(0, 100))}${posts[0].length > 100 ? "…" : ""}</span>`
       : "";
 
   el.innerHTML = `
     <strong>Profile detected</strong>
     ${name ? `<div>${escapeHtml(name)}</div>` : ""}
     ${headline ? `<span>${escapeHtml(headline)}</span>` : ""}
-    ${about ? `<span style="display:block;margin-top:4px">${escapeHtml(about.slice(0, 160))}${about.length > 160 ? "…" : ""}</span>` : ""}
+    ${about ? `<span style="display:block;margin-top:4px">${escapeHtml(about.slice(0, 140))}${about.length > 140 ? "…" : ""}</span>` : ""}
     ${experienceHtml}
     ${postsHtml}
   `;
@@ -275,6 +478,8 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+// ── API call ───────────────────────────────────────────────────────────────
+
 async function callApi(body) {
   const res = await fetch(API_URL, {
     method: "POST",
@@ -282,29 +487,51 @@ async function callApi(body) {
     body: JSON.stringify(body),
   });
 
+  if (res.status === 402) {
+    // Usage limit reached — show upgrade prompt
+    showView("view-upgrade-prompt");
+    throw new Error("__LIMIT_REACHED__");
+  }
+
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(
-      text || `API error (${res.status}). Check your connection and try again.`
-    );
+    let friendlyMsg = "";
+    try {
+      const data = await res.json();
+      friendlyMsg = data.error || "";
+    } catch {
+      friendlyMsg = "";
+    }
+
+    if (res.status >= 500) {
+      throw new Error("Our AI service is temporarily unavailable. Please try again in a moment.");
+    }
+    throw new Error(friendlyMsg || `Something went wrong (${res.status}). Please try again.`);
   }
 
   const data = await res.json();
   const options = data.options ?? data.results ?? data.choices ?? data.variations;
   if (!Array.isArray(options) || options.length === 0) {
-    throw new Error("No options returned from the API.");
+    throw new Error("No options returned. Please try again.");
   }
 
   if (typeof data.remainingCredits === "number" && accountStatus && !accountStatus.isPro) {
-    renderAccountStatus({
+    const updatedStatus = {
       ...accountStatus,
       remaining: data.remainingCredits,
-      usedThisMonth: accountStatus.limit - data.remainingCredits,
-    });
+      usedThisMonth: (accountStatus.limit ?? 10) - data.remainingCredits,
+    };
+    renderAccountStatus(updatedStatus);
+    accountStatus = updatedStatus;
+
+    if (data.remainingCredits === 0) {
+      showToast("You've used your last free generation — consider upgrading!", "default");
+    }
   }
 
   return options.slice(0, 3);
 }
+
+// ── Results ────────────────────────────────────────────────────────────────
 
 function displayResults(feature, options) {
   lastFeature = feature;
@@ -330,6 +557,7 @@ function displayResults(feature, options) {
       await navigator.clipboard.writeText(text);
       btn.textContent = "Copied!";
       btn.classList.add("copied");
+      showToast("Copied to clipboard", "success");
       setTimeout(() => {
         btn.textContent = "Copy";
         btn.classList.remove("copied");
@@ -340,14 +568,18 @@ function displayResults(feature, options) {
   showView("view-results");
 }
 
+// ── Generation runner ──────────────────────────────────────────────────────
+
 async function runGeneration(feature, buildBody) {
   showView("view-loading");
   try {
     const userId = await getUserId();
+    const email = await getUserEmail();
     const body = await buildBody(userId);
-    const options = await callApi({ feature, userId, ...body });
+    const options = await callApi({ feature, userId, email: email || undefined, ...body });
     displayResults(feature, options);
   } catch (err) {
+    if (err.message === "__LIMIT_REACHED__") return; // upgrade prompt already shown
     showView(`view-${feature}`);
     const formMap = {
       generate_post: "form-generate_post",
@@ -360,19 +592,7 @@ async function runGeneration(feature, buildBody) {
   }
 }
 
-async function runPersonalizedDmGeneration() {
-  clearError("form-personalized_dm");
-  await runGeneration("personalized_dm", async (userId) => {
-    const profileData = await getProfileDataFromPage({ refresh: true });
-    renderProfilePreview("profile-preview-dm", profileData);
-    const dmContext = document.getElementById("dm-context")?.value.trim();
-    return {
-      userId,
-      profileData,
-      topic: dmContext || undefined,
-    };
-  });
-}
+// ── Feature button clicks ──────────────────────────────────────────────────
 
 document.querySelectorAll(".feature-btn").forEach((btn) => {
   btn.addEventListener("click", async () => {
@@ -383,15 +603,8 @@ document.querySelectorAll(".feature-btn").forEach((btn) => {
       showView("view-loading");
       try {
         const profileData = await getProfileDataFromPage({ refresh: true });
+        showView("view-personalized_dm");
         renderProfilePreview("profile-preview-dm", profileData);
-        await runGeneration("personalized_dm", async (userId) => {
-          const dmContext = document.getElementById("dm-context")?.value.trim();
-          return {
-            userId,
-            profileData,
-            topic: dmContext || undefined,
-          };
-        });
       } catch (err) {
         showView("view-personalized_dm");
         const el = document.getElementById("profile-preview-dm");
@@ -399,7 +612,6 @@ document.querySelectorAll(".feature-btn").forEach((btn) => {
           el.hidden = false;
           el.innerHTML = `<strong>Note</strong><span>${escapeHtml(err.message)}</span>`;
         }
-        showError("form-personalized_dm", err.message);
       }
       return;
     }
@@ -411,19 +623,17 @@ document.querySelectorAll(".feature-btn").forEach((btn) => {
         const profileData = await getProfileDataFromPage();
         renderProfilePreview("profile-preview-headline", profileData);
         const input = document.getElementById("headline-input");
-        if (profileData.headline && !input.value) {
+        if (profileData.headline && input && !input.value) {
           input.value = profileData.headline;
         }
-      } catch (err) {
-        const el = document.getElementById("profile-preview-headline");
-        if (el) {
-          el.hidden = false;
-          el.innerHTML = `<strong>Note</strong><span>${escapeHtml(err.message)}</span>`;
-        }
+      } catch {
+        /* Optional — user can type manually */
       }
     }
   });
 });
+
+// ── Back buttons ───────────────────────────────────────────────────────────
 
 document.querySelectorAll("[data-back]").forEach((btn) => {
   btn.addEventListener("click", () => showView("view-home"));
@@ -433,6 +643,8 @@ document.querySelector("[data-back-home]")?.addEventListener("click", () => {
   showView("view-home");
 });
 
+// ── Form submissions ───────────────────────────────────────────────────────
+
 document.getElementById("form-generate_post")?.addEventListener("submit", (e) => {
   e.preventDefault();
   clearError("form-generate_post");
@@ -441,9 +653,21 @@ document.getElementById("form-generate_post")?.addEventListener("submit", (e) =>
   runGeneration("generate_post", async (userId) => ({ userId, topic }));
 });
 
-document.getElementById("form-personalized_dm")?.addEventListener("submit", (e) => {
+document.getElementById("form-personalized_dm")?.addEventListener("submit", async (e) => {
   e.preventDefault();
-  runPersonalizedDmGeneration();
+  clearError("form-personalized_dm");
+  try {
+    const profileData = await getProfileDataFromPage({ refresh: true });
+    renderProfilePreview("profile-preview-dm", profileData);
+    const dmContext = document.getElementById("dm-context")?.value.trim();
+    await runGeneration("personalized_dm", async (userId) => ({
+      userId,
+      profileData,
+      topic: dmContext || undefined,
+    }));
+  } catch (err) {
+    showError("form-personalized_dm", err.message);
+  }
 });
 
 document.getElementById("form-reply_comment")?.addEventListener("submit", (e) => {
@@ -480,15 +704,10 @@ document.getElementById("form-viral_rewriter")?.addEventListener("submit", (e) =
   clearError("form-viral_rewriter");
   const draftPost = document.getElementById("draft-post").value.trim();
   if (!draftPost) return;
-  runGeneration("viral_rewriter", async (userId) => ({
-    userId,
-    draftPost,
-  }));
+  runGeneration("viral_rewriter", async (userId) => ({ userId, draftPost }));
 });
 
-document.getElementById("upgrade-btn")?.addEventListener("click", () => {
-  startUpgrade();
-});
+// ── Visibility / focus refresh ─────────────────────────────────────────────
 
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
@@ -500,4 +719,9 @@ window.addEventListener("focus", () => {
   refreshAccountStatus();
 });
 
-refreshAccountStatus();
+// ── Init ───────────────────────────────────────────────────────────────────
+
+(async function init() {
+  await checkOnboarding();
+  refreshAccountStatus();
+})();

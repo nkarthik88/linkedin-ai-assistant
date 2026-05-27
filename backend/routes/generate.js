@@ -2,6 +2,7 @@ import { Router } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { generateVariations } from "../services/openrouter.js";
 import { consumeCredit } from "../services/usage.js";
+import { sendWelcomeEmail, sendUsageWarningEmail } from "../services/email.js";
 
 const router = Router();
 
@@ -34,10 +35,21 @@ router.post(
       plan: account.plan,
     });
 
+    // Fire-and-forget emails (never block the response)
+    const email = req.body.email || req.body.customerEmail || account.email || null;
+    if (email) {
+      if (account.usedThisMonth === 1) {
+        sendWelcomeEmail(email).catch(() => {});
+      } else if (account.remainingCredits === 2) {
+        sendUsageWarningEmail(email, { remaining: 2, limit: account.limit }).catch(() => {});
+      }
+    }
+
     res.json({
       variations,
       options: variations,
       remainingCredits: account.remainingCredits,
+      limitReached: account.remainingCredits === 0,
     });
   })
 );

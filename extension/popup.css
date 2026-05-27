@@ -16,6 +16,7 @@
   --bg: #f3f6f8;
   --white: #ffffff;
   --error: #d11124;
+  --success: #057642;
   --radius: 8px;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
@@ -30,34 +31,161 @@ body {
   background: var(--bg);
 }
 
+/* ── Onboarding ── */
+.onboarding {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.onboarding[hidden] { display: none; }
+
+.onboarding-card {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  text-align: center;
+  max-width: 340px;
+  width: 100%;
+}
+
+.onboarding-logo {
+  font-size: 40px;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+
+.onboarding-card h2 {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--text-primary);
+}
+
+.onboarding-card > p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.onboarding-features {
+  list-style: none;
+  text-align: left;
+  margin-bottom: 16px;
+}
+
+.onboarding-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 13px;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
+}
+
+.onboarding-features li:last-child { border-bottom: none; }
+
+.of-icon { font-size: 18px; line-height: 1.3; flex-shrink: 0; }
+
+.onboarding-free {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a1a;
+  color: #fff;
+  padding: 9px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 10000;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  animation: toastIn 0.2s ease;
+}
+
+.toast[hidden] { display: none; }
+.toast.success { background: var(--success); }
+.toast.error { background: var(--error); }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ── App layout ── */
 .app {
   display: flex;
   flex-direction: column;
   min-height: 100%;
 }
 
+/* ── Header ── */
 .header {
   background: var(--linkedin-blue);
   color: var(--white);
-  padding: 16px 20px;
+  padding: 14px 16px;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .header h1 {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   letter-spacing: -0.01em;
 }
 
 .header p {
-  font-size: 12px;
+  font-size: 11px;
   opacity: 0.85;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
+.account-tab-btn {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.account-tab-btn:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+/* ── Account bar ── */
 .account-bar {
   background: var(--white);
   border-bottom: 1px solid var(--border);
-  padding: 12px 16px;
+  padding: 10px 14px;
 }
 
 .account-bar-top {
@@ -65,13 +193,12 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 0;
 }
 
 .tier-badge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
+  padding: 3px 9px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
@@ -83,7 +210,7 @@ body {
 
 .tier-badge.pro {
   background: #e8f5e9;
-  color: #057642;
+  color: var(--success);
 }
 
 .usage-label {
@@ -108,7 +235,7 @@ body {
 }
 
 .upgrade-btn:hover:not(:disabled) {
-  opacity: 0.95;
+  opacity: 0.92;
 }
 
 .upgrade-btn:active:not(:disabled) {
@@ -127,8 +254,9 @@ body {
   line-height: 1.3;
 }
 
+/* ── Main ── */
 .main {
-  padding: 16px;
+  padding: 14px;
   flex: 1;
 }
 
@@ -140,6 +268,7 @@ body {
   display: block;
 }
 
+/* ── Feature grid ── */
 .feature-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -150,8 +279,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
-  padding: 14px;
+  gap: 5px;
+  padding: 13px;
   background: var(--white);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -191,6 +320,7 @@ body {
   grid-column: 1 / -1;
 }
 
+/* ── Back button ── */
 .back-btn {
   display: inline-flex;
   align-items: center;
@@ -202,13 +332,13 @@ body {
   font-weight: 600;
   cursor: pointer;
   padding: 0 0 12px;
-  margin-bottom: 4px;
 }
 
 .back-btn:hover {
   color: var(--linkedin-blue-dark);
 }
 
+/* ── Card ── */
 .card {
   background: var(--white);
   border-radius: var(--radius);
@@ -239,7 +369,8 @@ label {
 }
 
 textarea,
-input[type="text"] {
+input[type="text"],
+input[type="email"] {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--border);
@@ -250,16 +381,19 @@ input[type="text"] {
   min-height: 80px;
   margin-bottom: 12px;
   transition: border-color 0.15s;
+  background: var(--white);
 }
 
 textarea:focus,
-input[type="text"]:focus {
+input[type="text"]:focus,
+input[type="email"]:focus {
   outline: none;
   border-color: var(--linkedin-blue);
   box-shadow: 0 0 0 2px var(--linkedin-blue-light);
 }
 
-input[type="text"] {
+input[type="text"],
+input[type="email"] {
   min-height: unset;
   height: 40px;
   resize: none;
@@ -275,11 +409,15 @@ input[type="text"] {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, transform 0.1s;
 }
 
 .submit-btn:hover:not(:disabled) {
   background: var(--linkedin-blue-dark);
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .submit-btn:disabled {
@@ -287,12 +425,13 @@ input[type="text"] {
   cursor: not-allowed;
 }
 
+/* ── Loading ── */
 .loading {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  padding: 32px 16px;
+  padding: 40px 16px;
   text-align: center;
 }
 
@@ -306,9 +445,7 @@ input[type="text"] {
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 .loading p {
@@ -316,6 +453,7 @@ input[type="text"] {
   color: var(--text-secondary);
 }
 
+/* ── Error ── */
 .error-msg {
   background: #fde8ea;
   color: var(--error);
@@ -326,6 +464,7 @@ input[type="text"] {
   line-height: 1.4;
 }
 
+/* ── Results ── */
 .results-header {
   font-size: 14px;
   font-weight: 600;
@@ -376,10 +515,11 @@ input[type="text"] {
 }
 
 .copy-btn.copied {
-  background: #057642;
+  background: var(--success);
   color: var(--white);
 }
 
+/* ── Profile preview ── */
 .profile-preview {
   background: var(--linkedin-blue-light);
   border-radius: var(--radius);
@@ -397,4 +537,241 @@ input[type="text"] {
 
 .profile-preview span {
   color: var(--text-secondary);
+}
+
+/* ── Account page ── */
+.account-card {
+  padding: 16px;
+}
+
+.account-header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.account-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--linkedin-blue-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--linkedin-blue);
+  flex-shrink: 0;
+}
+
+.account-email {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+
+/* ── Usage bar ── */
+.usage-section {
+  margin-bottom: 16px;
+}
+
+.usage-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.usage-section-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.usage-section-count {
+  font-size: 12px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.usage-bar-bg {
+  height: 6px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.usage-bar-fill {
+  height: 100%;
+  background: var(--linkedin-blue);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.usage-bar-fill.full {
+  background: var(--error);
+}
+
+.usage-note {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+/* ── Pro section ── */
+.account-pro-section {
+  margin-bottom: 12px;
+}
+
+.pro-perks {
+  background: #f0faf4;
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.pro-perk {
+  font-size: 12px;
+  color: var(--success);
+  font-weight: 600;
+  padding: 3px 0;
+}
+
+.cancel-btn {
+  width: 100%;
+  padding: 9px 14px;
+  background: none;
+  border: 1px solid #e0e0e0;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--error);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  background: #fde8ea;
+  border-color: var(--error);
+}
+
+.cancel-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.cancel-success {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--success);
+  font-weight: 600;
+}
+
+/* ── Email edit ── */
+.account-email-edit {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  margin-top: 4px;
+}
+
+.email-edit-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.email-edit-row input {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.email-save-btn {
+  padding: 0 14px;
+  height: 40px;
+  background: var(--linkedin-blue);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.email-save-btn:hover {
+  background: var(--linkedin-blue-dark);
+}
+
+.email-save-status {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--success);
+}
+
+/* ── Upgrade prompt view ── */
+.upgrade-prompt-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 20px 16px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.upgrade-prompt-icon {
+  font-size: 36px;
+  margin-bottom: 10px;
+  line-height: 1;
+}
+
+.upgrade-prompt-card h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.upgrade-prompt-card p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.upgrade-perks {
+  list-style: none;
+  text-align: left;
+  margin-bottom: 16px;
+  background: #f9fafb;
+  border-radius: var(--radius);
+  padding: 10px 14px;
+}
+
+.upgrade-perks li {
+  font-size: 13px;
+  color: var(--success);
+  font-weight: 600;
+  padding: 4px 0;
+}
+
+.upgrade-prompt-btn-main {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.back-link-btn {
+  background: none;
+  border: none;
+  color: var(--linkedin-blue);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.back-link-btn:hover {
+  color: var(--linkedin-blue-dark);
 }
