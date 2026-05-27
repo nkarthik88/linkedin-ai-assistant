@@ -12,6 +12,8 @@ export const corsMiddleware = cors({
       origin === "http://localhost:3000" ||
       origin.startsWith("http://127.0.0.1:") ||
       origin === "https://linkedin-ai-backend-rho.vercel.app" ||
+      origin === "https://linkedinai.tech" ||
+      origin === "https://www.linkedinai.tech" ||
       origin.endsWith(".vercel.app")
     ) {
       return callback(null, true);
