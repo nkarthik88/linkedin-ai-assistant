@@ -775,10 +775,10 @@ function displayLeads(leads) {
 
   leads.forEach((lead, i) => {
     const q = LEAD_QUALITY[lead.quality] || LEAD_QUALITY.cold;
-    const subParts = [lead.title || lead.headline || "", lead.company || ""]
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const sub = subParts.join(" · ");
+
+    let sub = "";
+    if (lead.title && lead.company) sub = `${lead.title} at ${lead.company}`;
+    else sub = lead.title || lead.headline || lead.company || "";
 
     const card = document.createElement("div");
     card.className = "lead-card";
@@ -787,13 +787,17 @@ function displayLeads(leads) {
         <div class="lead-identity">
           <div class="lead-name">${escapeHtml(lead.name || "Unknown")}</div>
           ${sub ? `<div class="lead-sub">${escapeHtml(sub)}</div>` : ""}
+          ${lead.location ? `<div class="lead-location">📍 ${escapeHtml(lead.location)}</div>` : ""}
         </div>
         <span class="quality-badge ${q.cls}">${q.icon} ${q.label}</span>
       </div>
       ${lead.reason ? `<div class="lead-reason">${escapeHtml(lead.reason)}</div>` : ""}
       <div class="lead-dm-label">Personalized DM</div>
       <div class="lead-dm">${escapeHtml(lead.dm || "")}</div>
-      <button type="button" class="copy-btn lead-copy" data-index="${i}">Copy DM</button>
+      <div class="lead-actions">
+        <button type="button" class="copy-btn lead-copy" data-index="${i}">Copy DM</button>
+        ${lead.url ? `<button type="button" class="lead-view" data-url="${escapeHtml(lead.url)}">View Profile →</button>` : ""}
+      </div>
     `;
     container.appendChild(card);
   });
@@ -809,6 +813,13 @@ function displayLeads(leads) {
         btn.textContent = "Copy DM";
         btn.classList.remove("copied");
       }, 2000);
+    });
+  });
+
+  container.querySelectorAll(".lead-view").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const url = btn.dataset.url;
+      if (url) chrome.tabs.create({ url });
     });
   });
 

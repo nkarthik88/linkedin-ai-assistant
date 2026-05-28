@@ -75,6 +75,7 @@ export async function qualifyLeads({ profiles, targetDescription, plan }) {
     title: p.title || "",
     company: p.company || "",
     headline: p.headline || "",
+    location: p.location || "",
   }));
 
   const response = await fetch(OPENROUTER_URL, {
@@ -92,13 +93,18 @@ export async function qualifyLeads({ profiles, targetDescription, plan }) {
       messages: [
         {
           role: "system",
-          content: `You are a B2B sales prospecting assistant. The user describes their ideal customer, and you receive a list of LinkedIn profiles from a search results page.
+          content: `You are an expert B2B sales prospecting assistant. The user describes their ideal customer, and you receive a list of LinkedIn profiles from a search results page (with job title, company, headline, and location).
 
-For EACH profile, decide how well it matches the ideal customer and return:
+For EACH profile, judge how well it matches the ideal customer and return:
 - "index": the profile's index (integer, copied from input)
-- "quality": one of "hot", "warm", "cold" (hot = strong match, warm = partial, cold = weak/unlikely)
-- "reason": one short sentence (max 120 chars) explaining the rating
-- "dm": a personalized LinkedIn outreach DM (under 300 chars) that references a specific detail from their title/company/headline. No generic openers. If quality is cold, still write a polite DM.
+- "quality": one of "hot", "warm", "cold"
+    • "hot"  = clearly matches the target (role AND industry/company fit)
+    • "warm" = partial match (right role OR right space, but not both, or seniority is close)
+    • "cold" = unlikely to match the target
+- "reason": one short sentence (max 120 chars) that explicitly ties the rating to the user's target, e.g. "Matches your target — B2B SaaS founder at a product company." Reference their actual title/company.
+- "dm": a personalized LinkedIn outreach DM (under 300 chars) that names the person and references their SPECIFIC role and company. No generic openers like "I came across your profile". Make it feel hand-written. Even for cold leads, write a polite, relevant DM.
+
+If a profile has no title/company, infer from the headline and rate conservatively (usually warm/cold), and say so in the reason.
 
 Respond with JSON only, in this exact shape:
 {"leads":[{"index":0,"quality":"hot","reason":"...","dm":"..."}]}
@@ -158,6 +164,8 @@ ${JSON.stringify(profilesForPrompt, null, 2)}`,
       title: p.title || "",
       company: p.company || "",
       headline: p.headline || "",
+      location: p.location || "",
+      url: p.url || "",
       quality,
       reason: String(ai.reason || "").trim(),
       dm: String(ai.dm || "").trim(),

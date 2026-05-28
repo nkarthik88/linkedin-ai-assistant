@@ -271,8 +271,69 @@ function cleanName(raw) {
   return getText({ textContent: raw })
     .replace(/^status is (reachable|offline)\s*/i, "")
     .replace(/\s*•.*$/, "") // strip "• 1st" degree badges
+    .replace(/\s*\b(1st|2nd|3rd)\b\s*degree connection.*$/i, "")
     .replace(/\s*view .*?profile.*$/i, "")
     .trim();
+}
+
+const NOISE_ROW =
+  /^(1st|2nd|3rd|connect|message|follow|following|pending)$|degree connection|view .*?profile|status is (reachable|offline)|\bfollowers?\b|mutual connection/i;
+
+/**
+ * Split a LinkedIn headline into job title + company.
+ * Handles "CEO at TechCorp", "Founder & CEO @ TechCorp", and pipe/bullet
+ * separated headlines like "Helping founders | CEO at TechCorp | SaaS".
+ */
+function splitTitleCompany(headline) {
+  if (!headline) return { title: "", company: "" };
+  const segments = headline.split(/\s*[|•·–—]\s*/).filter(Boolean);
+
+  for (const seg of segments) {
+    const m = seg.match(/^(.*?\S)\s+(?:at|@)\s+(.+)$/i);
+    if (m && m[2].trim()) {
+      return { title: m[1].trim(), company: m[2].trim() };
+    }
+  }
+  // No "at"/"@" — treat the most descriptive segment as the title.
+  return { title: (segments[0] || headline).trim(), company: "" };
+}
+
+/**
+ * Collect the visible text rows inside a result card (headline, location, etc.)
+ * in DOM order, skipping the name, action buttons, and connection-degree noise.
+ * This is the resilient fallback when LinkedIn's named subtitle classes change.
+ */
+function collectInfoRows(container, name) {
+  const candidates = container.querySelectorAll(
+    ".entity-result__primary-subtitle, .entity-result__secondary-subtitle, " +
+      '.t-14, .t-12, [class*="subtitle"], [class*="summary"], p'
+  );
+
+  const rows = [];
+  const seen = new Set();
+  for (const el of candidates) {
+    // Skip the title block (contains the profile link / the name itself).
+    if (el.querySelector && el.querySelector('a[href*="/in/"]')) continue;
+    const txt = getText(el);
+    if (!txt || txt.length < 2 || txt.length > 220) continue;
+    if (name && txt === name) continue;
+    if (NOISE_ROW.test(txt)) continue;
+    if (seen.has(txt)) continue;
+    seen.add(txt);
+    rows.push(txt);
+  }
+  return rows;
+}
+
+function looksLikeLocation(text) {
+  if (!text) return false;
+  if (/\b(at|@)\b/i.test(text)) return false; // that's a headline
+  // Locations are short and often "City, Region, Country" or a known area.
+  return (
+    /,/.test(text) ||
+    /\b(area|region|county|district|greater)\b/i.test(text) ||
+    text.split(/\s+/).length <= 4
+  );
 }
 
 function extractSearchProfiles(limit = 25) {
@@ -281,14 +342,25 @@ function extractSearchProfiles(limit = 25) {
 
   let containers = Array.from(
     document.querySelectorAll(
-      "li.reusable-search__result-container, div[data-chameleon-result-urn], li.org-people-profile-card__profile-card-spacing, div.entity-result, li.artdeco-list__item"
+      [
+        "li.reusable-search__result-container",
+        "div[data-chameleon-result-urn]",
+        "li.org-people-profile-card__profile-card-spacing",
+        "div.entity-result",
+        "div.search-results-container ul > li",
+        'ul[role="list"] > li',
+        "li.artdeco-list__item",
+      ].join(", ")
     )
   );
 
   // Fallback: derive containers from profile links if known classes are absent.
   if (!containers.length) {
     document.querySelectorAll('a[href*="/in/"]').forEach((a) => {
-      const c = a.closest("li") || a.closest("div");
+      const c =
+        a.closest("li") ||
+        a.closest("div[data-chameleon-result-urn]") ||
+        a.closest("div");
       if (c && !containers.includes(c)) containers.push(c);
     });
   }
@@ -300,33 +372,39 @@ function extractSearchProfiles(limit = 25) {
     if (!link) continue;
 
     const href = (link.getAttribute("href") || "").split("?")[0];
-    if (!href || seen.has(href)) continue;
+    if (!href || !/\/in\/[^/]+/.test(href) || seen.has(href)) continue;
 
     const name = cleanName(
-      getText(c.querySelector('.entity-result__title-text span[aria-hidden="true"]')) ||
+      getText(link.querySelector('span[aria-hidden="true"]')) ||
+        getText(c.querySelector('.entity-result__title-text span[aria-hidden="true"]')) ||
         getText(c.querySelector('.entity-result__title-text a')) ||
-        getText(c.querySelector('span[aria-hidden="true"]')) ||
         getText(link)
     );
-    if (!name || name.length < 2) continue;
+    if (!name || name.length < 2 || /^linkedin member$/i.test(name)) continue;
 
-    const headline =
+    // 1) Try LinkedIn's named subtitle classes (across DOM versions).
+    let headline =
       getText(c.querySelector(".entity-result__primary-subtitle")) ||
       getText(c.querySelector("div.t-14.t-black.t-normal")) ||
       "";
-    const location =
+    let location =
       getText(c.querySelector(".entity-result__secondary-subtitle")) ||
       getText(c.querySelector("div.t-14.t-normal.t-black--light")) ||
       "";
 
-    // Best-effort split of "Title at Company" / "Title @ Company".
-    let title = headline;
-    let company = "";
-    const m = headline.match(/^(.*?)\s+(?:at|@)\s+(.+)$/i);
-    if (m) {
-      title = m[1].trim();
-      company = m[2].trim();
+    // 2) Fallback: positional text rows when class names have changed.
+    if (!headline || !location) {
+      const rows = collectInfoRows(c, name);
+      if (!headline) headline = rows[0] || "";
+      if (!location) {
+        location =
+          rows.find((r) => r !== headline && looksLikeLocation(r)) ||
+          rows.find((r) => r !== headline) ||
+          "";
+      }
     }
+
+    const { title, company } = splitTitleCompany(headline);
 
     seen.add(href);
     results.push({
