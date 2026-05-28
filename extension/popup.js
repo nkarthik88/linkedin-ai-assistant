@@ -742,6 +742,43 @@ function renderLeadCounter() {
   });
 }
 
+function formatResetDate(iso) {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  } catch {
+    return "";
+  }
+}
+
+function showLeadLimit() {
+  const isPro = Boolean(accountStatus?.isPro);
+  const limit = accountStatus?.lead_searches_limit ?? (isPro ? 50 : 2);
+  const msg = document.getElementById("lead-limit-msg");
+  const resetEl = document.getElementById("lead-limit-reset");
+  const upBtn = document.getElementById("lead-limit-upgrade");
+
+  if (msg) {
+    msg.textContent = isPro
+      ? `You've used all ${limit} lead searches this month.`
+      : "You've used all 2 free lead searches this month. Upgrade to Pro for 50 searches/month.";
+  }
+
+  const resetsOn = formatResetDate(accountStatus?.resets_on);
+  if (resetEl) {
+    resetEl.textContent = resetsOn ? `Resets on ${resetsOn}` : "";
+    resetEl.hidden = !resetsOn;
+  }
+
+  if (upBtn) upBtn.hidden = isPro;
+
+  showView("view-lead-limit");
+}
+
 async function getSearchProfilesFromPage() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id || !tab.url?.includes("linkedin.com")) {
@@ -841,12 +878,7 @@ async function runFindLeads(targetDescription) {
     });
 
     if (res.status === 402) {
-      const isPro = Boolean(accountStatus?.isPro);
-      if (isPro) {
-        showView("view-lead-limit");
-      } else {
-        showView("view-upgrade-prompt");
-      }
+      showLeadLimit();
       refreshAccountStatus();
       return;
     }
@@ -894,6 +926,7 @@ document.querySelector("[data-back-leads]")?.addEventListener("click", () => {
 });
 
 document.getElementById("lead-limit-back")?.addEventListener("click", () => showView("view-home"));
+document.getElementById("lead-limit-upgrade")?.addEventListener("click", () => startUpgrade(false));
 
 // ── Visibility / focus refresh ─────────────────────────────────────────────
 

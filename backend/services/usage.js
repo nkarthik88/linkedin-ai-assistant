@@ -1,10 +1,18 @@
 import { supabaseAdmin } from "./supabase.js";
+import { config } from "../config.js";
 import {
   FREE_TIER_LIMIT,
   getLimitForPlan,
   getLeadLimitForPlan,
   normalizePlan,
 } from "../constants/plans.js";
+
+const OWNER_LIMIT = 999999;
+
+function isOwnerEmail(email) {
+  if (!email) return false;
+  return config.ownerEmails.includes(String(email).trim().toLowerCase());
+}
 
 /**
  * Read lead-search usage defensively. Returns null if the
@@ -23,7 +31,7 @@ async function getLeadSearchesUsed(table, id) {
 
 async function withLeadUsage(account) {
   const used = await getLeadSearchesUsed(account.source, account.id);
-  const limit = getLeadLimitForPlan(account.plan);
+  const limit = account.isOwner ? OWNER_LIMIT : getLeadLimitForPlan(account.plan);
   return {
     ...account,
     leadTrackable: used !== null,
@@ -101,7 +109,7 @@ async function getAuthUserRow(userId) {
 async function getExtensionAccount(userId) {
   const { data, error } = await supabaseAdmin
     .from("extension_accounts")
-    .select("id, plan, usage_this_month, usage_limit, quota_reset_at")
+    .select("id, plan, email, usage_this_month, usage_limit, quota_reset_at")
     .eq("id", userId)
     .maybeSingle();
 
@@ -113,7 +121,7 @@ async function createExtensionAccount(userId) {
   const { data, error } = await supabaseAdmin
     .from("extension_accounts")
     .insert({ id: userId })
-    .select("id, plan, usage_this_month, usage_limit, quota_reset_at")
+    .select("id, plan, email, usage_this_month, usage_limit, quota_reset_at")
     .single();
 
   if (error) throw error;
@@ -129,16 +137,23 @@ export async function resolveAccount(userId) {
     authUser = await maybeResetUsage(authUser, "users");
     // Payment status is tracked via `users.is_pro`.
     // Keep `plan` as a fallback for legacy rows, but prefer `is_pro`.
-    const plan =
-      authUser.is_pro === true ? "pro" : normalizePlan(authUser.plan);
-    const limit = resolveMonthlyLimit(authUser, plan);
+    const owner = isOwnerEmail(authUser.email);
+    const plan = owner
+      ? "pro"
+      : authUser.is_pro === true
+      ? "pro"
+      : normalizePlan(authUser.plan);
+    const limit = owner ? OWNER_LIMIT : resolveMonthlyLimit(authUser, plan);
     const usedThisMonth = authUser.usage_this_month ?? 0;
     return withLeadUsage({
       source: "users",
       id: authUser.id,
       plan,
+      isOwner: owner,
+      email: authUser.email || null,
       usedThisMonth,
       limit,
+      quotaResetAt: authUser.quota_reset_at || null,
       remainingCredits: Math.max(0, limit - usedThisMonth),
     });
   }
@@ -148,15 +163,19 @@ export async function resolveAccount(userId) {
     ext = await createExtensionAccount(userId);
   }
   ext = await maybeResetUsage(ext, "extension_accounts");
-  const plan = normalizePlan(ext.plan);
-  const limit = resolveMonthlyLimit(ext, plan);
+  const owner = isOwnerEmail(ext.email);
+  const plan = owner ? "pro" : normalizePlan(ext.plan);
+  const limit = owner ? OWNER_LIMIT : resolveMonthlyLimit(ext, plan);
   const usedThisMonth = ext.usage_this_month ?? 0;
   return withLeadUsage({
     source: "extension_accounts",
     id: ext.id,
     plan,
+    isOwner: owner,
+    email: ext.email || null,
     usedThisMonth,
     limit,
+    quotaResetAt: ext.quota_reset_at || null,
     remainingCredits: Math.max(0, limit - usedThisMonth),
   });
 }
@@ -178,16 +197,18 @@ export async function getAccountStatus(userId) {
   const account = await resolveAccount(userId);
   const authUser = await getAuthUserRow(userId);
   const isPro =
-    authUser != null
+    account.isOwner ||
+    (authUser != null
       ? authUser.is_pro === true
-      : account.plan === "pro" || account.plan === "plus";
+      : account.plan === "pro" || account.plan === "plus");
 
   const remaining = Math.max(0, account.limit - account.usedThisMonth);
 
   return {
     isPro,
-    tier: isPro ? "pro" : "free",
-    tierLabel: isPro ? "Pro Tier" : "Free Tier",
+    isOwner: Boolean(account.isOwner),
+    tier: account.isOwner ? "owner" : isPro ? "pro" : "free",
+    tierLabel: account.isOwner ? "Owner" : isPro ? "Pro Tier" : "Free Tier",
     usedThisMonth: account.usedThisMonth,
     limit: account.limit,
     remaining,
@@ -195,6 +216,7 @@ export async function getAccountStatus(userId) {
     lead_searches_used: account.leadSearchesUsed,
     lead_searches_limit: account.leadSearchLimit,
     lead_searches_remaining: account.leadSearchesRemaining,
+    resets_on: account.quotaResetAt || null,
   };
 }
 

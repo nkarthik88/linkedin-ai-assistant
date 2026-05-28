@@ -24,4 +24,9 @@ export const config = {
   backendUrl: process.env.BACKEND_URL || "https://www.propostly.com",
   resendApiKey: process.env.RESEND_API_KEY || "",
   fromEmail: process.env.FROM_EMAIL || "support@propostly.com",
+  // Owner/developer accounts get unlimited usage (no quota enforcement).
+  ownerEmails: (process.env.OWNER_EMAILS || "naraharikarthik05@gmail.com")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean),
 };

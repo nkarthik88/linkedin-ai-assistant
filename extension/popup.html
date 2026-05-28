@@ -247,13 +247,16 @@
           <div id="leads-container"></div>
         </div>
 
-        <!-- Lead limit reached (Pro hit 50) -->
+        <!-- Lead limit reached -->
         <div id="view-lead-limit" class="view">
           <div class="upgrade-prompt-card">
             <div class="upgrade-prompt-icon">🎯</div>
-            <h2>Lead search limit reached</h2>
-            <p id="lead-limit-msg">You've used all your lead searches for this month. They reset at the start of next month.</p>
+            <h2 id="lead-limit-title">Lead search limit reached</h2>
+            <p id="lead-limit-msg"></p>
+            <p id="lead-limit-reset" class="lead-limit-reset" hidden></p>
+            <button id="lead-limit-upgrade" class="submit-btn upgrade-prompt-btn-main" hidden>Upgrade to Pro — $9/month</button>
             <button id="lead-limit-back" class="back-link-btn">← Back to home</button>
+            <p id="lead-limit-error" class="upgrade-error" hidden></p>
           </div>
         </div>
 
