@@ -3,6 +3,15 @@ import { config } from "../config.js";
 
 const REPLAY_TOLERANCE_SEC = 5 * 60;
 
+/**
+ * Standard Webhooks secrets are formatted `whsec_<base64>`. The HMAC key is the
+ * base64-decoded bytes after the prefix — not the raw string.
+ */
+function getSigningKey(secret) {
+  const withoutPrefix = secret.startsWith("whsec_") ? secret.slice(6) : secret;
+  return Buffer.from(withoutPrefix, "base64");
+}
+
 function parseSignatureHeader(header) {
   if (!header) return null;
   const parts = String(header).split(",");
@@ -51,7 +60,7 @@ export function verifyDodoWebhook(rawBody, headers) {
 
   const signedPayload = `${webhookId}.${webhookTimestamp}.${rawBody}`;
   const expected = crypto
-    .createHmac("sha256", config.dodoWebhookSecret)
+    .createHmac("sha256", getSigningKey(config.dodoWebhookSecret))
     .update(signedPayload)
     .digest("base64");
 
