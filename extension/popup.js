@@ -943,13 +943,28 @@ async function getSearchProfilesFromCurrentPage() {
   return resp.profiles;
 }
 
+let lastAutoDiag = null;
+
+async function isDebugAutoSearch() {
+  const { debugAutoSearch } = await chrome.storage.local.get("debugAutoSearch");
+  return Boolean(debugAutoSearch);
+}
+
 async function autoSearchProfiles(target) {
+  const debug = await isDebugAutoSearch();
+  lastAutoDiag = null;
+
   const url = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(
     target
   )}`;
-  setLoading("🔍 Searching LinkedIn…", "Opening results in a background tab");
+  setLoading(
+    "🔍 Searching LinkedIn…",
+    debug ? "Debug: opening a visible tab to inspect" : "Opening results in a background tab"
+  );
 
-  const tab = await chrome.tabs.create({ url, active: false });
+  // In debug we open the tab focused (active) so LinkedIn renders without
+  // background-tab throttling — and we leave it open for inspection.
+  const tab = await chrome.tabs.create({ url, active: debug });
   const tabId = tab.id;
 
   try {
@@ -959,21 +974,33 @@ async function autoSearchProfiles(target) {
       await sleepMs(1500);
       try {
         await ensureContentScript(tabId);
-        const resp = await chrome.tabs.sendMessage(tabId, { type: "AUTO_SCRAPE" });
+        const resp = await chrome.tabs.sendMessage(tabId, {
+          type: "AUTO_SCRAPE",
+          debug,
+        });
+        if (resp?.diag) lastAutoDiag = resp.diag;
         if (resp?.success && resp.profiles?.length) {
           profiles = resp.profiles;
           break;
         }
-      } catch {
-        /* tab still loading / no receiver yet — retry */
+      } catch (e) {
+        if (!lastAutoDiag) lastAutoDiag = { waiting: true, note: e.message };
       }
     }
     return profiles;
   } finally {
-    try {
-      await chrome.tabs.remove(tabId);
-    } catch {
-      /* already closed */
+    if (debug) {
+      try {
+        await chrome.tabs.update(tabId, { active: true }); // leave open + focused
+      } catch {
+        /* ignore */
+      }
+    } else {
+      try {
+        await chrome.tabs.remove(tabId);
+      } catch {
+        /* already closed */
+      }
     }
   }
 }
@@ -1137,9 +1164,12 @@ async function runFindLeads(targetDescription, { scanCurrentPage = false } = {})
       : await autoSearchProfiles(targetDescription);
 
     if (!profiles || profiles.length === 0) {
-      throw new Error(
-        "Couldn't read any profiles. Make sure you're logged into LinkedIn, then try again — or open a search page and use “scan this page”."
-      );
+      let msg =
+        "Couldn't read any profiles. Make sure you're logged into LinkedIn, then try again — or use “Find Leads on This Page” on a search results page.";
+      if (!scanCurrentPage && (await isDebugAutoSearch())) {
+        msg += ` [debug ${JSON.stringify(lastAutoDiag || {})}] — the LinkedIn tab was left open; open its DevTools console for [ProPostly][auto] logs.`;
+      }
+      throw new Error(msg);
     }
 
     await qualifyAndShow(profiles, targetDescription);
@@ -1195,10 +1225,17 @@ document.getElementById("copy-all-hot")?.addEventListener("click", async () => {
   showToast(`Copied ${hot.length} hot DM${hot.length === 1 ? "" : "s"}`, "success");
 });
 
+document.getElementById("lead-debug")?.addEventListener("change", (e) => {
+  chrome.storage.local.set({ debugAutoSearch: e.target.checked });
+});
+
 // Open Find Leads: show cached results if present, else the search form.
 async function openFindLeads() {
   renderLeadCounter();
   refreshAccountStatus();
+  const dbg = await isDebugAutoSearch();
+  const cb = document.getElementById("lead-debug");
+  if (cb) cb.checked = dbg;
   const cached = await getLeadResults();
   if (cached?.leads?.length) {
     displayLeads(cached.leads, { ts: cached.ts });

@@ -276,15 +276,22 @@ function sleep(ms) {
  * count stabilises (or we time out), then return extracted profiles. Used by
  * the background-tab auto-search so the popup gets a full result set.
  */
-async function autoScrapeSearch(maxMs = 12000) {
+async function autoScrapeSearch(maxMs = 12000, debug = false) {
   const start = Date.now();
   let lastCount = 0;
   let stablePasses = 0;
+  let passes = 0;
+  let maxAnchors = 0;
 
   while (Date.now() - start < maxMs) {
     window.scrollTo(0, document.body.scrollHeight);
     await sleep(750);
     const count = document.querySelectorAll('a[href*="/in/"]').length;
+    maxAnchors = Math.max(maxAnchors, count);
+    passes += 1;
+    if (debug) {
+      console.log(`[ProPostly][auto] pass ${passes}: ${count} profile anchors`);
+    }
     if (count > 0 && count === lastCount) {
       stablePasses += 1;
       if (stablePasses >= 2) break;
@@ -296,7 +303,18 @@ async function autoScrapeSearch(maxMs = 12000) {
 
   window.scrollTo(0, 0);
   await sleep(200);
-  return extractSearchProfiles();
+  const profiles = extractSearchProfiles();
+  const diag = {
+    url: window.location.href,
+    isSearch: isLinkedInSearchPage(),
+    visibility: document.visibilityState,
+    passes,
+    maxAnchors,
+    finalAnchors: document.querySelectorAll('a[href*="/in/"]').length,
+    extracted: profiles.length,
+  };
+  if (debug) console.log("[ProPostly][auto] done", diag);
+  return { profiles, diag };
 }
 
 function cleanName(raw) {
@@ -488,11 +506,17 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.type === "AUTO_SCRAPE") {
     if (!isLinkedInSearchPage()) {
-      sendResponse({ success: false, error: "Not a search results page yet." });
+      sendResponse({
+        success: false,
+        error: "Not a search results page yet.",
+        diag: { url: window.location.href, isSearch: false },
+      });
       return true;
     }
-    autoScrapeSearch()
-      .then((profiles) => sendResponse({ success: true, profiles }))
+    autoScrapeSearch(12000, message.debug)
+      .then(({ profiles, diag }) =>
+        sendResponse({ success: profiles.length > 0, profiles, diag })
+      )
       .catch((err) => sendResponse({ success: false, error: err.message }));
     return true; // async response
   }

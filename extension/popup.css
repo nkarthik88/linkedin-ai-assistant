@@ -1068,3 +1068,13 @@ input[type="email"] {
   cursor: pointer;
 }
 .saved-delete:hover { border-color: var(--error); }
+
+.debug-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.debug-row input { margin: 0; }
