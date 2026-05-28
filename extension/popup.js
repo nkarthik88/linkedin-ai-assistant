@@ -1154,22 +1154,24 @@ function getLeadTarget() {
   return document.getElementById("lead-target")?.value.trim() || "";
 }
 
+// Default action: scan the LinkedIn page the user is already on.
 document.getElementById("form-find_leads")?.addEventListener("submit", (e) => {
   e.preventDefault();
   clearError("form-find_leads");
   const target = getLeadTarget();
   if (!target) return;
-  runFindLeads(target);
+  runFindLeads(target, { scanCurrentPage: true });
 });
 
-document.getElementById("lead-scan-page")?.addEventListener("click", () => {
+// Opt-in: let ProPostly open a background LinkedIn search and scrape it.
+document.getElementById("lead-auto-search")?.addEventListener("click", () => {
   clearError("form-find_leads");
   const target = getLeadTarget();
   if (!target) {
-    showError("form-find_leads", "Describe your ideal customer first, then scan the page.");
+    showError("form-find_leads", "Describe your ideal customer first, then try auto-search.");
     return;
   }
-  runFindLeads(target, { scanCurrentPage: true });
+  runFindLeads(target);
 });
 
 // "New Search" — clear persisted results and start fresh.
