@@ -2,8 +2,36 @@ import { supabaseAdmin } from "./supabase.js";
 import {
   FREE_TIER_LIMIT,
   getLimitForPlan,
+  getLeadLimitForPlan,
   normalizePlan,
 } from "../constants/plans.js";
+
+/**
+ * Read lead-search usage defensively. Returns null if the
+ * `lead_searches_this_month` column doesn't exist yet (migration not applied),
+ * so the feature degrades to "untracked" instead of throwing.
+ */
+async function getLeadSearchesUsed(table, id) {
+  const { data, error } = await supabaseAdmin
+    .from(table)
+    .select("lead_searches_this_month")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) return null;
+  return data?.lead_searches_this_month ?? 0;
+}
+
+async function withLeadUsage(account) {
+  const used = await getLeadSearchesUsed(account.source, account.id);
+  const limit = getLeadLimitForPlan(account.plan);
+  return {
+    ...account,
+    leadTrackable: used !== null,
+    leadSearchesUsed: used ?? 0,
+    leadSearchLimit: limit,
+    leadSearchesRemaining: Math.max(0, limit - (used ?? 0)),
+  };
+}
 
 function resolveMonthlyLimit(row, plan) {
   if (plan === "pro" || plan === "plus") {
@@ -43,6 +71,17 @@ async function maybeResetUsage(row, table) {
     .single();
 
   if (error) throw error;
+
+  // Best-effort: reset the lead counter too. Ignored if column doesn't exist.
+  try {
+    await supabaseAdmin
+      .from(table)
+      .update({ lead_searches_this_month: 0 })
+      .eq("id", row.id);
+  } catch {
+    /* column not present yet — non-fatal */
+  }
+
   return data;
 }
 
@@ -94,14 +133,14 @@ export async function resolveAccount(userId) {
       authUser.is_pro === true ? "pro" : normalizePlan(authUser.plan);
     const limit = resolveMonthlyLimit(authUser, plan);
     const usedThisMonth = authUser.usage_this_month ?? 0;
-    return {
+    return withLeadUsage({
       source: "users",
       id: authUser.id,
       plan,
       usedThisMonth,
       limit,
       remainingCredits: Math.max(0, limit - usedThisMonth),
-    };
+    });
   }
 
   let ext = await getExtensionAccount(userId);
@@ -112,14 +151,14 @@ export async function resolveAccount(userId) {
   const plan = normalizePlan(ext.plan);
   const limit = resolveMonthlyLimit(ext, plan);
   const usedThisMonth = ext.usage_this_month ?? 0;
-  return {
+  return withLeadUsage({
     source: "extension_accounts",
     id: ext.id,
     plan,
     usedThisMonth,
     limit,
     remainingCredits: Math.max(0, limit - usedThisMonth),
-  };
+  });
 }
 
 export async function getUsageSummary(userId) {
@@ -153,6 +192,9 @@ export async function getAccountStatus(userId) {
     limit: account.limit,
     remaining,
     unlimited: isPro,
+    lead_searches_used: account.leadSearchesUsed,
+    lead_searches_limit: account.leadSearchLimit,
+    lead_searches_remaining: account.leadSearchesRemaining,
   };
 }
 
@@ -179,6 +221,46 @@ export async function consumeCredit(userId) {
     ...account,
     usedThisMonth: newUsage,
     remainingCredits: Math.max(0, account.limit - newUsage),
+  };
+}
+
+/**
+ * Consume one Find Leads search. Enforces the per-plan monthly lead cap
+ * (free: 2, pro/plus: 50). If the lead column isn't present yet, it degrades
+ * to allowing the search rather than erroring.
+ */
+export async function consumeLeadSearch(userId) {
+  const account = await resolveAccount(userId);
+  const limit = account.leadSearchLimit;
+  const used = account.leadSearchesUsed;
+
+  if (account.leadTrackable && used >= limit) {
+    const err = new Error(
+      account.plan === "pro" || account.plan === "plus"
+        ? "You've used all 50 lead searches this month. Resets next month."
+        : "You've used all 2 free lead searches this month. Upgrade to Pro for 50/month."
+    );
+    err.statusCode = 402;
+    err.leadLimit = true;
+    err.isPro = account.plan === "pro" || account.plan === "plus";
+    throw err;
+  }
+
+  const newUsed = used + 1;
+  if (account.leadTrackable) {
+    const { error } = await supabaseAdmin
+      .from(account.source)
+      .update({ lead_searches_this_month: newUsed })
+      .eq("id", userId);
+    if (error) {
+      /* column disappeared mid-flight — don't block the user */
+    }
+  }
+
+  return {
+    ...account,
+    leadSearchesUsed: newUsed,
+    leadSearchesRemaining: Math.max(0, limit - newUsed),
   };
 }
 

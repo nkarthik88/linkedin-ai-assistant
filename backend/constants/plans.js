@@ -1,6 +1,14 @@
 /** Monthly generation cap for free-tier accounts (extension + auth). */
 export const FREE_TIER_LIMIT = 10;
 
+/** Monthly "Find Leads" search caps — tracked separately from generations. */
+export const LEAD_FREE_LIMIT = 2;
+export const LEAD_PRO_LIMIT = 50;
+
+export function getLeadLimitForPlan(plan) {
+  return plan === "pro" || plan === "plus" ? LEAD_PRO_LIMIT : LEAD_FREE_LIMIT;
+}
+
 export const PLAN_LIMITS = {
   free: FREE_TIER_LIMIT,
   pro: 500,

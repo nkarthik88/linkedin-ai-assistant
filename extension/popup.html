@@ -79,10 +79,15 @@
               <span class="label">Improve Headline</span>
               <span class="desc">Rewrite your headline</span>
             </button>
-            <button class="feature-btn wide" data-feature="viral_rewriter">
+            <button class="feature-btn" data-feature="viral_rewriter">
               <span class="icon">🚀</span>
               <span class="label">Viral Post Rewriter</span>
               <span class="desc">Rewrite your draft for more engagement</span>
+            </button>
+            <button class="feature-btn wide" data-feature="find_leads">
+              <span class="icon">🎯</span>
+              <span class="label">Find Leads</span>
+              <span class="desc">Qualify prospects &amp; get personalized outreach</span>
             </button>
           </div>
         </div>
@@ -214,6 +219,41 @@
               <textarea id="draft-post" name="draftPost" placeholder="Paste your draft LinkedIn post..." required rows="6"></textarea>
               <button type="submit" class="submit-btn">Rewrite for Engagement</button>
             </form>
+          </div>
+        </div>
+
+        <!-- Find Leads -->
+        <div id="view-find_leads" class="view">
+          <button class="back-btn" data-back>← Back</button>
+          <div class="card">
+            <h2 class="form-title">🎯 Find Leads</h2>
+            <p class="form-hint">On a LinkedIn people search page, describe your ideal customer. ProPostly reads the visible profiles, qualifies each as Hot/Warm/Cold, and drafts a personalized DM.</p>
+            <p id="lead-counter" class="lead-counter">—</p>
+            <form id="form-find_leads">
+              <label for="lead-target">Describe your ideal customer</label>
+              <textarea id="lead-target" name="targetDescription" placeholder="e.g. B2B SaaS founders at seed-stage startups hiring engineers" rows="3" required></textarea>
+              <button type="submit" class="submit-btn">Find Leads on This Page</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Leads Results -->
+        <div id="view-leads-results" class="view">
+          <button class="back-btn" data-back-leads>← New search</button>
+          <div class="leads-results-header">
+            <p class="results-header" id="leads-results-title">Leads found</p>
+            <span id="lead-counter-results" class="lead-counter-pill"></span>
+          </div>
+          <div id="leads-container"></div>
+        </div>
+
+        <!-- Lead limit reached (Pro hit 50) -->
+        <div id="view-lead-limit" class="view">
+          <div class="upgrade-prompt-card">
+            <div class="upgrade-prompt-icon">🎯</div>
+            <h2>Lead search limit reached</h2>
+            <p id="lead-limit-msg">You've used all your lead searches for this month. They reset at the start of next month.</p>
+            <button id="lead-limit-back" class="back-link-btn">← Back to home</button>
           </div>
         </div>
 

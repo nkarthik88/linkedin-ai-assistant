@@ -261,9 +261,118 @@ function watchProfilePage() {
 
 watchProfilePage();
 
+// ── Find Leads: read profiles from a people search results page ──────────────
+
+function isLinkedInSearchPage() {
+  return /linkedin\.com\/search\/results\/(people|all)/i.test(window.location.href);
+}
+
+function cleanName(raw) {
+  return getText({ textContent: raw })
+    .replace(/^status is (reachable|offline)\s*/i, "")
+    .replace(/\s*•.*$/, "") // strip "• 1st" degree badges
+    .replace(/\s*view .*?profile.*$/i, "")
+    .trim();
+}
+
+function extractSearchProfiles(limit = 25) {
+  const seen = new Set();
+  const results = [];
+
+  let containers = Array.from(
+    document.querySelectorAll(
+      "li.reusable-search__result-container, div[data-chameleon-result-urn], li.org-people-profile-card__profile-card-spacing, div.entity-result, li.artdeco-list__item"
+    )
+  );
+
+  // Fallback: derive containers from profile links if known classes are absent.
+  if (!containers.length) {
+    document.querySelectorAll('a[href*="/in/"]').forEach((a) => {
+      const c = a.closest("li") || a.closest("div");
+      if (c && !containers.includes(c)) containers.push(c);
+    });
+  }
+
+  for (const c of containers) {
+    if (results.length >= limit) break;
+
+    const link = c.querySelector('a[href*="/in/"]');
+    if (!link) continue;
+
+    const href = (link.getAttribute("href") || "").split("?")[0];
+    if (!href || seen.has(href)) continue;
+
+    const name = cleanName(
+      getText(c.querySelector('.entity-result__title-text span[aria-hidden="true"]')) ||
+        getText(c.querySelector('.entity-result__title-text a')) ||
+        getText(c.querySelector('span[aria-hidden="true"]')) ||
+        getText(link)
+    );
+    if (!name || name.length < 2) continue;
+
+    const headline =
+      getText(c.querySelector(".entity-result__primary-subtitle")) ||
+      getText(c.querySelector("div.t-14.t-black.t-normal")) ||
+      "";
+    const location =
+      getText(c.querySelector(".entity-result__secondary-subtitle")) ||
+      getText(c.querySelector("div.t-14.t-normal.t-black--light")) ||
+      "";
+
+    // Best-effort split of "Title at Company" / "Title @ Company".
+    let title = headline;
+    let company = "";
+    const m = headline.match(/^(.*?)\s+(?:at|@)\s+(.+)$/i);
+    if (m) {
+      title = m[1].trim();
+      company = m[2].trim();
+    }
+
+    seen.add(href);
+    results.push({
+      name,
+      title,
+      company,
+      headline,
+      location,
+      url: href.startsWith("http") ? href : `https://www.linkedin.com${href}`,
+    });
+  }
+
+  return results;
+}
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === "PING") {
     sendResponse({ success: true, isProfilePage: isLinkedInProfilePage() });
+    return true;
+  }
+
+  if (message.type === "GET_SEARCH_PROFILES") {
+    try {
+      if (!isLinkedInSearchPage()) {
+        sendResponse({
+          success: false,
+          error:
+            "Open a LinkedIn people search results page (linkedin.com/search/results/people) in this tab.",
+        });
+        return true;
+      }
+
+      const profiles = extractSearchProfiles();
+      if (!profiles.length) {
+        sendResponse({
+          success: false,
+          error:
+            "No profiles found on this page. Scroll down to load results, then try again.",
+        });
+        return true;
+      }
+
+      sendResponse({ success: true, profiles });
+    } catch (err) {
+      sendResponse({ success: false, error: err.message });
+    }
     return true;
   }
 

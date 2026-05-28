@@ -1,5 +1,6 @@
 const API_BASE = "https://linkedin-ai-backend-rho.vercel.app";
 const API_URL = `${API_BASE}/api/generate`;
+const API_URL_LEADS = `${API_BASE}/api/generate/leads`;
 
 let accountStatus = null;
 
@@ -158,6 +159,7 @@ async function refreshAccountStatus() {
   try {
     const status = await fetchAccountStatus();
     renderAccountStatus(status);
+    renderLeadCounter();
     await chrome.storage.local.set({ isPro: Boolean(status.isPro) });
     return status;
   } catch {
@@ -618,6 +620,11 @@ document.querySelectorAll(".feature-btn").forEach((btn) => {
 
     showView(`view-${feature}`);
 
+    if (feature === "find_leads") {
+      renderLeadCounter();
+      refreshAccountStatus();
+    }
+
     if (feature === "improve_headline") {
       try {
         const profileData = await getProfileDataFromPage();
@@ -706,6 +713,176 @@ document.getElementById("form-viral_rewriter")?.addEventListener("submit", (e) =
   if (!draftPost) return;
   runGeneration("viral_rewriter", async (userId) => ({ userId, draftPost }));
 });
+
+// ── Find Leads ───────────────────────────────────────────────────────────────
+
+const LEAD_QUALITY = {
+  hot: { icon: "🔥", label: "Hot", cls: "hot" },
+  warm: { icon: "⚡", label: "Warm", cls: "warm" },
+  cold: { icon: "❄️", label: "Cold", cls: "cold" },
+};
+
+function renderLeadCounter() {
+  const els = [
+    document.getElementById("lead-counter"),
+    document.getElementById("lead-counter-results"),
+  ];
+  const s = accountStatus;
+  let text = "Lead searches available";
+  if (s && typeof s.lead_searches_remaining === "number") {
+    const used = s.lead_searches_used ?? 0;
+    const limit = s.lead_searches_limit ?? 2;
+    text = `${used}/${limit} lead searches used · ${s.lead_searches_remaining} remaining`;
+  }
+  els.forEach((el) => {
+    if (!el) return;
+    el.textContent = text;
+    el.style.color =
+      s && s.lead_searches_remaining === 0 ? "var(--error)" : "";
+  });
+}
+
+async function getSearchProfilesFromPage() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id || !tab.url?.includes("linkedin.com")) {
+    throw new Error("Open a LinkedIn people search results page in this tab first.");
+  }
+  if (!/\/search\/results\/(people|all)/i.test(tab.url || "")) {
+    throw new Error(
+      "Go to a LinkedIn people search (linkedin.com/search/results/people) and try again."
+    );
+  }
+
+  await ensureContentScript(tab.id);
+
+  const resp = await chrome.tabs.sendMessage(tab.id, {
+    type: "GET_SEARCH_PROFILES",
+  });
+
+  if (!resp?.success) {
+    throw new Error(resp?.error || "Could not read profiles from this page.");
+  }
+  return resp.profiles;
+}
+
+function displayLeads(leads) {
+  const container = document.getElementById("leads-container");
+  const title = document.getElementById("leads-results-title");
+  if (title) {
+    title.textContent = `${leads.length} lead${leads.length === 1 ? "" : "s"} analyzed`;
+  }
+  container.innerHTML = "";
+
+  leads.forEach((lead, i) => {
+    const q = LEAD_QUALITY[lead.quality] || LEAD_QUALITY.cold;
+    const subParts = [lead.title || lead.headline || "", lead.company || ""]
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const sub = subParts.join(" · ");
+
+    const card = document.createElement("div");
+    card.className = "lead-card";
+    card.innerHTML = `
+      <div class="lead-card-head">
+        <div class="lead-identity">
+          <div class="lead-name">${escapeHtml(lead.name || "Unknown")}</div>
+          ${sub ? `<div class="lead-sub">${escapeHtml(sub)}</div>` : ""}
+        </div>
+        <span class="quality-badge ${q.cls}">${q.icon} ${q.label}</span>
+      </div>
+      ${lead.reason ? `<div class="lead-reason">${escapeHtml(lead.reason)}</div>` : ""}
+      <div class="lead-dm-label">Personalized DM</div>
+      <div class="lead-dm">${escapeHtml(lead.dm || "")}</div>
+      <button type="button" class="copy-btn lead-copy" data-index="${i}">Copy DM</button>
+    `;
+    container.appendChild(card);
+  });
+
+  container.querySelectorAll(".lead-copy").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const dm = leads[Number(btn.dataset.index)]?.dm || "";
+      await navigator.clipboard.writeText(dm);
+      btn.textContent = "Copied!";
+      btn.classList.add("copied");
+      showToast("DM copied to clipboard", "success");
+      setTimeout(() => {
+        btn.textContent = "Copy DM";
+        btn.classList.remove("copied");
+      }, 2000);
+    });
+  });
+
+  showView("view-leads-results");
+}
+
+async function runFindLeads(targetDescription) {
+  clearError("form-find_leads");
+  showView("view-loading");
+
+  try {
+    const userId = await getUserId();
+    const profiles = await getSearchProfilesFromPage();
+
+    const res = await fetch(API_URL_LEADS, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, profiles, targetDescription }),
+    });
+
+    if (res.status === 402) {
+      const isPro = Boolean(accountStatus?.isPro);
+      if (isPro) {
+        showView("view-lead-limit");
+      } else {
+        showView("view-upgrade-prompt");
+      }
+      refreshAccountStatus();
+      return;
+    }
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (res.status >= 500) {
+        throw new Error("Our AI service is temporarily unavailable. Please try again in a moment.");
+      }
+      throw new Error(data.error || `Something went wrong (${res.status}). Please try again.`);
+    }
+
+    const data = await res.json();
+    const leads = data.leads;
+    if (!Array.isArray(leads) || leads.length === 0) {
+      throw new Error("No leads returned. Make sure profiles are visible on the page, then try again.");
+    }
+
+    if (typeof data.leadSearchesRemaining === "number" && accountStatus) {
+      const limit = data.leadSearchLimit ?? accountStatus.lead_searches_limit ?? 2;
+      accountStatus.lead_searches_limit = limit;
+      accountStatus.lead_searches_remaining = data.leadSearchesRemaining;
+      accountStatus.lead_searches_used = Math.max(0, limit - data.leadSearchesRemaining);
+    }
+    renderLeadCounter();
+    displayLeads(leads);
+  } catch (err) {
+    showView("view-find_leads");
+    showError("form-find_leads", err.message);
+    renderLeadCounter();
+  }
+}
+
+document.getElementById("form-find_leads")?.addEventListener("submit", (e) => {
+  e.preventDefault();
+  clearError("form-find_leads");
+  const targetDescription = document.getElementById("lead-target")?.value.trim();
+  if (!targetDescription) return;
+  runFindLeads(targetDescription);
+});
+
+document.querySelector("[data-back-leads]")?.addEventListener("click", () => {
+  showView("view-find_leads");
+  renderLeadCounter();
+});
+
+document.getElementById("lead-limit-back")?.addEventListener("click", () => showView("view-home"));
 
 // ── Visibility / focus refresh ─────────────────────────────────────────────
 

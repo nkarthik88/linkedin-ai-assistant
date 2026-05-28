@@ -58,6 +58,113 @@ Generate 3 DM options that reference specific details from this profile.`;
   return `${toneLine}Feature: ${feature}\n\nInput data:\n${payload}`;
 }
 
+const MAX_LEAD_PROFILES = 25;
+
+/**
+ * Qualify a batch of LinkedIn search-result profiles against the user's ideal
+ * customer and draft a personalized opening DM for each.
+ * Returns [{ name, title, company, headline, quality, dm, reason }].
+ */
+export async function qualifyLeads({ profiles, targetDescription, plan }) {
+  const model = getModelForPlan(plan);
+  const list = (Array.isArray(profiles) ? profiles : []).slice(0, MAX_LEAD_PROFILES);
+
+  const profilesForPrompt = list.map((p, i) => ({
+    index: i,
+    name: p.name || "",
+    title: p.title || "",
+    company: p.company || "",
+    headline: p.headline || "",
+  }));
+
+  const response = await fetch(OPENROUTER_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.openRouterApiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://linkedin-ai-assistant.local",
+      "X-Title": "ProPostly",
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.7,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: `You are a B2B sales prospecting assistant. The user describes their ideal customer, and you receive a list of LinkedIn profiles from a search results page.
+
+For EACH profile, decide how well it matches the ideal customer and return:
+- "index": the profile's index (integer, copied from input)
+- "quality": one of "hot", "warm", "cold" (hot = strong match, warm = partial, cold = weak/unlikely)
+- "reason": one short sentence (max 120 chars) explaining the rating
+- "dm": a personalized LinkedIn outreach DM (under 300 chars) that references a specific detail from their title/company/headline. No generic openers. If quality is cold, still write a polite DM.
+
+Respond with JSON only, in this exact shape:
+{"leads":[{"index":0,"quality":"hot","reason":"...","dm":"..."}]}
+
+Return one object per input profile, preserving the index. No markdown fences.`,
+        },
+        {
+          role: "user",
+          content: `Ideal customer / target description:
+${targetDescription || "(not specified — infer a reasonable B2B target)"}
+
+Profiles:
+${JSON.stringify(profilesForPrompt, null, 2)}`,
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    const err = new Error(text || `OpenRouter request failed (${response.status})`);
+    err.statusCode = response.status >= 500 ? 502 : 400;
+    throw err;
+  }
+
+  const body = await response.json();
+  const content = body.choices?.[0]?.message?.content;
+  if (!content) {
+    const err = new Error("Empty response from OpenRouter");
+    err.statusCode = 502;
+    throw err;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    const err = new Error("Failed to parse AI response as JSON");
+    err.statusCode = 502;
+    throw err;
+  }
+
+  const aiLeads = Array.isArray(parsed.leads) ? parsed.leads : [];
+  const byIndex = new Map();
+  for (const l of aiLeads) {
+    if (typeof l?.index === "number") byIndex.set(l.index, l);
+  }
+
+  const validQuality = new Set(["hot", "warm", "cold"]);
+  return list.map((p, i) => {
+    const ai = byIndex.get(i) || {};
+    const quality = validQuality.has(String(ai.quality).toLowerCase())
+      ? String(ai.quality).toLowerCase()
+      : "cold";
+    return {
+      name: p.name || "",
+      title: p.title || "",
+      company: p.company || "",
+      headline: p.headline || "",
+      quality,
+      reason: String(ai.reason || "").trim(),
+      dm: String(ai.dm || "").trim(),
+    };
+  });
+}
+
 export async function generateVariations({ feature, data, tone, plan }) {
   const model = getModelForPlan(plan);
   const systemInstruction =

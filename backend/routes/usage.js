@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { requireAuth } from "../middleware/auth.js";
-import { FREE_TIER_LIMIT } from "../constants/plans.js";
+import { FREE_TIER_LIMIT, LEAD_FREE_LIMIT } from "../constants/plans.js";
 import { getUsageSummary, getAccountStatus } from "../services/usage.js";
 
 const router = Router();
@@ -15,6 +15,9 @@ function fallbackStatus() {
     limit: FREE_TIER_LIMIT,
     remaining: FREE_TIER_LIMIT,
     unlimited: false,
+    lead_searches_used: 0,
+    lead_searches_limit: LEAD_FREE_LIMIT,
+    lead_searches_remaining: LEAD_FREE_LIMIT,
     message: `${FREE_TIER_LIMIT} uses remaining this month`,
   };
 }

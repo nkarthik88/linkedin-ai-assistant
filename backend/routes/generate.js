@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
-import { generateVariations } from "../services/openrouter.js";
-import { consumeCredit } from "../services/usage.js";
+import { generateVariations, qualifyLeads } from "../services/openrouter.js";
+import { consumeCredit, consumeLeadSearch } from "../services/usage.js";
 import { sendWelcomeEmail, sendUsageWarningEmail } from "../services/email.js";
 
 const router = Router();
@@ -50,6 +50,37 @@ router.post(
       options: variations,
       remainingCredits: account.remainingCredits,
       limitReached: account.remainingCredits === 0,
+    });
+  })
+);
+
+router.post(
+  "/leads",
+  asyncHandler(async (req, res) => {
+    const { userId, profiles, targetDescription } = req.body;
+
+    if (!Array.isArray(profiles) || profiles.length === 0) {
+      return res.status(400).json({
+        error: "No profiles found. Open a LinkedIn people search results page and try again.",
+      });
+    }
+
+    // userId is optional: when present we enforce + consume the monthly lead
+    // quota; when absent (e.g. smoke test) we process without tracking.
+    let plan = "free";
+    let leadAccount = null;
+    if (userId) {
+      leadAccount = await consumeLeadSearch(String(userId));
+      plan = leadAccount.plan;
+    }
+
+    const leads = await qualifyLeads({ profiles, targetDescription, plan });
+
+    res.json({
+      leads,
+      leadSearchesRemaining: leadAccount ? leadAccount.leadSearchesRemaining : null,
+      leadSearchLimit: leadAccount ? leadAccount.leadSearchLimit : null,
+      limitReached: leadAccount ? leadAccount.leadSearchesRemaining === 0 : false,
     });
   })
 );
