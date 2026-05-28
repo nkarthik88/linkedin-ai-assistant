@@ -267,6 +267,38 @@ function isLinkedInSearchPage() {
   return /linkedin\.com\/search\/results\/(people|all)/i.test(window.location.href);
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Scroll the search page to trigger LinkedIn's lazy loading until the profile
+ * count stabilises (or we time out), then return extracted profiles. Used by
+ * the background-tab auto-search so the popup gets a full result set.
+ */
+async function autoScrapeSearch(maxMs = 12000) {
+  const start = Date.now();
+  let lastCount = 0;
+  let stablePasses = 0;
+
+  while (Date.now() - start < maxMs) {
+    window.scrollTo(0, document.body.scrollHeight);
+    await sleep(750);
+    const count = document.querySelectorAll('a[href*="/in/"]').length;
+    if (count > 0 && count === lastCount) {
+      stablePasses += 1;
+      if (stablePasses >= 2) break;
+    } else {
+      stablePasses = 0;
+    }
+    lastCount = count;
+  }
+
+  window.scrollTo(0, 0);
+  await sleep(200);
+  return extractSearchProfiles();
+}
+
 function cleanName(raw) {
   return getText({ textContent: raw })
     .replace(/^status is (reachable|offline)\s*/i, "")
@@ -452,6 +484,17 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse({ success: false, error: err.message });
     }
     return true;
+  }
+
+  if (message.type === "AUTO_SCRAPE") {
+    if (!isLinkedInSearchPage()) {
+      sendResponse({ success: false, error: "Not a search results page yet." });
+      return true;
+    }
+    autoScrapeSearch()
+      .then((profiles) => sendResponse({ success: true, profiles }))
+      .catch((err) => sendResponse({ success: false, error: err.message }));
+    return true; // async response
   }
 
   if (message.type === "GET_PROFILE_DATA") {

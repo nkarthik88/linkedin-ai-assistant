@@ -618,12 +618,12 @@ document.querySelectorAll(".feature-btn").forEach((btn) => {
       return;
     }
 
-    showView(`view-${feature}`);
-
     if (feature === "find_leads") {
-      renderLeadCounter();
-      refreshAccountStatus();
+      openFindLeads();
+      return;
     }
+
+    showView(`view-${feature}`);
 
     if (feature === "improve_headline") {
       try {
@@ -779,7 +779,153 @@ function showLeadLimit() {
   showView("view-lead-limit");
 }
 
-async function getSearchProfilesFromPage() {
+function sleepMs(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function relativeTime(ts) {
+  if (!ts) return "";
+  const diff = Math.max(0, Date.now() - ts);
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return "just now";
+  if (min === 1) return "1 minute ago";
+  if (min < 60) return `${min} minutes ago`;
+  const hr = Math.floor(min / 60);
+  if (hr === 1) return "1 hour ago";
+  if (hr < 24) return `${hr} hours ago`;
+  const d = Math.floor(hr / 24);
+  return d === 1 ? "1 day ago" : `${d} days ago`;
+}
+
+function setLoading(text, subtext) {
+  const t = document.getElementById("loading-text");
+  const s = document.getElementById("loading-subtext");
+  if (t) t.textContent = text;
+  if (s) {
+    s.textContent = subtext || "";
+    s.hidden = !subtext;
+  }
+}
+
+// ── Lead result persistence ──────────────────────────────────────────────────
+
+async function persistLeadResults(leads, target) {
+  await chrome.storage.local.set({
+    leadResults: { leads, target: target || "", ts: Date.now() },
+  });
+}
+
+async function getLeadResults() {
+  const { leadResults } = await chrome.storage.local.get("leadResults");
+  return leadResults || null;
+}
+
+async function clearLeadResults() {
+  await chrome.storage.local.remove("leadResults");
+}
+
+// ── Saved Leads CRM ──────────────────────────────────────────────────────────
+
+function leadKey(lead) {
+  return lead.url || `${lead.name || ""}::${lead.company || ""}`;
+}
+
+async function getSavedLeads() {
+  const { savedLeads } = await chrome.storage.local.get("savedLeads");
+  return Array.isArray(savedLeads) ? savedLeads : [];
+}
+
+async function saveLead(lead) {
+  const saved = await getSavedLeads();
+  const key = leadKey(lead);
+  if (saved.some((l) => leadKey(l) === key)) return false;
+  saved.unshift({ ...lead, savedAt: Date.now() });
+  await chrome.storage.local.set({ savedLeads: saved });
+  await renderSavedLeads();
+  return true;
+}
+
+async function deleteSavedLead(key) {
+  const saved = await getSavedLeads();
+  const next = saved.filter((l) => leadKey(l) !== key);
+  await chrome.storage.local.set({ savedLeads: next });
+  await renderSavedLeads();
+}
+
+async function renderSavedLeads() {
+  const section = document.getElementById("saved-leads-section");
+  const list = document.getElementById("saved-leads-list");
+  const countEl = document.getElementById("saved-leads-count");
+  if (!section || !list) return;
+
+  const saved = await getSavedLeads();
+  if (countEl) countEl.textContent = String(saved.length);
+  section.hidden = saved.length === 0;
+  list.innerHTML = "";
+
+  saved.forEach((lead) => {
+    const q = LEAD_QUALITY[lead.quality] || LEAD_QUALITY.cold;
+    const sub =
+      lead.title && lead.company
+        ? `${lead.title} at ${lead.company}`
+        : lead.title || lead.company || lead.headline || "";
+    const key = leadKey(lead);
+
+    const item = document.createElement("div");
+    item.className = "saved-lead";
+    item.innerHTML = `
+      <div class="saved-lead-head" role="button" tabindex="0">
+        <div class="saved-lead-identity">
+          <div class="saved-lead-name">${escapeHtml(lead.name || "Unknown")}</div>
+          ${sub ? `<div class="saved-lead-sub">${escapeHtml(sub)}</div>` : ""}
+        </div>
+        <span class="quality-badge ${q.cls}">${q.icon} ${q.label}</span>
+      </div>
+      <div class="saved-lead-body" hidden>
+        ${lead.dm ? `<div class="lead-dm">${escapeHtml(lead.dm)}</div>` : ""}
+        <div class="lead-actions">
+          <button type="button" class="copy-btn saved-copy">Copy DM</button>
+          ${lead.url ? `<button type="button" class="lead-view saved-view">View Profile →</button>` : ""}
+          <button type="button" class="saved-delete">Delete</button>
+        </div>
+      </div>
+    `;
+
+    const head = item.querySelector(".saved-lead-head");
+    const body = item.querySelector(".saved-lead-body");
+    head.addEventListener("click", () => {
+      body.hidden = !body.hidden;
+    });
+
+    item.querySelector(".saved-copy")?.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      await navigator.clipboard.writeText(lead.dm || "");
+      const b = e.currentTarget;
+      b.textContent = "Copied!";
+      b.classList.add("copied");
+      showToast("DM copied", "success");
+      setTimeout(() => {
+        b.textContent = "Copy DM";
+        b.classList.remove("copied");
+      }, 2000);
+    });
+    item.querySelector(".saved-view")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (lead.url) chrome.tabs.create({ url: lead.url });
+    });
+    item.querySelector(".saved-delete")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      deleteSavedLead(key);
+      showToast("Lead removed", "default");
+    });
+
+    list.appendChild(item);
+  });
+}
+
+// ── Profile sources (auto background-tab search + current-page scan) ─────────
+
+async function getSearchProfilesFromCurrentPage() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id || !tab.url?.includes("linkedin.com")) {
     throw new Error("Open a LinkedIn people search results page in this tab first.");
@@ -789,122 +935,214 @@ async function getSearchProfilesFromPage() {
       "Go to a LinkedIn people search (linkedin.com/search/results/people) and try again."
     );
   }
-
   await ensureContentScript(tab.id);
-
-  const resp = await chrome.tabs.sendMessage(tab.id, {
-    type: "GET_SEARCH_PROFILES",
-  });
-
+  const resp = await chrome.tabs.sendMessage(tab.id, { type: "GET_SEARCH_PROFILES" });
   if (!resp?.success) {
     throw new Error(resp?.error || "Could not read profiles from this page.");
   }
   return resp.profiles;
 }
 
-function displayLeads(leads) {
+async function autoSearchProfiles(target) {
+  const url = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(
+    target
+  )}`;
+  setLoading("🔍 Searching LinkedIn…", "Opening results in a background tab");
+
+  const tab = await chrome.tabs.create({ url, active: false });
+  const tabId = tab.id;
+
+  try {
+    const deadline = Date.now() + 28000;
+    let profiles = [];
+    while (Date.now() < deadline) {
+      await sleepMs(1500);
+      try {
+        await ensureContentScript(tabId);
+        const resp = await chrome.tabs.sendMessage(tabId, { type: "AUTO_SCRAPE" });
+        if (resp?.success && resp.profiles?.length) {
+          profiles = resp.profiles;
+          break;
+        }
+      } catch {
+        /* tab still loading / no receiver yet — retry */
+      }
+    }
+    return profiles;
+  } finally {
+    try {
+      await chrome.tabs.remove(tabId);
+    } catch {
+      /* already closed */
+    }
+  }
+}
+
+// ── Render leads ─────────────────────────────────────────────────────────────
+
+function displayLeads(leads, opts = {}) {
   const container = document.getElementById("leads-container");
   const title = document.getElementById("leads-results-title");
+  const tsEl = document.getElementById("leads-timestamp");
+  const celebrate = document.getElementById("leads-celebrate");
+  const copyAllBtn = document.getElementById("copy-all-hot");
+
+  const hotCount = leads.filter((l) => l.quality === "hot").length;
+
   if (title) {
     title.textContent = `${leads.length} lead${leads.length === 1 ? "" : "s"} analyzed`;
   }
+  if (tsEl) {
+    tsEl.textContent = opts.ts ? `Last search: ${relativeTime(opts.ts)}` : "";
+  }
+  if (celebrate) {
+    if (hotCount > 0) {
+      celebrate.textContent = `🎉 ${hotCount} Hot lead${hotCount === 1 ? "" : "s"} found!`;
+      celebrate.hidden = false;
+    } else {
+      celebrate.hidden = true;
+    }
+  }
+  if (copyAllBtn) copyAllBtn.hidden = hotCount === 0;
+
   container.innerHTML = "";
 
-  leads.forEach((lead, i) => {
-    const q = LEAD_QUALITY[lead.quality] || LEAD_QUALITY.cold;
+  getSavedLeads().then((saved) => {
+    const savedKeys = new Set(saved.map(leadKey));
 
-    let sub = "";
-    if (lead.title && lead.company) sub = `${lead.title} at ${lead.company}`;
-    else sub = lead.title || lead.headline || lead.company || "";
+    leads.forEach((lead, i) => {
+      const q = LEAD_QUALITY[lead.quality] || LEAD_QUALITY.cold;
+      const sub =
+        lead.title && lead.company
+          ? `${lead.title} at ${lead.company}`
+          : lead.title || lead.headline || lead.company || "";
+      const isSaved = savedKeys.has(leadKey(lead));
 
-    const card = document.createElement("div");
-    card.className = "lead-card";
-    card.innerHTML = `
-      <div class="lead-card-head">
-        <div class="lead-identity">
-          <div class="lead-name">${escapeHtml(lead.name || "Unknown")}</div>
-          ${sub ? `<div class="lead-sub">${escapeHtml(sub)}</div>` : ""}
-          ${lead.location ? `<div class="lead-location">📍 ${escapeHtml(lead.location)}</div>` : ""}
+      const card = document.createElement("div");
+      card.className = `lead-card${lead.quality === "hot" ? " lead-hot" : ""}`;
+      card.innerHTML = `
+        <div class="lead-card-head">
+          <div class="lead-identity">
+            <div class="lead-name">${escapeHtml(lead.name || "Unknown")}</div>
+            ${sub ? `<div class="lead-sub">${escapeHtml(sub)}</div>` : ""}
+            ${lead.location ? `<div class="lead-location">📍 ${escapeHtml(lead.location)}</div>` : ""}
+          </div>
+          <span class="quality-badge ${q.cls}">${q.icon} ${q.label}</span>
         </div>
-        <span class="quality-badge ${q.cls}">${q.icon} ${q.label}</span>
-      </div>
-      ${lead.reason ? `<div class="lead-reason">${escapeHtml(lead.reason)}</div>` : ""}
-      <div class="lead-dm-label">Personalized DM</div>
-      <div class="lead-dm">${escapeHtml(lead.dm || "")}</div>
-      <div class="lead-actions">
-        <button type="button" class="copy-btn lead-copy" data-index="${i}">Copy DM</button>
-        ${lead.url ? `<button type="button" class="lead-view" data-url="${escapeHtml(lead.url)}">View Profile →</button>` : ""}
-      </div>
-    `;
-    container.appendChild(card);
-  });
-
-  container.querySelectorAll(".lead-copy").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const dm = leads[Number(btn.dataset.index)]?.dm || "";
-      await navigator.clipboard.writeText(dm);
-      btn.textContent = "Copied!";
-      btn.classList.add("copied");
-      showToast("DM copied to clipboard", "success");
-      setTimeout(() => {
-        btn.textContent = "Copy DM";
-        btn.classList.remove("copied");
-      }, 2000);
+        ${lead.reason ? `<div class="lead-reason">${escapeHtml(lead.reason)}</div>` : ""}
+        <div class="lead-dm-label">Personalized DM</div>
+        <div class="lead-dm">${escapeHtml(lead.dm || "")}</div>
+        <div class="lead-actions">
+          <button type="button" class="copy-btn lead-copy" data-index="${i}">Copy DM</button>
+          ${lead.url ? `<button type="button" class="lead-view" data-url="${escapeHtml(lead.url)}">View Profile →</button>` : ""}
+          <button type="button" class="lead-save${isSaved ? " saved" : ""}" data-index="${i}">${isSaved ? "★ Saved" : "☆ Save Lead"}</button>
+        </div>
+      `;
+      container.appendChild(card);
     });
-  });
 
-  container.querySelectorAll(".lead-view").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const url = btn.dataset.url;
-      if (url) chrome.tabs.create({ url });
+    container.querySelectorAll(".lead-copy").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const dm = leads[Number(btn.dataset.index)]?.dm || "";
+        await navigator.clipboard.writeText(dm);
+        btn.textContent = "Copied!";
+        btn.classList.add("copied");
+        showToast("DM copied to clipboard", "success");
+        setTimeout(() => {
+          btn.textContent = "Copy DM";
+          btn.classList.remove("copied");
+        }, 2000);
+      });
+    });
+
+    container.querySelectorAll(".lead-view").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const url = btn.dataset.url;
+        if (url) chrome.tabs.create({ url });
+      });
+    });
+
+    container.querySelectorAll(".lead-save").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (btn.classList.contains("saved")) return;
+        const ok = await saveLead(leads[Number(btn.dataset.index)]);
+        if (ok) {
+          btn.textContent = "★ Saved";
+          btn.classList.add("saved");
+          showToast("Lead saved", "success");
+        }
+      });
     });
   });
 
   showView("view-leads-results");
 }
 
-async function runFindLeads(targetDescription) {
+// ── Lead search flow ─────────────────────────────────────────────────────────
+
+async function qualifyAndShow(profiles, targetDescription) {
+  setLoading(
+    `Found ${profiles.length} profile${profiles.length === 1 ? "" : "s"}, analyzing…`,
+    "Qualifying leads with AI"
+  );
+
+  const userId = await getUserId();
+  const res = await fetch(API_URL_LEADS, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, profiles, targetDescription }),
+  });
+
+  if (res.status === 402) {
+    showLeadLimit();
+    refreshAccountStatus();
+    return;
+  }
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    if (res.status >= 500) {
+      throw new Error("Our AI service is temporarily unavailable. Please try again in a moment.");
+    }
+    throw new Error(data.error || `Something went wrong (${res.status}). Please try again.`);
+  }
+
+  const data = await res.json();
+  const leads = data.leads;
+  if (!Array.isArray(leads) || leads.length === 0) {
+    throw new Error("No leads returned. Try a broader search.");
+  }
+
+  if (typeof data.leadSearchesRemaining === "number" && accountStatus) {
+    const limit = data.leadSearchLimit ?? accountStatus.lead_searches_limit ?? 2;
+    accountStatus.lead_searches_limit = limit;
+    accountStatus.lead_searches_remaining = data.leadSearchesRemaining;
+    accountStatus.lead_searches_used = Math.max(0, limit - data.leadSearchesRemaining);
+  }
+  renderLeadCounter();
+
+  const ts = Date.now();
+  await persistLeadResults(leads, targetDescription);
+  displayLeads(leads, { ts });
+}
+
+async function runFindLeads(targetDescription, { scanCurrentPage = false } = {}) {
   clearError("form-find_leads");
   showView("view-loading");
+  setLoading("🔍 Searching LinkedIn…", "Getting started");
 
   try {
-    const userId = await getUserId();
-    const profiles = await getSearchProfilesFromPage();
+    const profiles = scanCurrentPage
+      ? await getSearchProfilesFromCurrentPage()
+      : await autoSearchProfiles(targetDescription);
 
-    const res = await fetch(API_URL_LEADS, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, profiles, targetDescription }),
-    });
-
-    if (res.status === 402) {
-      showLeadLimit();
-      refreshAccountStatus();
-      return;
+    if (!profiles || profiles.length === 0) {
+      throw new Error(
+        "Couldn't read any profiles. Make sure you're logged into LinkedIn, then try again — or open a search page and use “scan this page”."
+      );
     }
 
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      if (res.status >= 500) {
-        throw new Error("Our AI service is temporarily unavailable. Please try again in a moment.");
-      }
-      throw new Error(data.error || `Something went wrong (${res.status}). Please try again.`);
-    }
-
-    const data = await res.json();
-    const leads = data.leads;
-    if (!Array.isArray(leads) || leads.length === 0) {
-      throw new Error("No leads returned. Make sure profiles are visible on the page, then try again.");
-    }
-
-    if (typeof data.leadSearchesRemaining === "number" && accountStatus) {
-      const limit = data.leadSearchLimit ?? accountStatus.lead_searches_limit ?? 2;
-      accountStatus.lead_searches_limit = limit;
-      accountStatus.lead_searches_remaining = data.leadSearchesRemaining;
-      accountStatus.lead_searches_used = Math.max(0, limit - data.leadSearchesRemaining);
-    }
-    renderLeadCounter();
-    displayLeads(leads);
+    await qualifyAndShow(profiles, targetDescription);
   } catch (err) {
     showView("view-find_leads");
     showError("form-find_leads", err.message);
@@ -912,18 +1150,60 @@ async function runFindLeads(targetDescription) {
   }
 }
 
+function getLeadTarget() {
+  return document.getElementById("lead-target")?.value.trim() || "";
+}
+
 document.getElementById("form-find_leads")?.addEventListener("submit", (e) => {
   e.preventDefault();
   clearError("form-find_leads");
-  const targetDescription = document.getElementById("lead-target")?.value.trim();
-  if (!targetDescription) return;
-  runFindLeads(targetDescription);
+  const target = getLeadTarget();
+  if (!target) return;
+  runFindLeads(target);
 });
 
-document.querySelector("[data-back-leads]")?.addEventListener("click", () => {
+document.getElementById("lead-scan-page")?.addEventListener("click", () => {
+  clearError("form-find_leads");
+  const target = getLeadTarget();
+  if (!target) {
+    showError("form-find_leads", "Describe your ideal customer first, then scan the page.");
+    return;
+  }
+  runFindLeads(target, { scanCurrentPage: true });
+});
+
+// "New Search" — clear persisted results and start fresh.
+document.querySelector("[data-back-leads]")?.addEventListener("click", async () => {
+  await clearLeadResults();
+  const input = document.getElementById("lead-target");
+  if (input) input.value = "";
   showView("view-find_leads");
   renderLeadCounter();
 });
+
+document.getElementById("copy-all-hot")?.addEventListener("click", async () => {
+  const cached = await getLeadResults();
+  const leads = cached?.leads || [];
+  const hot = leads.filter((l) => l.quality === "hot");
+  if (!hot.length) return;
+  const text = hot
+    .map((l) => `${l.name}${l.company ? ` (${l.company})` : ""}:\n${l.dm}`)
+    .join("\n\n———\n\n");
+  await navigator.clipboard.writeText(text);
+  showToast(`Copied ${hot.length} hot DM${hot.length === 1 ? "" : "s"}`, "success");
+});
+
+// Open Find Leads: show cached results if present, else the search form.
+async function openFindLeads() {
+  renderLeadCounter();
+  refreshAccountStatus();
+  const cached = await getLeadResults();
+  if (cached?.leads?.length) {
+    displayLeads(cached.leads, { ts: cached.ts });
+  } else {
+    showView("view-find_leads");
+  }
+}
 
 document.getElementById("lead-limit-back")?.addEventListener("click", () => showView("view-home"));
 document.getElementById("lead-limit-upgrade")?.addEventListener("click", () => startUpgrade(false));
@@ -945,4 +1225,5 @@ window.addEventListener("focus", () => {
 (async function init() {
   await checkOnboarding();
   refreshAccountStatus();
+  renderSavedLeads();
 })();

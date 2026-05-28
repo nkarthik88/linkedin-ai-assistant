@@ -286,6 +286,24 @@ export async function consumeLeadSearch(userId) {
   };
 }
 
+/**
+ * Record one Find Leads search for analytics. Best-effort: never throws, so a
+ * missing table or insert error can't break the lead response.
+ */
+export async function logLeadSearchEvent({ userId, target, profilesCount, leadsCount, hotCount }) {
+  try {
+    await supabaseAdmin.from("lead_search_events").insert({
+      user_id: userId ? String(userId) : null,
+      target: target ? String(target).slice(0, 500) : null,
+      profiles_count: profilesCount || 0,
+      leads_count: leadsCount || 0,
+      hot_count: hotCount || 0,
+    });
+  } catch {
+    /* analytics is non-critical */
+  }
+}
+
 export async function updatePlanForUser(userId, plan) {
   const normalized = normalizePlan(plan);
   const { data: authUser } = await supabaseAdmin

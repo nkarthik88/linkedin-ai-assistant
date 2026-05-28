@@ -1,7 +1,11 @@
 import { Router } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { generateVariations, qualifyLeads } from "../services/openrouter.js";
-import { consumeCredit, consumeLeadSearch } from "../services/usage.js";
+import {
+  consumeCredit,
+  consumeLeadSearch,
+  logLeadSearchEvent,
+} from "../services/usage.js";
 import { sendWelcomeEmail, sendUsageWarningEmail } from "../services/email.js";
 
 const router = Router();
@@ -75,6 +79,15 @@ router.post(
     }
 
     const leads = await qualifyLeads({ profiles, targetDescription, plan });
+
+    // Fire-and-forget analytics (never blocks the response).
+    logLeadSearchEvent({
+      userId,
+      target: targetDescription,
+      profilesCount: profiles.length,
+      leadsCount: leads.length,
+      hotCount: leads.filter((l) => l.quality === "hot").length,
+    });
 
     res.json({
       leads,

@@ -931,3 +931,140 @@ input[type="email"] {
   color: var(--text-secondary);
   margin-top: 4px;
 }
+
+/* ── Find Leads polish ───────────────────────────────────────────────────── */
+
+.link-btn-subtle {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.link-btn-subtle:hover { color: var(--linkedin-blue); }
+
+.loading-subtext {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.leads-results-subhead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 6px 0 10px;
+}
+.leads-timestamp { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+
+.leads-celebrate {
+  background: #eaf7ef;
+  color: var(--success);
+  font-weight: 700;
+  font-size: 14px;
+  text-align: center;
+  padding: 10px;
+  border-radius: var(--radius);
+  margin-bottom: 4px;
+}
+
+.copy-all-hot-btn {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--success);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.copy-all-hot-btn:hover { filter: brightness(0.95); }
+
+/* Hot leads stand out with a green accent */
+.lead-card.lead-hot {
+  border-color: var(--success);
+  border-left: 4px solid var(--success);
+  background: #f6fcf8;
+}
+
+.lead-save {
+  flex: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.lead-save:hover { border-color: var(--linkedin-blue); color: var(--linkedin-blue); }
+.lead-save.saved {
+  color: var(--success);
+  border-color: var(--success);
+  background: #eaf7ef;
+  cursor: default;
+}
+
+/* ── Saved Leads CRM ─────────────────────────────────────────────────────── */
+
+.saved-leads-section {
+  margin-top: 16px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+.saved-leads-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.saved-leads-title { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.saved-leads-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--linkedin-blue);
+  background: var(--linkedin-blue-light);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.saved-leads-list { display: flex; flex-direction: column; gap: 8px; }
+
+.saved-lead {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--white);
+  overflow: hidden;
+}
+.saved-lead-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+.saved-lead-head:hover { background: var(--bg); }
+.saved-lead-name { font-weight: 700; font-size: 13px; }
+.saved-lead-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.saved-lead-body { padding: 0 12px 12px; }
+
+.saved-delete {
+  flex: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--error);
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.saved-delete:hover { border-color: var(--error); }
