@@ -839,7 +839,7 @@ async function saveLead(lead) {
   const saved = await getSavedLeads();
   const key = leadKey(lead);
   if (saved.some((l) => leadKey(l) === key)) return false;
-  saved.unshift({ ...lead, savedAt: Date.now() });
+  saved.unshift({ ...lead, status: "new", savedAt: Date.now() });
   await chrome.storage.local.set({ savedLeads: saved });
   await renderSavedLeads();
   return true;
@@ -850,6 +850,39 @@ async function deleteSavedLead(key) {
   const next = saved.filter((l) => leadKey(l) !== key);
   await chrome.storage.local.set({ savedLeads: next });
   await renderSavedLeads();
+}
+
+async function setLeadStatus(key, status) {
+  const saved = await getSavedLeads();
+  const next = saved.map((l) => (leadKey(l) === key ? { ...l, status } : l));
+  await chrome.storage.local.set({ savedLeads: next });
+  await renderSavedLeads();
+}
+
+async function exportLeadsCSV() {
+  const saved = await getSavedLeads();
+  if (!saved.length) {
+    showToast("No saved leads to export", "default");
+    return;
+  }
+  const cols = ["Name", "Title", "Company", "Location", "Quality", "Status", "DM", "Profile URL"];
+  const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const rows = saved.map((l) =>
+    [l.name, l.title, l.company, l.location, l.quality, l.status || "new", l.dm, l.url]
+      .map(esc)
+      .join(",")
+  );
+  const csv = [cols.join(","), ...rows].join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "propostly-leads.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+  showToast(`Exported ${saved.length} lead${saved.length === 1 ? "" : "s"}`, "success");
 }
 
 async function renderSavedLeads() {
@@ -870,13 +903,14 @@ async function renderSavedLeads() {
         ? `${lead.title} at ${lead.company}`
         : lead.title || lead.company || lead.headline || "";
     const key = leadKey(lead);
+    const contacted = lead.status === "contacted";
 
     const item = document.createElement("div");
-    item.className = "saved-lead";
+    item.className = `saved-lead${contacted ? " contacted" : ""}`;
     item.innerHTML = `
       <div class="saved-lead-head" role="button" tabindex="0">
         <div class="saved-lead-identity">
-          <div class="saved-lead-name">${escapeHtml(lead.name || "Unknown")}</div>
+          <div class="saved-lead-name">${escapeHtml(lead.name || "Unknown")}${contacted ? ' <span class="status-badge">✓ Contacted</span>' : ""}</div>
           ${sub ? `<div class="saved-lead-sub">${escapeHtml(sub)}</div>` : ""}
         </div>
         <span class="quality-badge ${q.cls}">${q.icon} ${q.label}</span>
@@ -886,6 +920,7 @@ async function renderSavedLeads() {
         <div class="lead-actions">
           <button type="button" class="copy-btn saved-copy">Copy DM</button>
           ${lead.url ? `<button type="button" class="lead-view saved-view">View Profile →</button>` : ""}
+          <button type="button" class="saved-status">${contacted ? "↺ Mark New" : "✓ Mark Contacted"}</button>
           <button type="button" class="saved-delete">Delete</button>
         </div>
       </div>
@@ -912,6 +947,11 @@ async function renderSavedLeads() {
     item.querySelector(".saved-view")?.addEventListener("click", (e) => {
       e.stopPropagation();
       if (lead.url) chrome.tabs.create({ url: lead.url });
+    });
+    item.querySelector(".saved-status")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setLeadStatus(key, contacted ? "new" : "contacted");
+      showToast(contacted ? "Marked as new" : "Marked as contacted", "success");
     });
     item.querySelector(".saved-delete")?.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -1228,6 +1268,8 @@ document.getElementById("copy-all-hot")?.addEventListener("click", async () => {
 document.getElementById("lead-debug")?.addEventListener("change", (e) => {
   chrome.storage.local.set({ debugAutoSearch: e.target.checked });
 });
+
+document.getElementById("export-leads")?.addEventListener("click", exportLeadsCSV);
 
 // Open Find Leads: show cached results if present, else the search form.
 async function openFindLeads() {
