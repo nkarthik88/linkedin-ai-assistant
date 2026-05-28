@@ -12,3 +12,6 @@ node_modules/
 .vercel/
 .vercel
 .vercel
+
+# Supabase CLI local scratch
+supabase/.temp/
