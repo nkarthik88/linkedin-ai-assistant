@@ -84,10 +84,10 @@
               <span class="label">Viral Post Rewriter</span>
               <span class="desc">Rewrite your draft for more engagement</span>
             </button>
-            <button class="feature-btn" data-feature="find_leads">
-              <span class="icon">🎯</span>
-              <span class="label">Find Leads</span>
-              <span class="desc">Qualify prospects &amp; get personalized outreach</span>
+            <button class="feature-btn" data-feature="deep_lead_search">
+              <span class="icon">🔎</span>
+              <span class="label">Deep Lead Search</span>
+              <span class="desc">Smart filters — only qualified leads</span>
             </button>
           </div>
 
@@ -232,27 +232,31 @@
           </div>
         </div>
 
-        <!-- Find Leads -->
-        <div id="view-find_leads" class="view">
+        <!-- Deep Lead Search -->
+        <div id="view-deep_lead_search" class="view">
           <button class="back-btn" data-back>← Back</button>
           <div class="card">
-            <h2 class="form-title">🎯 Find Leads</h2>
-            <p class="form-hint">Open a LinkedIn people-search page, describe your ideal customer, and ProPostly qualifies the visible profiles as 🔥 Hot / ⚡ Warm / ❄️ Cold and drafts a personalized DM for each.</p>
+            <h2 class="form-title">🔎 Deep Lead Search</h2>
+            <p class="form-hint">Enter your target filters — ProPostly searches LinkedIn and returns ONLY qualified leads that match.</p>
             <p id="lead-counter" class="lead-counter">—</p>
-            <form id="form-find_leads">
-              <label for="lead-target">Who are you looking for?</label>
-              <textarea id="lead-target" name="targetDescription" placeholder="e.g. SaaS founders in India / Marketing managers at fintech startups" rows="3" required></textarea>
-              <button type="submit" class="submit-btn">🔍 Find Leads on This Page</button>
+            <form id="form-deep_lead_search">
+              <label for="filter-title">Job Title</label>
+              <input type="text" id="filter-title" name="filterTitle" placeholder="e.g. CEO, Founder, CTO" />
+              <label for="filter-company">Company</label>
+              <input type="text" id="filter-company" name="filterCompany" placeholder="e.g. n8n, Stripe, startup" />
+              <label for="filter-location">Location</label>
+              <input type="text" id="filter-location" name="filterLocation" placeholder="e.g. India, USA, Hyderabad" />
+              <label for="filter-keywords">Keywords</label>
+              <input type="text" id="filter-keywords" name="filterKeywords" placeholder="e.g. SaaS, AI, automation" />
+              <button type="submit" class="submit-btn">🔍 Search Deep</button>
             </form>
-            <button type="button" id="lead-auto-search" class="link-btn-subtle">Or let ProPostly search LinkedIn for me (beta)</button>
-            <label class="debug-row"><input type="checkbox" id="lead-debug" /> Debug auto-search (opens a visible tab &amp; logs to console)</label>
           </div>
         </div>
 
         <!-- Leads Results -->
         <div id="view-leads-results" class="view">
           <div class="leads-results-header">
-            <button class="back-btn" data-back-leads>← New Search</button>
+            <button class="back-btn" id="back-to-search">← New Search</button>
             <span id="lead-counter-results" class="lead-counter-pill"></span>
           </div>
           <div id="leads-celebrate" class="leads-celebrate" hidden></div>

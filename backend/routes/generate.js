@@ -61,7 +61,7 @@ router.post(
 router.post(
   "/leads",
   asyncHandler(async (req, res) => {
-    const { userId, profiles, targetDescription } = req.body;
+    const { userId, profiles, targetDescription, filters } = req.body;
 
     if (!Array.isArray(profiles) || profiles.length === 0) {
       return res.status(400).json({
@@ -78,7 +78,7 @@ router.post(
       plan = leadAccount.plan;
     }
 
-    const leads = await qualifyLeads({ profiles, targetDescription, plan });
+    const leads = await qualifyLeads({ profiles, targetDescription, filters, plan });
 
     // Fire-and-forget analytics (never blocks the response).
     logLeadSearchEvent({

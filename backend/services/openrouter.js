@@ -60,12 +60,21 @@ Generate 3 DM options that reference specific details from this profile.`;
 
 const MAX_LEAD_PROFILES = 25;
 
+function buildFiltersBlock(filters) {
+  if (!filters) return "";
+  const lines = [];
+  if (filters.title) lines.push(`- Job Title filter: "${filters.title}"`);
+  if (filters.company) lines.push(`- Company filter: "${filters.company}"`);
+  if (filters.location) lines.push(`- Location filter: "${filters.location}"`);
+  if (filters.keywords) lines.push(`- Keywords filter: "${filters.keywords}"`);
+  return lines.length ? lines.join("\n") : "";
+}
+
 /**
- * Qualify a batch of LinkedIn search-result profiles against the user's ideal
- * customer and draft a personalized opening DM for each.
+ * Qualify a batch of LinkedIn search-result profiles against the user's filters.
  * Returns [{ name, title, company, headline, quality, dm, reason }].
  */
-export async function qualifyLeads({ profiles, targetDescription, plan }) {
+export async function qualifyLeads({ profiles, targetDescription, filters, plan }) {
   const model = getModelForPlan(plan);
   const list = (Array.isArray(profiles) ? profiles : []).slice(0, MAX_LEAD_PROFILES);
 
@@ -78,6 +87,37 @@ export async function qualifyLeads({ profiles, targetDescription, plan }) {
     location: p.location || "",
   }));
 
+  const filtersBlock = buildFiltersBlock(filters);
+
+  const systemPrompt = `You are a B2B lead qualifier. The user has entered SPECIFIC search filters for their ideal customer. Your job is to score each LinkedIn profile STRICTLY against those filters.
+
+${filtersBlock ? `USER'S EXACT FILTERS:\n${filtersBlock}\n\nCRITICAL RULES:` : "TARGET DESCRIPTION RULES:"}
+${filters?.company ? `- If company filter is "${filters.company}": ONLY rate as hot/warm profiles WHERE the person works AT that company or a company with that exact name. "CEO at Google" when searching for "${filters.company}" → COLD.` : ""}
+${filters?.title ? `- If title filter is "${filters.title}": ONLY rate as hot/warm profiles with that job title or very close variant (e.g. "CEO" matches "Co-Founder & CEO" but NOT "Marketing Manager").` : ""}
+${filters?.location ? `- If location filter is "${filters.location}": prefer profiles in that location; non-matching location alone makes warm→cold.` : ""}
+${filters?.keywords ? `- Keywords "${filters.keywords}": profile's title, headline, or company must contain at least one of these keywords to be hot/warm.` : ""}
+
+SCORING (be strict — if a filter doesn't match, downgrade):
+- Title matches title filter: +2 pts
+- Company matches company filter: +2 pts
+- Headline/title contains keyword(s): +1 pt
+- Location matches location filter: +1 pt
+
+QUALITY ASSIGNMENT:
+- "hot"  = 3+ pts AND matches at least one primary filter (title or company) exactly
+- "warm" = 2 pts OR partial primary filter match (close but not exact)
+- "cold" = <2 pts OR primary filter clearly doesn't match
+
+For EACH profile return:
+- "index": integer copied from input
+- "quality": "hot", "warm", or "cold"
+- "reason": 1 sentence (max 120 chars) explaining WHY — reference their actual title/company and which filters matched/didn't, e.g. "Founder at n8n — matches both company and automation keywords 🔥" or "CEO at Google — doesn't match n8n company filter ❄️"
+- "dm": personalized LinkedIn DM (under 300 chars), names the person, references their specific role/company, no generic openers
+
+Respond with JSON only:
+{"leads":[{"index":0,"quality":"hot","reason":"...","dm":"..."}]}
+No markdown fences.`;
+
   const response = await fetch(OPENROUTER_URL, {
     method: "POST",
     headers: {
@@ -88,36 +128,16 @@ export async function qualifyLeads({ profiles, targetDescription, plan }) {
     },
     body: JSON.stringify({
       model,
-      temperature: 0.7,
+      temperature: 0.3,
       response_format: { type: "json_object" },
       messages: [
         {
           role: "system",
-          content: `You are an expert B2B sales prospecting assistant. The user describes their ideal customer, and you receive a list of LinkedIn profiles from a search results page (with job title, company, headline, and location).
-
-For EACH profile, judge how well it matches the ideal customer and return:
-- "index": the profile's index (integer, copied from input)
-- "quality": one of "hot", "warm", "cold"
-    • "hot"  = clearly matches the target (role AND industry/company fit)
-    • "warm" = partial match (right role OR right space, but not both, or seniority is close)
-    • "cold" = unlikely to match the target
-- "reason": one short sentence (max 120 chars) that explicitly ties the rating to the user's target, e.g. "Matches your target — B2B SaaS founder at a product company." Reference their actual title/company.
-- "dm": a personalized LinkedIn outreach DM (under 300 chars) that names the person and references their SPECIFIC role and company. No generic openers like "I came across your profile". Make it feel hand-written. Even for cold leads, write a polite, relevant DM.
-
-If a profile has no title/company, infer from the headline and rate conservatively (usually warm/cold), and say so in the reason.
-
-Respond with JSON only, in this exact shape:
-{"leads":[{"index":0,"quality":"hot","reason":"...","dm":"..."}]}
-
-Return one object per input profile, preserving the index. No markdown fences.`,
+          content: systemPrompt,
         },
         {
           role: "user",
-          content: `Ideal customer / target description:
-${targetDescription || "(not specified — infer a reasonable B2B target)"}
-
-Profiles:
-${JSON.stringify(profilesForPrompt, null, 2)}`,
+          content: `${targetDescription ? `Target description:\n${targetDescription}\n\n` : ""}Profiles to qualify:\n${JSON.stringify(profilesForPrompt, null, 2)}`,
         },
       ],
     }),
