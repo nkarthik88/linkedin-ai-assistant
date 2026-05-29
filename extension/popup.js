@@ -1181,10 +1181,10 @@ async function qualifyAndShow(profiles, targetDescription, filters = null) {
 
 function buildLinkedInSearchUrl(filters) {
   const parts = [filters.title, filters.company, filters.keywords, filters.location].filter(Boolean);
-  const keywords = parts.join(“ “);
+  const keywords = parts.join(" ");
   const params = new URLSearchParams();
-  if (keywords) params.set(“keywords”, keywords);
-  if (filters.title) params.set(“title”, filters.title);
+  if (keywords) params.set("keywords", keywords);
+  if (filters.title) params.set("title", filters.title);
   return `https://www.linkedin.com/search/results/people/?${params.toString()}`;
 }
 
@@ -1194,13 +1194,13 @@ function filtersToDescription(filters) {
   if (filters.company) parts.push(`Company: ${filters.company}`);
   if (filters.location) parts.push(`Location: ${filters.location}`);
   if (filters.keywords) parts.push(`Keywords: ${filters.keywords}`);
-  return parts.join(“\n”) || “(not specified)”;
+  return parts.join("\n") || "(not specified)";
 }
 
 async function runDeepLeadSearch(filters) {
-  clearError(“form-deep_lead_search”);
-  showView(“view-loading”);
-  setLoading(“🔍 Searching LinkedIn…”, “Opening results in background”);
+  clearError("form-deep_lead_search");
+  showView("view-loading");
+  setLoading("🔍 Searching LinkedIn…", "Opening results in background");
 
   try {
     const searchUrl = buildLinkedInSearchUrl(filters);
@@ -1208,39 +1208,39 @@ async function runDeepLeadSearch(filters) {
 
     if (!profiles || profiles.length === 0) {
       throw new Error(
-        “Couldn't find any profiles. Make sure you're logged into LinkedIn and try again.”
+        "Couldn't find any profiles. Make sure you're logged into LinkedIn and try again."
       );
     }
 
     const targetDescription = filtersToDescription(filters);
     await qualifyAndShow(profiles, targetDescription, filters);
   } catch (err) {
-    showView(“view-deep_lead_search”);
-    showError(“form-deep_lead_search”, err.message);
+    showView("view-deep_lead_search");
+    showError("form-deep_lead_search", err.message);
     renderLeadCounter();
   }
 }
 
-document.getElementById(“form-deep_lead_search”)?.addEventListener(“submit”, (e) => {
+document.getElementById("form-deep_lead_search")?.addEventListener("submit", (e) => {
   e.preventDefault();
-  clearError(“form-deep_lead_search”);
-  const title = document.getElementById(“filter-title”)?.value.trim() || “”;
-  const company = document.getElementById(“filter-company”)?.value.trim() || “”;
-  const location = document.getElementById(“filter-location”)?.value.trim() || “”;
-  const keywords = document.getElementById(“filter-keywords”)?.value.trim() || “”;
+  clearError("form-deep_lead_search");
+  const title = document.getElementById("filter-title")?.value.trim() || "";
+  const company = document.getElementById("filter-company")?.value.trim() || "";
+  const location = document.getElementById("filter-location")?.value.trim() || "";
+  const keywords = document.getElementById("filter-keywords")?.value.trim() || "";
 
   if (!title && !company && !location && !keywords) {
-    showError(“form-deep_lead_search”, “Enter at least one filter to search.”);
+    showError("form-deep_lead_search", "Enter at least one filter to search.");
     return;
   }
 
   runDeepLeadSearch({ title, company, location, keywords });
 });
 
-// “New Search” — clear persisted results and start fresh.
-document.getElementById(“back-to-search”)?.addEventListener(“click”, async () => {
+// "New Search" — clear persisted results and start fresh.
+document.getElementById("back-to-search")?.addEventListener("click", async () => {
   await clearLeadResults();
-  showView(“view-deep_lead_search”);
+  showView("view-deep_lead_search");
   renderLeadCounter();
 });
 
