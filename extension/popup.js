@@ -810,29 +810,29 @@ document.querySelectorAll(".feature-btn").forEach((btn) => {
     }
 
     if (feature === "improve_headline") {
-      const input = document.getElementById("headline-input");
       const statusEl = document.getElementById("headline-load-status");
+      const submitBtn = document.getElementById("headline-submit-btn");
       const setStatus = (msg, isError = false) => {
         if (!statusEl) return;
         statusEl.textContent = msg;
         statusEl.className = `read-from-page-status${isError ? " error" : " ok"}`;
         statusEl.hidden = !msg;
       };
-      if (input) input.placeholder = "Reading from your profile…";
+      setStatus("📖 Reading your profile…");
+      if (submitBtn) submitBtn.disabled = true;
       try {
         const profileData = await getProfileDataFromPage();
         renderProfilePreview("profile-preview-headline", profileData);
-        if (profileData.headline && input) {
-          input.value = profileData.headline;
-          input.placeholder = "Your current headline";
-          setStatus("✅ Headline loaded from your profile");
+        if (profileData.name || profileData.headline) {
+          setStatus("✅ Profile loaded — ready to generate!");
+          if (submitBtn) submitBtn.disabled = false;
         } else {
-          if (input) input.placeholder = "Type your current headline";
-          setStatus("Could not read headline — type it below", true);
+          setStatus("⚠️ Go to your LinkedIn profile page first", true);
+          if (submitBtn) submitBtn.disabled = false;
         }
       } catch {
-        if (input) input.placeholder = "Type your current headline";
-        setStatus("Go to your LinkedIn profile to auto-load", true);
+        setStatus("⚠️ Go to your LinkedIn profile page first", true);
+        if (submitBtn) submitBtn.disabled = false;
       }
     }
   });
@@ -943,20 +943,16 @@ document.getElementById("form-reply_comment")?.addEventListener("submit", (e) =>
   }));
 });
 
-document.getElementById("form-improve_headline")?.addEventListener("submit", (e) => {
+document.getElementById("form-improve_headline")?.addEventListener("submit", async (e) => {
   e.preventDefault();
   clearError("form-improve_headline");
-  const headline = document.getElementById("headline-input").value.trim();
-  if (!headline) return;
-  runGeneration("improve_headline", async (userId) => {
-    let profileData = {};
-    try {
-      profileData = await getProfileDataFromPage();
-    } catch {
-      /* optional */
-    }
-    return { userId, headline, profileData };
-  });
+  try {
+    const profileData = await getProfileDataFromPage({ refresh: true });
+    const headline = profileData.headline || "";
+    runGeneration("improve_headline", async (userId) => ({ userId, headline, profileData }));
+  } catch (err) {
+    showError("form-improve_headline", "Go to your LinkedIn profile page first, then try again.");
+  }
 });
 
 document.getElementById("form-viral_rewriter")?.addEventListener("submit", (e) => {
