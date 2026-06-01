@@ -640,12 +640,58 @@ function displayResults(feature, options) {
           if (!tab?.id || !tab.url?.includes("linkedin.com")) {
             throw new Error("Switch to your LinkedIn tab first, then try again.");
           }
-          await ensureContentScript(tab.id);
-          const resp = await chrome.tabs.sendMessage(tab.id, {
-            type: "FILL_POST_BOX",
-            text,
-          }).catch((e) => ({ success: false, error: e.message }));
-          if (!resp?.success) throw new Error(resp?.error || "Could not open LinkedIn post box.");
+
+          // Step 1: open the post modal if not already open (fresh script, no caching)
+          await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => {
+              const COMMENT_AREA = ".comments-comment-box, .comments-reply-box, .comments-comment-texteditor";
+              const hasEditor = () => {
+                for (const el of document.querySelectorAll('div[contenteditable="true"]')) {
+                  if (el.closest(COMMENT_AREA)) continue;
+                  const r = el.getBoundingClientRect();
+                  if (r.width > 100 && r.height > 30) return true;
+                }
+                return false;
+              };
+              if (!hasEditor()) {
+                const btn = document.querySelector(
+                  '.share-box-feed-entry__trigger, button[aria-label="Start a post"], .share-box-feed-entry__top-bar'
+                );
+                if (btn) btn.click();
+              }
+            },
+          });
+
+          // Step 2: wait for modal to be ready (poll up to 3s)
+          let filled = false;
+          for (let i = 0; i < 12; i++) {
+            await new Promise((r) => setTimeout(r, 250));
+            const results = await chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              func: (postText) => {
+                const COMMENT_AREA = ".comments-comment-box, .comments-reply-box, .comments-comment-texteditor";
+                let editor = null;
+                for (const el of document.querySelectorAll('div[contenteditable="true"]')) {
+                  if (el.closest(COMMENT_AREA)) continue;
+                  const r = el.getBoundingClientRect();
+                  if (r.width > 100 && r.height > 30) { editor = el; break; }
+                }
+                if (!editor) return false;
+                editor.focus();
+                editor.click();
+                document.execCommand("selectAll", false, null);
+                document.execCommand("insertText", false, postText);
+                editor.dispatchEvent(new InputEvent("input", { bubbles: true }));
+                editor.scrollIntoView({ behavior: "smooth", block: "center" });
+                return true;
+              },
+              args: [text],
+            });
+            if (results?.[0]?.result === true) { filled = true; break; }
+          }
+
+          if (!filled) throw new Error("Could not fill post box. Make sure you're on the LinkedIn feed page.");
           btn.textContent = "✅ Ready!";
           showToast("Post ready — click Post on LinkedIn! 🚀", "success");
         } catch (err) {
