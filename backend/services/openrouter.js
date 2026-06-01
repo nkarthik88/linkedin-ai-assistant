@@ -18,33 +18,43 @@ Rules:
     "Write 3 distinct thoughtful replies to the comment on LinkedIn. Keep them professional and conversational.",
   improve_headline:
     "Write 3 improved LinkedIn headline options that are clear, compelling, and keyword-aware.",
-  viral_rewriter: `You are a viral LinkedIn content expert. Rewrite the given post into 1 DRAMATICALLY more engaging version that feels completely new.
+  viral_rewriter: `You are a viral LinkedIn ghostwriter. Your job is to transform a normal post into a story-driven post that gets thousands of likes.
 
-MANDATORY STRUCTURE:
-1. HOOK (first line — make them STOP scrolling):
-   - Use one of: shocking stat, bold statement, personal story opener, or provocative question
-   - Examples: "I wasted 3 years doing this wrong.", "Nobody talks about this.", "This changed everything for me."
+THE VIRAL FORMULA (use this exact structure):
 
-2. BODY (short punchy paragraphs, 1-2 sentences each):
-   - Personal story or relatable struggle
-   - The turning point or surprising insight
-   - Specific actionable detail or numbered list
-   - Build curiosity — make them want to keep reading
+1. CONFLICT HOOK (1 line — stops the scroll):
+   Start with personal conflict, near-failure, or shocking moment.
+   Examples: "I almost got fired for this.", "Nobody warned me.", "This nearly destroyed my reputation."
 
-3. CLOSING CTA (drive comments):
-   - Ask a direct engaging question
-   - Make it easy to answer in one line
-   - End with 2-3 relevant hashtags
+2. EMOTIONAL STAKES (2-3 lines):
+   What was at risk? Show the struggle, the fear, the real human cost.
+   Make the reader feel: "I've been there too."
 
-RULES:
-- Use line breaks between every paragraph (\\n\\n)
-- Max 1300 characters total
-- Short sentences. No corporate fluff. No "I am pleased to announce."
-- Must feel like a REAL person sharing a real insight, not marketing copy
-- The viral version must be NOTICEABLY different from the original — new hook, new angle, new structure
-- High emotion + high value + strong CTA = viral
+3. TURNING POINT (1-2 lines):
+   The moment everything shifted. "But then something changed." "Here's what nobody tells you."
 
-Return only 1 viral variation (not 3).`,
+4. TRANSFORMATION + PROOF (3-5 lines):
+   Before → After. Show REAL results with numbers if possible.
+   "Productivity jumped 40%." "The same people who complained now ask for more."
+   Make it believable and specific.
+
+5. INSIGHT / LESSON (2-4 lines, can use numbered list):
+   The 1-3 things learned. Give actual value. Be specific, not vague.
+
+6. STRONG CTA (1-2 lines):
+   Ask a direct question that makes people WANT to share their story.
+   End with 2-3 hashtags.
+
+STRICT RULES:
+- Every paragraph separated by blank line (\\n\\n)
+- Max 1400 characters
+- First word of post must create tension or curiosity — NEVER start with "I" followed by a boring statement
+- No corporate language. No "leverage", "synergy", "excited to share"
+- Must feel like a real person went through something real
+- The viral version must be COMPLETELY different from the original — different hook, different angle, story-driven
+- If original has no personal story, INVENT a plausible one based on the topic
+
+Return JSON: {"variations": ["<the one viral post>"]}`,
 };
 
 function formatProfileForPrompt(profileData = {}) {
