@@ -190,6 +190,31 @@ function extractRecentPosts(limit = 3) {
   return [];
 }
 
+function extractProfilePhoto() {
+  const img = queryFirst([
+    "img.pv-top-card-profile-picture__image--show",
+    "img.pv-top-card-profile-picture__image",
+    ".profile-photo-edit__preview",
+    ".pv-top-card__photo img",
+    "main section img.EntityPhoto-circle-9",
+    "main .pv-top-card img[src*='profile-displayphoto']",
+    "main img[src*='licdn.com'][width='200']",
+    "main img[src*='licdn.com'][width='400']",
+  ]);
+  return img?.src || "";
+}
+
+function extractLocation() {
+  const el = queryFirst([
+    ".pv-text-details__left-panel span.text-body-small.inline.t-black--light.break-words",
+    ".pv-top-card--list .pv-top-card--list-bullet li",
+    "main .text-body-small.t-black--light.break-words",
+  ]);
+  const text = getText(el);
+  if (text && text.length < 80 && !text.toLowerCase().includes("contact")) return text;
+  return "";
+}
+
 function extractProfileData() {
   const meta = extractFromOgMeta();
   const name = extractName() || meta.name;
@@ -198,6 +223,8 @@ function extractProfileData() {
   const experience = extractExperience();
   const posts = extractRecentPosts();
   const firstName = name.split(/\s+/)[0] || "";
+  const photo = extractProfilePhoto();
+  const location = extractLocation();
 
   return {
     name,
@@ -206,6 +233,8 @@ function extractProfileData() {
     about,
     experience,
     posts,
+    photo,
+    location,
     url: window.location.href,
     isProfilePage: isLinkedInProfilePage(),
   };

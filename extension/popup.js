@@ -451,29 +451,29 @@ function renderProfilePreview(elId, profileData) {
   const el = document.getElementById(elId);
   if (!el) return;
 
-  const { name, headline, about, experience, posts } = profileData;
+  const { name, headline, photo, location, experience } = profileData;
   if (!name && !headline) {
     el.hidden = true;
     return;
   }
 
   el.hidden = false;
-  const experienceHtml =
-    experience?.length > 0
-      ? `<span style="display:block;margin-top:4px"><strong>Experience:</strong> ${escapeHtml(experience.slice(0, 2).join("; "))}</span>`
-      : "";
-  const postsHtml =
-    posts?.length > 0
-      ? `<span style="display:block;margin-top:4px"><strong>Recent post:</strong> ${escapeHtml(posts[0].slice(0, 100))}${posts[0].length > 100 ? "…" : ""}</span>`
-      : "";
+  const avatarHtml = photo
+    ? `<img src="${escapeHtml(photo)}" class="profile-preview-photo" alt="${escapeHtml(name || "")}" />`
+    : `<div class="profile-preview-avatar-placeholder">${escapeHtml((name || "?")[0].toUpperCase())}</div>`;
+
+  const company = experience?.[0] ? `<span class="profile-preview-company">🏢 ${escapeHtml(experience[0].split(" · ")[0])}</span>` : "";
+  const loc = location ? `<span class="profile-preview-location">📍 ${escapeHtml(location)}</span>` : "";
 
   el.innerHTML = `
-    <strong>Profile detected</strong>
-    ${name ? `<div>${escapeHtml(name)}</div>` : ""}
-    ${headline ? `<span>${escapeHtml(headline)}</span>` : ""}
-    ${about ? `<span style="display:block;margin-top:4px">${escapeHtml(about.slice(0, 140))}${about.length > 140 ? "…" : ""}</span>` : ""}
-    ${experienceHtml}
-    ${postsHtml}
+    <div class="profile-preview-inner">
+      <div class="profile-preview-left">${avatarHtml}</div>
+      <div class="profile-preview-right">
+        <div class="profile-preview-name">${escapeHtml(name || "")}</div>
+        ${headline ? `<div class="profile-preview-headline">${escapeHtml(headline)}</div>` : ""}
+        <div class="profile-preview-meta">${company}${loc}</div>
+      </div>
+    </div>
   `;
 }
 
@@ -547,15 +547,34 @@ function displayResults(feature, options) {
 
   const isReply = feature === "reply_comment";
   const isPost = feature === "generate_post";
+  const isDM = feature === "personalized_dm";
 
   const POST_STYLE_LABELS = ["💼 Professional", "🚀 Inspiring", "😎 Conversational"];
+  const DM_TONE_LABELS = ["👔 Professional", "🤝 Collaborative", "😊 Casual"];
+
+  if (isDM) {
+    // Add regenerate button above cards
+    const regenRow = document.createElement("div");
+    regenRow.className = "dm-regen-row";
+    regenRow.innerHTML = `<button type="button" id="regen-dm-btn" class="regen-btn">🔄 Generate Different Options</button>`;
+    container.appendChild(regenRow);
+    regenRow.querySelector("#regen-dm-btn").addEventListener("click", () => {
+      showView("view-personalized_dm");
+    });
+  }
 
   options.forEach((text, i) => {
     const card = document.createElement("div");
     card.className = "option-card";
     const charCount = String(text).length;
+
+    let labelHtml = "";
+    if (isPost) labelHtml = POST_STYLE_LABELS[i] || `Option ${i + 1}`;
+    else if (isDM) labelHtml = DM_TONE_LABELS[i] || `Option ${i + 1}`;
+    else labelHtml = `Option ${i + 1}`;
+
     card.innerHTML = `
-      <div class="option-num">${isPost ? POST_STYLE_LABELS[i] || `Option ${i + 1}` : `Option ${i + 1}`} <span class="char-count">${charCount} chars</span></div>
+      <div class="option-num">${labelHtml} <span class="char-count">${charCount} chars</span></div>
       <div class="option-text">${escapeHtml(String(text))}</div>
       ${isReply
         ? `<div class="reply-actions">
@@ -563,9 +582,11 @@ function displayResults(feature, options) {
              <button type="button" class="copy-btn copy-reply-btn" data-index="${i}">Copy</button>
            </div>`
         : isPost
+        ? `<button type="button" class="copy-btn" data-index="${i}">📋 Copy</button>`
+        : isDM
         ? `<div class="reply-actions">
-             <button type="button" class="post-to-linkedin-btn" data-index="${i}">📤 Post to LinkedIn</button>
-             <button type="button" class="copy-btn" data-index="${i}">Copy</button>
+             <button type="button" class="copy-btn dm-copy-btn" data-index="${i}">📋 Copy DM</button>
+             <button type="button" class="open-messages-btn" data-index="${i}">✉️ Open Messages</button>
            </div>`
         : `<button type="button" class="copy-btn" data-index="${i}">Copy</button>`}
     `;
@@ -633,93 +654,47 @@ function displayResults(feature, options) {
       btn.addEventListener("click", async () => {
         const text = options[Number(btn.dataset.index)];
         const prevText = btn.textContent;
-        btn.textContent = "Opening…";
         btn.disabled = true;
+
+        // Step 1: copy text to clipboard
         try {
-          const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-          if (!tab?.id || !tab.url?.includes("linkedin.com")) {
-            throw new Error("Switch to your LinkedIn tab first, then try again.");
+          await navigator.clipboard.writeText(text);
+        } catch {
+          try {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.cssText = "position:fixed;opacity:0";
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+          } catch {
+            showToast("Could not copy. Please copy manually then go to LinkedIn.", "default");
+            btn.disabled = false;
+            return;
           }
-
-          // Step 1: open the post modal if not already open (fresh script, no caching)
-          await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: () => {
-              const COMMENT_AREA = ".comments-comment-box, .comments-reply-box, .comments-comment-texteditor";
-              const hasEditor = () => {
-                const all = document.querySelectorAll('[contenteditable]:not([contenteditable="false"])');
-                for (const el of all) {
-                  if (el.closest(COMMENT_AREA)) continue;
-                  const r = el.getBoundingClientRect();
-                  if (r.width > 100 && r.height > 20) return true;
-                }
-                return false;
-              };
-              if (!hasEditor()) {
-                const btn = document.querySelector(
-                  '.share-box-feed-entry__trigger, button[aria-label="Start a post"], .share-box-feed-entry__top-bar'
-                );
-                if (btn) btn.click();
-              }
-            },
-          });
-
-          // Step 2: wait for modal to be ready (poll up to 3s)
-          let filled = false;
-          for (let i = 0; i < 12; i++) {
-            await new Promise((r) => setTimeout(r, 250));
-            const results = await chrome.scripting.executeScript({
-              target: { tabId: tab.id },
-              func: (postText) => {
-                const COMMENT_AREA = ".comments-comment-box, .comments-reply-box, .comments-comment-texteditor";
-                let editor = null;
-
-                // Match contenteditable regardless of attribute value ("true", "", or no value)
-                const all = document.querySelectorAll(
-                  '[contenteditable]:not([contenteditable="false"])'
-                );
-                for (const el of all) {
-                  if (el.closest(COMMENT_AREA)) continue;
-                  const r = el.getBoundingClientRect();
-                  if (r.width > 100 && r.height > 20) { editor = el; break; }
-                }
-                if (!editor) return false;
-
-                editor.focus();
-                editor.click();
-                // Select all and replace with generated text
-                document.execCommand("selectAll", false, null);
-                const ok = document.execCommand("insertText", false, postText);
-                if (!ok) {
-                  // Fallback for editors that ignore execCommand
-                  const p = document.createElement("p");
-                  p.textContent = postText;
-                  editor.innerHTML = "";
-                  editor.appendChild(p);
-                }
-                editor.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: postText }));
-                editor.scrollIntoView({ behavior: "smooth", block: "center" });
-                return true;
-              },
-              args: [text],
-            });
-            if (results?.[0]?.result === true) { filled = true; break; }
-          }
-
-          if (!filled) throw new Error("Could not fill post box. Make sure you're on the LinkedIn feed page.");
-          btn.textContent = "✅ Ready!";
-          showToast("Post ready — click Post on LinkedIn! 🚀", "success");
-        } catch (err) {
-          showToast(err.message, "default");
-          btn.textContent = prevText;
-          btn.disabled = false;
         }
+
+        // Step 2: open or focus LinkedIn tab
+        const linkedinTabs = await chrome.tabs.query({ url: "*://*.linkedin.com/*" });
+        if (linkedinTabs.length > 0) {
+          // Focus existing LinkedIn tab
+          await chrome.tabs.update(linkedinTabs[0].id, { active: true });
+          await chrome.windows.update(linkedinTabs[0].windowId, { focused: true });
+        } else {
+          // Open LinkedIn feed in new tab
+          await chrome.tabs.create({ url: "https://www.linkedin.com/feed/" });
+        }
+
+        btn.textContent = "✅ Copied!";
+        showToast("✅ Copied! Click 'Start a post' on LinkedIn and press Ctrl+V (or ⌘V)", "success");
+        setTimeout(() => { btn.textContent = prevText; btn.disabled = false; }, 3000);
       });
     });
   }
 
-  if (!isReply && !isPost) {
-    container.querySelectorAll(".copy-btn").forEach((btn) => {
+  // Copy button — works for ALL card types (post, headline, etc.)
+  container.querySelectorAll(".copy-btn").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const text = options[Number(btn.dataset.index)];
         try {
@@ -739,16 +714,40 @@ function displayResults(feature, options) {
             return;
           }
         }
+        const isDMCopy = btn.classList.contains("dm-copy-btn");
         btn.textContent = "✅ Copied!";
         btn.classList.add("copied");
-        showToast(isPost ? "✅ Copied! Ready to post on LinkedIn 🚀" : "Copied to clipboard!", "success");
+        showToast(
+          isPost ? "✅ Copied! Ready to post on LinkedIn 🚀"
+          : isDMCopy ? "✅ DM copied! Open Messages and paste →"
+          : "Copied to clipboard!",
+          "success"
+        );
+        const origLabel = isDMCopy ? "📋 Copy DM" : isPost ? "📋 Copy" : "Copy";
         setTimeout(() => {
-          btn.textContent = "Copy";
+          btn.textContent = origLabel;
           btn.classList.remove("copied");
         }, 2000);
       });
     });
-  }
+
+  // "Open Messages" button on DM cards
+  container.querySelectorAll(".open-messages-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const text = options[Number(btn.dataset.index)];
+      // Copy the DM first
+      try { await navigator.clipboard.writeText(text); } catch { /* ignore */ }
+      // Open LinkedIn Messaging
+      const msgTabs = await chrome.tabs.query({ url: "*://*.linkedin.com/messaging/*" });
+      if (msgTabs.length > 0) {
+        await chrome.tabs.update(msgTabs[0].id, { active: true });
+        await chrome.windows.update(msgTabs[0].windowId, { focused: true });
+      } else {
+        await chrome.tabs.create({ url: "https://www.linkedin.com/messaging/" });
+      }
+      showToast("✅ DM copied! Find the person on LinkedIn and paste →", "success");
+    });
+  });
 
   showView("view-results");
 }
@@ -907,6 +906,15 @@ document.getElementById("form-generate_post")?.addEventListener("submit", (e) =>
   runGeneration("generate_post", async (userId) => ({ userId, topic }));
 });
 
+// Intent chip toggle
+document.querySelectorAll(".intent-chip").forEach((chip) => {
+  chip.addEventListener("click", () => {
+    const wasActive = chip.classList.contains("active");
+    document.querySelectorAll(".intent-chip").forEach((c) => c.classList.remove("active"));
+    if (!wasActive) chip.classList.add("active");
+  });
+});
+
 document.getElementById("form-personalized_dm")?.addEventListener("submit", async (e) => {
   e.preventDefault();
   clearError("form-personalized_dm");
@@ -914,10 +922,13 @@ document.getElementById("form-personalized_dm")?.addEventListener("submit", asyn
     const profileData = await getProfileDataFromPage({ refresh: true });
     renderProfilePreview("profile-preview-dm", profileData);
     const dmContext = document.getElementById("dm-context")?.value.trim();
+    const intentChip = document.querySelector(".intent-chip.active");
+    const intent = intentChip?.dataset.intent || "";
+    const topicParts = [intent ? `Goal: ${intent}` : "", dmContext].filter(Boolean);
     await runGeneration("personalized_dm", async (userId) => ({
       userId,
       profileData,
-      topic: dmContext || undefined,
+      topic: topicParts.join(". ") || undefined,
     }));
   } catch (err) {
     showError("form-personalized_dm", err.message);

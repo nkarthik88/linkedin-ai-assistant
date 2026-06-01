@@ -180,9 +180,16 @@
             <p class="form-hint">Open a LinkedIn profile tab — we read name, headline, about, and posts automatically.</p>
             <div id="profile-preview-dm" class="profile-preview" hidden></div>
             <form id="form-personalized_dm">
-              <label for="dm-context">Extra context (optional)</label>
-              <textarea id="dm-context" name="dmContext" placeholder="Why you want to connect, shared interest, etc." rows="3"></textarea>
-              <button type="submit" class="submit-btn">Generate 3 DMs from profile</button>
+              <label>Your goal <span style="font-weight:400;opacity:.7">(pick one)</span></label>
+              <div class="intent-chips" id="intent-chips">
+                <button type="button" class="intent-chip" data-intent="network">🤝 Network</button>
+                <button type="button" class="intent-chip" data-intent="collaborate">🚀 Collaborate</button>
+                <button type="button" class="intent-chip" data-intent="advice">💡 Ask Advice</button>
+                <button type="button" class="intent-chip" data-intent="partner">🤜 Partner</button>
+              </div>
+              <label for="dm-context">Extra context <span style="font-weight:400;opacity:.7">(optional)</span></label>
+              <textarea id="dm-context" name="dmContext" placeholder="Any specific detail to make the DM even more personal…" rows="2"></textarea>
+              <button type="submit" class="submit-btn">💬 Generate 3 DMs</button>
             </form>
           </div>
         </div>
