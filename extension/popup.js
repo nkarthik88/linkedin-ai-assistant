@@ -647,10 +647,11 @@ function displayResults(feature, options) {
             func: () => {
               const COMMENT_AREA = ".comments-comment-box, .comments-reply-box, .comments-comment-texteditor";
               const hasEditor = () => {
-                for (const el of document.querySelectorAll('div[contenteditable="true"]')) {
+                const all = document.querySelectorAll('[contenteditable]:not([contenteditable="false"])');
+                for (const el of all) {
                   if (el.closest(COMMENT_AREA)) continue;
                   const r = el.getBoundingClientRect();
-                  if (r.width > 100 && r.height > 30) return true;
+                  if (r.width > 100 && r.height > 20) return true;
                 }
                 return false;
               };
@@ -672,17 +673,31 @@ function displayResults(feature, options) {
               func: (postText) => {
                 const COMMENT_AREA = ".comments-comment-box, .comments-reply-box, .comments-comment-texteditor";
                 let editor = null;
-                for (const el of document.querySelectorAll('div[contenteditable="true"]')) {
+
+                // Match contenteditable regardless of attribute value ("true", "", or no value)
+                const all = document.querySelectorAll(
+                  '[contenteditable]:not([contenteditable="false"])'
+                );
+                for (const el of all) {
                   if (el.closest(COMMENT_AREA)) continue;
                   const r = el.getBoundingClientRect();
-                  if (r.width > 100 && r.height > 30) { editor = el; break; }
+                  if (r.width > 100 && r.height > 20) { editor = el; break; }
                 }
                 if (!editor) return false;
+
                 editor.focus();
                 editor.click();
+                // Select all and replace with generated text
                 document.execCommand("selectAll", false, null);
-                document.execCommand("insertText", false, postText);
-                editor.dispatchEvent(new InputEvent("input", { bubbles: true }));
+                const ok = document.execCommand("insertText", false, postText);
+                if (!ok) {
+                  // Fallback for editors that ignore execCommand
+                  const p = document.createElement("p");
+                  p.textContent = postText;
+                  editor.innerHTML = "";
+                  editor.appendChild(p);
+                }
+                editor.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: postText }));
                 editor.scrollIntoView({ behavior: "smooth", block: "center" });
                 return true;
               },
