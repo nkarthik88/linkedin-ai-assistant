@@ -1424,3 +1424,78 @@ input[type="email"] {
 .headline-improve-btn:hover {
   background: var(--linkedin-blue-light) !important;
 }
+
+/* ── Make it Viral ── */
+.viral-btn {
+  flex: 1;
+  background: linear-gradient(135deg, #ff6b35, #f7c59f);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.viral-btn:hover { opacity: .88; }
+.viral-btn:disabled { opacity: .6; cursor: default; }
+
+.viral-result {
+  margin-top: 10px;
+  border-top: 1.5px dashed #ff6b35;
+  padding-top: 10px;
+}
+
+.viral-loading {
+  font-size: 12px;
+  color: #ff6b35;
+  font-weight: 600;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.viral-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ff6b35;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 6px;
+}
+
+.viral-text {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  background: #fff8f5;
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  border: 1px solid #ffe0d0;
+}
+
+.viral-actions {
+  margin-top: 8px;
+}
+
+.copy-viral-btn {
+  background: #ff6b35;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 7px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s;
+  width: 100%;
+}
+.copy-viral-btn:hover { opacity: .88; }
+
+.viral-error {
+  font-size: 12px;
+  color: var(--error);
+  text-align: center;
+  padding: 6px 0;
+}

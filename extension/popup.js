@@ -590,7 +590,11 @@ function displayResults(feature, options) {
              <button type="button" class="copy-btn copy-reply-btn" data-index="${i}">Copy</button>
            </div>`
         : isPost
-        ? `<button type="button" class="copy-btn" data-index="${i}">📋 Copy</button>`
+        ? `<div class="reply-actions">
+             <button type="button" class="copy-btn" data-index="${i}">📋 Copy</button>
+             <button type="button" class="viral-btn" data-index="${i}">🔥 Make it Viral</button>
+           </div>
+           <div class="viral-result" id="viral-result-${i}" hidden></div>`
         : isDM
         ? `<button type="button" class="copy-btn dm-copy-btn" data-index="${i}">📋 Copy DM</button>`
         : `<button type="button" class="copy-btn" data-index="${i}">Copy</button>`}
@@ -694,6 +698,65 @@ function displayResults(feature, options) {
         btn.textContent = "✅ Copied!";
         showToast("✅ Copied! Click 'Start a post' on LinkedIn and press Ctrl+V (or ⌘V)", "success");
         setTimeout(() => { btn.textContent = prevText; btn.disabled = false; }, 3000);
+      });
+    });
+  }
+
+  // 🔥 Make it Viral button
+  if (isPost) {
+    container.querySelectorAll(".viral-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const i = Number(btn.dataset.index);
+        const originalText = options[i];
+        const resultBox = document.getElementById(`viral-result-${i}`);
+        const prevLabel = btn.textContent;
+
+        btn.textContent = "🔥 Making it viral…";
+        btn.disabled = true;
+        if (resultBox) { resultBox.hidden = false; resultBox.innerHTML = `<div class="viral-loading">🔥 Rewriting for maximum engagement…</div>`; }
+
+        try {
+          const userId = await getUserId();
+          const email = await getUserEmail();
+          const viralOptions = await callApi({
+            feature: "viral_rewriter",
+            userId,
+            email: email || undefined,
+            draftPost: originalText,
+          });
+          const viralText = viralOptions[0];
+
+          resultBox.innerHTML = `
+            <div class="viral-label">🔥 Viral Version</div>
+            <div class="viral-text">${escapeHtml(viralText)}</div>
+            <div class="viral-actions">
+              <button type="button" class="copy-viral-btn">📋 Copy Viral</button>
+            </div>
+          `;
+
+          resultBox.querySelector(".copy-viral-btn").addEventListener("click", async (e) => {
+            const copyBtn = e.currentTarget;
+            try { await navigator.clipboard.writeText(viralText); } catch {
+              const ta = document.createElement("textarea");
+              ta.value = viralText; ta.style.cssText = "position:fixed;opacity:0";
+              document.body.appendChild(ta); ta.select();
+              document.execCommand("copy"); document.body.removeChild(ta);
+            }
+            copyBtn.textContent = "✅ Copied!";
+            showToast("🔥 Viral version copied!", "success");
+            setTimeout(() => { copyBtn.textContent = "📋 Copy Viral"; }, 2000);
+          });
+
+          btn.textContent = "🔄 Redo Viral";
+          btn.disabled = false;
+          showToast("🔥 Viral version ready!", "success");
+        } catch (err) {
+          if (err.message !== "__LIMIT_REACHED__") {
+            if (resultBox) resultBox.innerHTML = `<div class="viral-error">Could not rewrite. Try again.</div>`;
+            btn.textContent = prevLabel;
+            btn.disabled = false;
+          }
+        }
       });
     });
   }
