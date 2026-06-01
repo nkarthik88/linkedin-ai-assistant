@@ -955,25 +955,77 @@ document.getElementById("headline-from-profile-btn")?.addEventListener("click", 
 
     if (!tab?.id) throw new Error("Go to your LinkedIn profile page first, then try again.");
 
-    // Read full profile data via executeScript
+    // Read full profile data via executeScript with wide selector coverage
     const [result] = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       func: () => {
         const getText = (el) => el?.textContent?.replace(/\s+/g, " ").trim() || "";
-        const name = getText(document.querySelector("main h1")) || "";
-        const headlineEl = document.querySelector(".text-body-medium.break-words, div.text-body-medium");
-        const headline = getText(headlineEl);
-        const aboutEl = document.querySelector("#about ~ div span[aria-hidden='true'], section[id*='about'] span[aria-hidden='true']");
-        const about = getText(aboutEl).slice(0, 500);
-        const expItems = Array.from(document.querySelectorAll("li.pvs-list__paged-list-item span[aria-hidden='true']"))
-          .map(el => getText(el)).filter(Boolean).slice(0, 8);
-        return { name, headline, about, experience: expItems };
+
+        // Name — h1 on profile pages
+        const name = getText(
+          document.querySelector("h1.text-heading-xlarge") ||
+          document.querySelector("main h1") ||
+          document.querySelector("h1")
+        );
+
+        // Headline — the line right below the name
+        let headline = "";
+        const headlineSelectors = [
+          ".text-body-medium.break-words",
+          "div.text-body-medium.break-words",
+          ".pv-text-details__left-panel .text-body-medium",
+          ".ph5 .text-body-medium",
+          "div.text-body-medium",
+        ];
+        for (const sel of headlineSelectors) {
+          const els = document.querySelectorAll(sel);
+          for (const el of els) {
+            const t = getText(el);
+            // Headline is typically 10–250 chars and NOT the name
+            if (t && t.length >= 10 && t.length <= 250 && t !== name) {
+              headline = t;
+              break;
+            }
+          }
+          if (headline) break;
+        }
+
+        // About section
+        let about = "";
+        const aboutSpans = document.querySelectorAll(
+          "#about ~ * span[aria-hidden='true'], [id*='about'] span[aria-hidden='true']"
+        );
+        for (const el of aboutSpans) {
+          const t = getText(el);
+          if (t.length > 30) { about = t.slice(0, 500); break; }
+        }
+
+        // Experience — grab visible text from experience list items
+        const expItems = [];
+        document.querySelectorAll("li.pvs-list__paged-list-item").forEach(li => {
+          if (expItems.length >= 4) return;
+          const spans = li.querySelectorAll("span[aria-hidden='true']");
+          const parts = [...new Set(Array.from(spans).map(s => getText(s)).filter(Boolean))];
+          if (parts.length) expItems.push(parts.slice(0, 2).join(" · "));
+        });
+
+        // og:title / og:description fallback
+        const ogTitle = document.querySelector('meta[property="og:title"]')?.content || "";
+        const ogDesc = document.querySelector('meta[property="og:description"]')?.content || "";
+
+        return {
+          name: name || ogTitle.split(" | ")[0] || ogTitle.split(" - ")[0] || "",
+          headline: headline || ogDesc.slice(0, 220) || "",
+          about,
+          experience: expItems,
+        };
       },
     });
 
     const profileData = result?.result || {};
-    if (!profileData.name && !profileData.headline) {
-      throw new Error("Could not read profile. Make sure you're on your LinkedIn profile page.");
+    // Proceed if we have any useful data
+    if (!profileData.name && !profileData.headline && !profileData.about) {
+      throw new Error("Could not read profile data. Scroll your LinkedIn profile page to load it fully, then try again.");
     }
 
     renderProfilePreview("profile-preview-headline", profileData);
