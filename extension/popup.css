@@ -1299,37 +1299,136 @@ input[type="email"] {
 }
 .saved-leads-list { display: flex; flex-direction: column; gap: 8px; }
 
-.saved-lead {
+.saved-empty {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 16px 0;
+  line-height: 1.6;
+}
+
+/* ── Saved Lead Card ── */
+.saved-lead-card {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--white);
   overflow: hidden;
+  transition: box-shadow .15s;
 }
-.saved-lead-head {
+.saved-lead-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.saved-lead-card.sl-contacted { opacity: .75; }
+
+.sl-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 11px 12px;
   cursor: pointer;
+  user-select: none;
 }
-.saved-lead-head:hover { background: var(--bg); }
-.saved-lead-name { font-weight: 700; font-size: 13px; }
-.saved-lead-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
-.saved-lead-body { padding: 0 12px 12px; }
+.sl-head:hover { background: var(--bg); }
 
-.saved-delete {
-  flex: none;
+.sl-left { flex: 1; min-width: 0; }
+.sl-name {
   font-size: 13px;
-  font-weight: 600;
-  color: var(--error);
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 8px 12px;
-  cursor: pointer;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.saved-delete:hover { border-color: var(--error); }
+.sl-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sl-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.sl-chevron {
+  font-size: 12px;
+  color: var(--text-secondary);
+  transition: transform .2s;
+}
+
+.sl-status-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 7px;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+.sl-status-badge.contacted {
+  background: #eaf7ef;
+  color: var(--success);
+}
+
+.sl-body {
+  padding: 0 12px 12px;
+  border-top: 1px solid var(--border);
+}
+.sl-location {
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding: 8px 0 4px;
+}
+.sl-dm-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--linkedin-blue);
+  margin: 6px 0 4px;
+}
+.sl-dm {
+  font-size: 12px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+  margin-bottom: 10px;
+}
+
+.sl-actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.sl-actions-2 { margin-bottom: 0; }
+
+.sl-btn {
+  flex: 1;
+  padding: 7px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--text-primary);
+  transition: all .12s;
+  text-align: center;
+}
+.sl-btn:hover { border-color: var(--linkedin-blue); color: var(--linkedin-blue); }
+
+.sl-copy { border-color: var(--linkedin-blue); color: var(--linkedin-blue); }
+.sl-copy:hover { background: var(--linkedin-blue-light); }
+
+.sl-status-btn { color: var(--success); border-color: var(--success); }
+.sl-status-btn:hover { background: #eaf7ef; }
+.sl-contacted-btn { color: var(--text-secondary); border-color: var(--border); }
+
+.sl-delete { color: var(--error); border-color: var(--error); }
+.sl-delete:hover { background: #fef2f2; }
 
 .debug-row {
   display: flex;
@@ -1354,30 +1453,6 @@ input[type="email"] {
 }
 .export-btn:hover { background: #d6eafc; }
 
-.saved-lead.contacted { opacity: 0.7; }
-.saved-lead.contacted .saved-lead-name { text-decoration: none; }
-.status-badge {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--success);
-  background: #eaf7ef;
-  border-radius: 999px;
-  padding: 1px 6px;
-  margin-left: 4px;
-  vertical-align: middle;
-}
-.saved-status {
-  flex: none;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 8px 12px;
-  cursor: pointer;
-}
-.saved-status:hover { border-color: var(--success); color: var(--success); }
 
 /* ── Headline AI two-option layout ── */
 .headline-option-block {

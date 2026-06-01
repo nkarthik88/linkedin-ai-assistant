@@ -1232,64 +1232,82 @@ async function renderSavedLeads() {
   section.hidden = saved.length === 0;
   list.innerHTML = "";
 
+  if (saved.length === 0) {
+    list.innerHTML = `<div class="saved-empty">No saved leads yet.<br>Start a Deep Lead Search! 🔎</div>`;
+    return;
+  }
+
   saved.forEach((lead) => {
     const q = LEAD_QUALITY[lead.quality] || LEAD_QUALITY.cold;
-    const sub =
-      lead.title && lead.company
-        ? `${lead.title} at ${lead.company}`
-        : lead.title || lead.company || lead.headline || "";
+    const sub = lead.title && lead.company
+      ? `${lead.title} at ${lead.company}`
+      : lead.title || lead.company || lead.headline || "";
     const key = leadKey(lead);
     const contacted = lead.status === "contacted";
 
     const item = document.createElement("div");
-    item.className = `saved-lead${contacted ? " contacted" : ""}`;
+    item.className = `saved-lead-card${contacted ? " sl-contacted" : ""}`;
     item.innerHTML = `
-      <div class="saved-lead-head" role="button" tabindex="0">
-        <div class="saved-lead-identity">
-          <div class="saved-lead-name">${escapeHtml(lead.name || "Unknown")}${contacted ? ' <span class="status-badge">✓ Contacted</span>' : ""}</div>
-          ${sub ? `<div class="saved-lead-sub">${escapeHtml(sub)}</div>` : ""}
+      <div class="sl-head" role="button" tabindex="0" aria-expanded="false">
+        <div class="sl-left">
+          <div class="sl-name">${escapeHtml(lead.name || "Unknown")}
+            ${contacted ? '<span class="sl-status-badge contacted">✓ Contacted</span>' : ""}
+          </div>
+          ${sub ? `<div class="sl-sub">${escapeHtml(sub)}</div>` : ""}
         </div>
-        <span class="quality-badge ${q.cls}">${q.icon} ${q.label}</span>
+        <div class="sl-right">
+          <span class="quality-badge ${q.cls}">${q.icon} ${q.label}</span>
+          <span class="sl-chevron">▾</span>
+        </div>
       </div>
-      <div class="saved-lead-body" hidden>
-        ${lead.dm ? `<div class="lead-dm">${escapeHtml(lead.dm)}</div>` : ""}
-        <div class="lead-actions">
-          <button type="button" class="copy-btn saved-copy">Copy DM</button>
-          ${lead.url ? `<button type="button" class="lead-view saved-view">View Profile →</button>` : ""}
-          <button type="button" class="saved-status">${contacted ? "↺ Mark New" : "✓ Mark Contacted"}</button>
-          <button type="button" class="saved-delete">Delete</button>
+      <div class="sl-body" hidden>
+        ${lead.location ? `<div class="sl-location">📍 ${escapeHtml(lead.location)}</div>` : ""}
+        ${lead.dm ? `
+          <div class="sl-dm-label">💬 Personalized DM</div>
+          <div class="sl-dm">${escapeHtml(lead.dm)}</div>
+        ` : ""}
+        <div class="sl-actions">
+          <button type="button" class="sl-btn sl-copy">📋 Copy DM</button>
+          ${lead.url ? `<button type="button" class="sl-btn sl-view">👁 Profile</button>` : ""}
+        </div>
+        <div class="sl-actions sl-actions-2">
+          <button type="button" class="sl-btn sl-status-btn${contacted ? " sl-contacted-btn" : ""}">${contacted ? "↺ Mark New" : "✓ Contacted"}</button>
+          <button type="button" class="sl-btn sl-delete">🗑 Delete</button>
         </div>
       </div>
     `;
 
-    const head = item.querySelector(".saved-lead-head");
-    const body = item.querySelector(".saved-lead-body");
+    const head = item.querySelector(".sl-head");
+    const body = item.querySelector(".sl-body");
+    const chevron = item.querySelector(".sl-chevron");
     head.addEventListener("click", () => {
-      body.hidden = !body.hidden;
+      const open = !body.hidden;
+      body.hidden = open;
+      chevron.style.transform = open ? "" : "rotate(180deg)";
+      head.setAttribute("aria-expanded", String(!open));
     });
 
-    item.querySelector(".saved-copy")?.addEventListener("click", async (e) => {
+    item.querySelector(".sl-copy")?.addEventListener("click", async (e) => {
       e.stopPropagation();
-      await navigator.clipboard.writeText(lead.dm || "");
+      try { await navigator.clipboard.writeText(lead.dm || ""); } catch { /* ignore */ }
       const b = e.currentTarget;
-      b.textContent = "Copied!";
-      b.classList.add("copied");
-      showToast("DM copied", "success");
-      setTimeout(() => {
-        b.textContent = "Copy DM";
-        b.classList.remove("copied");
-      }, 2000);
+      b.textContent = "✅ Copied!";
+      showToast("DM copied!", "success");
+      setTimeout(() => { b.textContent = "📋 Copy DM"; }, 2000);
     });
-    item.querySelector(".saved-view")?.addEventListener("click", (e) => {
+
+    item.querySelector(".sl-view")?.addEventListener("click", (e) => {
       e.stopPropagation();
       if (lead.url) chrome.tabs.create({ url: lead.url });
     });
-    item.querySelector(".saved-status")?.addEventListener("click", (e) => {
+
+    item.querySelector(".sl-status-btn")?.addEventListener("click", (e) => {
       e.stopPropagation();
       setLeadStatus(key, contacted ? "new" : "contacted");
-      showToast(contacted ? "Marked as new" : "Marked as contacted", "success");
+      showToast(contacted ? "Marked as new" : "✓ Marked as contacted!", "success");
     });
-    item.querySelector(".saved-delete")?.addEventListener("click", (e) => {
+
+    item.querySelector(".sl-delete")?.addEventListener("click", (e) => {
       e.stopPropagation();
       deleteSavedLead(key);
       showToast("Lead removed", "default");
