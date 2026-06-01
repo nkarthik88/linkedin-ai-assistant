@@ -528,15 +528,11 @@ function findNearestCommentText() {
       ".social-details-social-activity"
     );
     if (container) {
-      const textEl = container.querySelector(
-        ".comments-comment__main-content, " +
-        ".feed-shared-comment__main-content, " +
-        ".comments-comment-item__main-content, " +
-        ".comments-comment-item__main-content span[dir='ltr'], " +
-        "span[dir='ltr']"
-      );
-      const text = textEl?.textContent?.trim();
-      if (text && text.length > 5) return text;
+      for (const sel of COMMENT_TEXT_SELECTORS) {
+        const textEl = container.querySelector(sel);
+        const text = textEl?.textContent?.trim();
+        if (text && text.length > 5) return text;
+      }
     }
   }
 
@@ -614,7 +610,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
       sendResponse({
         success: false,
-        error: "No comments found on this page. Navigate to a LinkedIn post with comments.",
+        error: "No comments visible. Click the comment count (e.g. '12 comments') under the post to expand them, then try again.",
       });
     } catch (err) {
       sendResponse({ success: false, error: err.message });
