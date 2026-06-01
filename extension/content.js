@@ -483,13 +483,9 @@ const COMMENT_BOX_SELECTORS = [
 ];
 
 function findCommentBox() {
-  // Prefer whichever comment box is already focused
+  // Prefer whichever contenteditable box is already focused inside a comment area
   const active = document.activeElement;
-  if (
-    active &&
-    active.contentEditable === "true" &&
-    active.getAttribute("role") !== "textbox" === false || active.tagName !== "INPUT"
-  ) {
+  if (active && active.contentEditable === "true") {
     const inCommentArea = active.closest(
       ".comments-comment-box, .comments-reply-box, .feed-shared-update-v2__comments-container, .comments-comment-texteditor"
     );
@@ -502,6 +498,16 @@ function findCommentBox() {
   }
   return null;
 }
+
+// Selectors for reading existing comment text (not the input box, the comment body)
+const COMMENT_TEXT_SELECTORS = [
+  ".comments-comment__main-content",
+  ".feed-shared-comment__main-content",
+  ".comments-comment-item__main-content",
+  ".social-details-social-activity .comments-comment__main-content",
+  "article .comments-comment__main-content",
+  ".comment__main-content",
+];
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === "FILL_COMMENT_REPLY") {
@@ -523,6 +529,33 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       box.scrollIntoView({ behavior: "smooth", block: "center" });
 
       sendResponse({ success: true });
+    } catch (err) {
+      sendResponse({ success: false, error: err.message });
+    }
+    return true;
+  }
+
+  if (message.type === "GET_SELECTED_TEXT") {
+    try {
+      // First priority: whatever the user has highlighted on the page
+      const selected = window.getSelection()?.toString()?.trim() || "";
+      if (selected.length > 5) {
+        sendResponse({ success: true, text: selected });
+        return true;
+      }
+      // Second priority: first visible comment body on the page
+      for (const sel of COMMENT_TEXT_SELECTORS) {
+        const el = document.querySelector(sel);
+        const text = el?.textContent?.trim() || "";
+        if (text.length > 5) {
+          sendResponse({ success: true, text });
+          return true;
+        }
+      }
+      sendResponse({
+        success: false,
+        error: "Select the comment text on LinkedIn first, then click Read from LinkedIn.",
+      });
     } catch (err) {
       sendResponse({ success: false, error: err.message });
     }

@@ -547,11 +547,15 @@ function displayResults(feature, options) {
   options.forEach((text, i) => {
     const card = document.createElement("div");
     card.className = "option-card";
+    const charCount = String(text).length;
     card.innerHTML = `
-      <div class="option-num">Option ${i + 1}</div>
+      <div class="option-num">Option ${i + 1} <span class="char-count">${charCount} chars</span></div>
       <div class="option-text">${escapeHtml(String(text))}</div>
       ${isReply
-        ? `<button type="button" class="post-reply-btn" data-index="${i}">↩ Post Reply</button>`
+        ? `<div class="reply-actions">
+             <button type="button" class="post-reply-btn" data-index="${i}">↩ Post Reply</button>
+             <button type="button" class="copy-btn copy-reply-btn" data-index="${i}">Copy</button>
+           </div>`
         : `<button type="button" class="copy-btn" data-index="${i}">Copy</button>`}
     `;
     container.appendChild(card);
@@ -567,21 +571,48 @@ function displayResults(feature, options) {
         try {
           const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
           if (!tab?.id || !tab.url?.includes("linkedin.com")) {
-            throw new Error("Switch to your LinkedIn tab first, then try again.");
+            throw new Error("Open the LinkedIn post in a tab, click Reply under the comment, then try again.");
           }
           await ensureContentScript(tab.id);
           const resp = await chrome.tabs.sendMessage(tab.id, {
             type: "FILL_COMMENT_REPLY",
             text,
           });
-          if (!resp?.success) throw new Error(resp?.error || "Could not fill comment box.");
-          btn.textContent = "✅ Posted!";
-          showToast("Reply ready — click Post on LinkedIn!", "success");
+          if (!resp?.success) throw new Error(resp?.error || "Could not find comment box. Click Reply under the LinkedIn comment first.");
+          btn.textContent = "✅ Done!";
+          showToast("Reply ready — click Post on LinkedIn! 🚀", "success");
         } catch (err) {
           showToast(err.message, "default");
           btn.textContent = prevText;
           btn.disabled = false;
         }
+      });
+    });
+
+    // Copy button also on reply cards (fallback)
+    container.querySelectorAll(".copy-reply-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const text = options[Number(btn.dataset.index)];
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {
+          try {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.cssText = "position:fixed;opacity:0";
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+          } catch {
+            showToast("Could not copy. Please select and copy manually.", "default");
+            return;
+          }
+        }
+        btn.textContent = "Copied!";
+        btn.classList.add("copied");
+        showToast("Copied to clipboard!", "success");
+        setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 2000);
       });
     });
   } else {
@@ -672,6 +703,13 @@ document.querySelectorAll(".feature-btn").forEach((btn) => {
       return;
     }
 
+    if (feature === "reply_comment") {
+      showView("view-reply_comment");
+      // Auto-read selected text from LinkedIn page so user never has to copy/paste
+      tryReadFromPage({ silent: true });
+      return;
+    }
+
     showView(`view-${feature}`);
 
     if (feature === "improve_headline") {
@@ -697,6 +735,49 @@ document.querySelectorAll("[data-back]").forEach((btn) => {
 
 document.querySelector("[data-back-home]")?.addEventListener("click", () => {
   showView("view-home");
+});
+
+// ── Reply to Comment: read text from LinkedIn page ────────────────────────
+
+async function tryReadFromPage({ silent = false } = {}) {
+  const statusEl = document.getElementById("read-from-page-status");
+  const btn = document.getElementById("read-from-page-btn");
+  const ta = document.getElementById("comment-text");
+
+  function setStatus(msg, isError = false) {
+    if (!statusEl) return;
+    statusEl.textContent = msg;
+    statusEl.className = `read-from-page-status${isError ? " error" : " ok"}`;
+    statusEl.hidden = !msg;
+  }
+
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id || !tab.url?.includes("linkedin.com")) {
+      if (!silent) setStatus("Open LinkedIn first, then try again.", true);
+      return;
+    }
+    if (btn) btn.textContent = "Reading…";
+    await ensureContentScript(tab.id);
+    const resp = await chrome.tabs.sendMessage(tab.id, { type: "GET_SELECTED_TEXT" });
+    if (resp?.success && resp.text) {
+      if (ta) {
+        ta.value = resp.text;
+        ta.dispatchEvent(new Event("input"));
+      }
+      setStatus("✅ Comment loaded from LinkedIn!");
+    } else if (!silent) {
+      setStatus(resp?.error || "Could not read comment. Select the comment text on LinkedIn, then click Read from LinkedIn.", true);
+    }
+  } catch (err) {
+    if (!silent) setStatus("Could not connect to LinkedIn tab.", true);
+  } finally {
+    if (btn) btn.textContent = "📋 Read from LinkedIn";
+  }
+}
+
+document.getElementById("read-from-page-btn")?.addEventListener("click", () => {
+  tryReadFromPage({ silent: false });
 });
 
 // ── Form submissions ───────────────────────────────────────────────────────
