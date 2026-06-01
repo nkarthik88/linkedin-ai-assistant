@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ProPostly — Side Panel</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body class="side-panel">
+    <!-- Onboarding overlay (shown first time only) -->
+    <div id="onboarding" class="onboarding" hidden>
+      <div class="onboarding-card">
+        <div class="onboarding-logo">🚀</div>
+        <h2>Welcome to ProPostly</h2>
+        <p>Your AI copilot for LinkedIn — generate posts, write personalized DMs, craft replies, and more.</p>
+        <ul class="onboarding-features">
+          <li><span class="of-icon">✍️</span><span><strong>Generate Post</strong> — 3 options from any topic</span></li>
+          <li><span class="of-icon">💬</span><span><strong>Personalized DM</strong> — reads profiles &amp; writes outreach</span></li>
+          <li><span class="of-icon">↩️</span><span><strong>Reply to Comment</strong> — thoughtful, professional replies</span></li>
+          <li><span class="of-icon">🎯</span><span><strong>Improve Headline</strong> — keyword-optimized rewrites</span></li>
+          <li><span class="of-icon">🚀</span><span><strong>Viral Post Rewriter</strong> — boost your post's engagement</span></li>
+        </ul>
+        <p class="onboarding-free">Free plan: <strong>10 AI generations/month</strong></p>
+        <button id="onboarding-start" class="submit-btn">Get Started →</button>
+      </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast" hidden></div>
+
+    <div class="app">
+      <header class="header">
+        <div class="header-inner">
+          <div>
+            <h1>ProPostly</h1>
+            <p>AI-powered content for your LinkedIn</p>
+          </div>
+          <button id="account-tab-btn" class="account-tab-btn" title="Account" aria-label="Account">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <section id="account-bar" class="account-bar" aria-live="polite">
+        <div class="account-bar-top">
+          <span id="tier-label" class="tier-badge">Free Tier</span>
+          <span id="usage-label" class="usage-label">Loading usage…</span>
+        </div>
+        <button type="button" id="upgrade-btn" class="upgrade-btn" hidden>
+          Unlock Unlimited — $9/month
+        </button>
+        <p id="upgrade-error" class="upgrade-error" hidden></p>
+      </section>
+
+      <main class="main">
+        <!-- Home: feature buttons -->
+        <div id="view-home" class="view active">
+          <div class="feature-grid">
+            <button class="feature-btn" data-feature="generate_post">
+              <span class="icon">✍️</span>
+              <span class="label">Generate Post</span>
+              <span class="desc">3 post options from a topic</span>
+            </button>
+            <button class="feature-btn" data-feature="personalized_dm">
+              <span class="icon">💬</span>
+              <span class="label">Personalized DM</span>
+              <span class="desc">Reads profile &amp; writes DMs</span>
+            </button>
+            <button class="feature-btn" data-feature="reply_comment">
+              <span class="icon">↩️</span>
+              <span class="label">Reply to Comment</span>
+              <span class="desc">Thoughtful comment replies</span>
+            </button>
+            <button class="feature-btn" data-feature="improve_headline">
+              <span class="icon">🎯</span>
+              <span class="label">Improve Headline</span>
+              <span class="desc">Rewrite your headline</span>
+            </button>
+            <button class="feature-btn" data-feature="viral_rewriter">
+              <span class="icon">🚀</span>
+              <span class="label">Viral Post Rewriter</span>
+              <span class="desc">Rewrite your draft for more engagement</span>
+            </button>
+            <button class="feature-btn" data-feature="deep_lead_search">
+              <span class="icon">🔎</span>
+              <span class="label">Deep Lead Search</span>
+              <span class="desc">Smart filters — only qualified leads</span>
+            </button>
+          </div>
+
+          <!-- Saved Leads CRM -->
+          <section id="saved-leads-section" class="saved-leads-section" hidden>
+            <div class="saved-leads-header">
+              <span class="saved-leads-title">📋 Saved Leads</span>
+              <span id="saved-leads-count" class="saved-leads-count">0</span>
+              <button type="button" id="export-leads" class="export-btn">⬇ CSV</button>
+            </div>
+            <div id="saved-leads-list" class="saved-leads-list"></div>
+          </section>
+        </div>
+
+        <!-- Account Page -->
+        <div id="view-account" class="view">
+          <button class="back-btn" data-back>← Back</button>
+          <div class="card account-card">
+            <div class="account-header-row">
+              <div class="account-avatar">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </div>
+              <div>
+                <div id="account-email" class="account-email">—</div>
+                <span id="account-tier-badge" class="tier-badge">Free Tier</span>
+              </div>
+            </div>
+
+            <div class="usage-section">
+              <div class="usage-section-header">
+                <span class="usage-section-label">Usage this month</span>
+                <span id="account-usage-text" class="usage-section-count">—</span>
+              </div>
+              <div class="usage-bar-bg">
+                <div id="account-usage-bar" class="usage-bar-fill" style="width:0%"></div>
+              </div>
+              <p id="account-usage-note" class="usage-note"></p>
+            </div>
+
+            <div id="account-pro-section" class="account-pro-section" hidden>
+              <div class="pro-perks">
+                <div class="pro-perk">✓ Unlimited AI generations</div>
+                <div class="pro-perk">✓ Advanced AI (smarter responses)</div>
+                <div class="pro-perk">✓ Priority support</div>
+              </div>
+              <button id="cancel-subscription-btn" class="cancel-btn">Cancel Subscription</button>
+              <p id="cancel-error" class="upgrade-error" hidden></p>
+              <p id="cancel-success" class="cancel-success" hidden>✓ Subscription cancelled. You've been moved to the free plan.</p>
+            </div>
+
+            <div id="account-free-section" class="account-free-section" hidden>
+              <button id="account-upgrade-btn" class="upgrade-btn" style="margin-top:8px;">
+                Upgrade to Pro — $9/month
+              </button>
+            </div>
+
+            <div class="account-email-edit">
+              <label for="account-email-input" style="margin-top:16px;">Email (for receipts &amp; alerts)</label>
+              <div class="email-edit-row">
+                <input type="email" id="account-email-input" placeholder="your@email.com" />
+                <button id="account-email-save" class="email-save-btn">Save</button>
+              </div>
+              <p id="account-email-status" class="email-save-status" hidden></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Generate Post -->
+        <div id="view-generate_post" class="view">
+          <button class="back-btn" data-back>← Back</button>
+          <div class="card">
+            <h2 class="form-title">Generate LinkedIn Post</h2>
+            <p class="form-hint">Enter a topic and get 3 post options tailored for LinkedIn.</p>
+            <form id="form-generate_post">
+              <label for="topic">Topic</label>
+              <input type="text" id="topic" name="topic" placeholder="e.g. lessons from my first startup" required />
+              <button type="submit" class="submit-btn">Generate 3 Posts</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Personalized DM -->
+        <div id="view-personalized_dm" class="view">
+          <button class="back-btn" data-back>← Back</button>
+          <div class="card">
+            <h2 class="form-title">Write Personalized DM</h2>
+            <p class="form-hint">Open a LinkedIn profile tab — we read name, headline, about, and posts automatically.</p>
+            <div id="profile-preview-dm" class="profile-preview" hidden></div>
+            <form id="form-personalized_dm">
+              <label for="dm-context">Extra context (optional)</label>
+              <textarea id="dm-context" name="dmContext" placeholder="Why you want to connect, shared interest, etc." rows="3"></textarea>
+              <button type="submit" class="submit-btn">Generate 3 DMs from profile</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Reply to Comment -->
+        <div id="view-reply_comment" class="view">
+          <button class="back-btn" data-back>← Back</button>
+          <div class="card">
+            <h2 class="form-title">↩️ Reply to Comment</h2>
+            <p class="form-hint">Select the comment text on LinkedIn, then click <strong>Read from LinkedIn</strong> — or paste it manually below.</p>
+            <button type="button" id="read-from-page-btn" class="read-from-page-btn">📋 Read from LinkedIn</button>
+            <p id="read-from-page-status" class="read-from-page-status" hidden></p>
+            <form id="form-reply_comment">
+              <label for="comment-text">Comment to reply to</label>
+              <textarea id="comment-text" name="commentText" placeholder="Select text on LinkedIn and click Read from LinkedIn above, or paste here..." required rows="4"></textarea>
+              <label for="original-post">Your original post (optional)</label>
+              <textarea id="original-post" name="originalComment" placeholder="Adds context so AI replies are more relevant..." rows="2"></textarea>
+              <button type="submit" class="submit-btn">⚡ Generate 3 Replies</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Improve Headline -->
+        <div id="view-improve_headline" class="view">
+          <button class="back-btn" data-back>← Back</button>
+          <div class="card">
+            <h2 class="form-title">Improve Headline</h2>
+            <p class="form-hint">Rewrite your LinkedIn headline — we'll pull it from your profile if you're on it.</p>
+            <div id="profile-preview-headline" class="profile-preview" hidden></div>
+            <form id="form-improve_headline">
+              <label for="headline-input">Current headline</label>
+              <input type="text" id="headline-input" name="headline" placeholder="Your current headline" required />
+              <button type="submit" class="submit-btn">Generate 3 Headlines</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Viral Post Rewriter -->
+        <div id="view-viral_rewriter" class="view">
+          <button class="back-btn" data-back>← Back</button>
+          <div class="card">
+            <h2 class="form-title">Viral Post Rewriter</h2>
+            <p class="form-hint">Paste your draft post and get 3 engagement-optimized versions.</p>
+            <form id="form-viral_rewriter">
+              <label for="draft-post">Draft post</label>
+              <textarea id="draft-post" name="draftPost" placeholder="Paste your draft LinkedIn post..." required rows="6"></textarea>
+              <button type="submit" class="submit-btn">Rewrite for Engagement</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Deep Lead Search -->
+        <div id="view-deep_lead_search" class="view">
+          <button class="back-btn" data-back>← Back</button>
+          <div class="card">
+            <h2 class="form-title">🔎 Deep Lead Search</h2>
+            <p class="form-hint">Enter your target filters — ProPostly searches LinkedIn and returns ONLY qualified leads that match.</p>
+            <p id="lead-counter" class="lead-counter">—</p>
+            <form id="form-deep_lead_search">
+              <label for="filter-title">Job Title</label>
+              <input type="text" id="filter-title" name="filterTitle" placeholder="e.g. CEO, Founder, CTO" />
+              <label for="filter-company">Company</label>
+              <input type="text" id="filter-company" name="filterCompany" placeholder="e.g. n8n, Stripe, startup" />
+              <label for="filter-location">Location</label>
+              <input type="text" id="filter-location" name="filterLocation" placeholder="e.g. India, USA, Hyderabad" />
+              <label for="filter-keywords">Keywords</label>
+              <input type="text" id="filter-keywords" name="filterKeywords" placeholder="e.g. SaaS, AI, automation" />
+              <button type="submit" class="submit-btn">🔍 Search Deep</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Leads Results -->
+        <div id="view-leads-results" class="view">
+          <div class="leads-results-header">
+            <button class="back-btn" id="back-to-search">← New Search</button>
+            <span id="lead-counter-results" class="lead-counter-pill"></span>
+          </div>
+          <div id="leads-celebrate" class="leads-celebrate" hidden></div>
+          <div class="leads-results-subhead">
+            <p class="results-header" id="leads-results-title">Leads found</p>
+            <span id="leads-timestamp" class="leads-timestamp"></span>
+          </div>
+          <button type="button" id="copy-all-hot" class="copy-all-hot-btn" hidden>📋 Copy All Hot DMs</button>
+          <div id="leads-container"></div>
+        </div>
+
+        <!-- Lead limit reached -->
+        <div id="view-lead-limit" class="view">
+          <div class="upgrade-prompt-card">
+            <div class="upgrade-prompt-icon">🎯</div>
+            <h2 id="lead-limit-title">Lead search limit reached</h2>
+            <p id="lead-limit-msg"></p>
+            <p id="lead-limit-reset" class="lead-limit-reset" hidden></p>
+            <button id="lead-limit-upgrade" class="submit-btn upgrade-prompt-btn-main" hidden>Upgrade to Pro — $9/month</button>
+            <button id="lead-limit-back" class="back-link-btn">← Back to home</button>
+            <p id="lead-limit-error" class="upgrade-error" hidden></p>
+          </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="view-loading" class="view">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p id="loading-text">Generating with AI…</p>
+            <p id="loading-subtext" class="loading-subtext" hidden></p>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div id="view-results" class="view">
+          <button class="back-btn" data-back-home>← New request</button>
+          <p class="results-header" id="results-title">Your options</p>
+          <div id="results-container"></div>
+        </div>
+
+        <!-- Upgrade prompt (shown when limit reached) -->
+        <div id="view-upgrade-prompt" class="view">
+          <div class="upgrade-prompt-card">
+            <div class="upgrade-prompt-icon">🔒</div>
+            <h2>You've used all 10 free generations</h2>
+            <p>Upgrade to Pro for <strong>unlimited AI generations</strong> every month — just $9/month.</p>
+            <ul class="upgrade-perks">
+              <li>✓ Unlimited posts, DMs, headlines &amp; rewrites</li>
+              <li>✓ Advanced AI (smarter responses)</li>
+              <li>✓ Cancel anytime</li>
+            </ul>
+            <button id="upgrade-prompt-btn" class="submit-btn upgrade-prompt-btn-main">Upgrade to Pro — $9/month</button>
+            <button id="upgrade-prompt-back" class="back-link-btn">← Back to home</button>
+            <p id="upgrade-prompt-error" class="upgrade-error" hidden></p>
+          </div>
+        </div>
+      </main>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>
