@@ -403,11 +403,13 @@ document.getElementById("upgrade-prompt-back")?.addEventListener("click", () => 
 // ── Profile helpers ────────────────────────────────────────────────────────
 
 async function getActiveLinkedInTab() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id || !tab.url?.includes("linkedin.com")) {
-    throw new Error("Open a LinkedIn profile page in this tab first.");
-  }
-  return tab;
+  // Check active tab in current window first
+  const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (activeTab?.id && activeTab.url?.includes("linkedin.com")) return activeTab;
+  // Side panel: currentWindow may not include the LinkedIn tab — search all windows
+  const allLinkedIn = await chrome.tabs.query({ url: "*://*.linkedin.com/*" });
+  if (allLinkedIn.length > 0) return allLinkedIn[0];
+  throw new Error("Open a LinkedIn profile page in this tab first.");
 }
 
 async function ensureContentScript(tabId) {
@@ -808,15 +810,29 @@ document.querySelectorAll(".feature-btn").forEach((btn) => {
     }
 
     if (feature === "improve_headline") {
+      const input = document.getElementById("headline-input");
+      const statusEl = document.getElementById("headline-load-status");
+      const setStatus = (msg, isError = false) => {
+        if (!statusEl) return;
+        statusEl.textContent = msg;
+        statusEl.className = `read-from-page-status${isError ? " error" : " ok"}`;
+        statusEl.hidden = !msg;
+      };
+      if (input) input.placeholder = "Reading from your profile…";
       try {
         const profileData = await getProfileDataFromPage();
         renderProfilePreview("profile-preview-headline", profileData);
-        const input = document.getElementById("headline-input");
-        if (profileData.headline && input && !input.value) {
+        if (profileData.headline && input) {
           input.value = profileData.headline;
+          input.placeholder = "Your current headline";
+          setStatus("✅ Headline loaded from your profile");
+        } else {
+          if (input) input.placeholder = "Type your current headline";
+          setStatus("Could not read headline — type it below", true);
         }
       } catch {
-        /* Optional — user can type manually */
+        if (input) input.placeholder = "Type your current headline";
+        setStatus("Go to your LinkedIn profile to auto-load", true);
       }
     }
   });
