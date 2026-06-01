@@ -816,65 +816,11 @@ document.querySelectorAll(".feature-btn").forEach((btn) => {
     }
 
     if (feature === "improve_headline") {
-      const input = document.getElementById("headline-input");
+      // Just show the view — both buttons handle their own logic
       const statusEl = document.getElementById("headline-load-status");
-      const submitBtn = document.getElementById("headline-submit-btn");
-      const setStatus = (msg, isError = false) => {
-        if (!statusEl) return;
-        statusEl.textContent = msg;
-        statusEl.className = `read-from-page-status${isError ? " error" : " ok"}`;
-        statusEl.hidden = !msg;
-      };
-      if (input) { input.value = ""; input.placeholder = "Reading from your profile…"; }
-      if (submitBtn) submitBtn.disabled = true;
-      setStatus("📖 Reading your profile…");
-      try {
-        // Query ALL active tabs across every window (side panel safe)
-        const activeTabs = await chrome.tabs.query({ active: true });
-        const allLinkedInTabs = await chrome.tabs.query({});
-        const tab =
-          activeTabs.find(t => t.url?.includes("linkedin.com/in/")) ||
-          allLinkedInTabs.find(t => t.url?.includes("linkedin.com/in/"));
-
-        if (!tab?.id) throw new Error("not on profile");
-
-        const [result] = await chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          func: () => {
-            const getText = (el) => el?.textContent?.replace(/\s+/g, " ").trim() || "";
-            // Try multiple selectors for the headline
-            const selectors = [
-              ".text-body-medium.break-words",
-              "div.text-body-medium",
-              ".pv-text-details__left-panel .text-body-medium",
-              ".ph5 .text-body-medium",
-              "[data-generated-suggestion-target] .text-body-medium",
-            ];
-            for (const sel of selectors) {
-              const el = document.querySelector(sel);
-              const text = getText(el);
-              if (text && text.length > 5 && text.length < 300) return text;
-            }
-            // Fallback: og:description often has name - headline
-            const og = document.querySelector('meta[property="og:description"]')?.content || "";
-            if (og.length > 5) return og.slice(0, 220);
-            return "";
-          },
-        });
-
-        const headline = result?.result || "";
-        if (headline) {
-          if (input) { input.value = headline; input.placeholder = "Your current headline"; }
-          setStatus("✅ Headline loaded! Edit if needed, then Generate.");
-        } else {
-          if (input) { input.placeholder = "e.g. SOC Analyst | SIEM | Incident Response"; input.focus(); }
-          setStatus("ℹ️ Paste your headline below, we'll improve it!");
-        }
-      } catch {
-        if (input) { input.placeholder = "e.g. SOC Analyst | SIEM | Incident Response"; input.focus(); }
-        setStatus("ℹ️ Paste your headline below, we'll improve it!");
-      }
-      if (submitBtn) submitBtn.disabled = false;
+      if (statusEl) statusEl.hidden = true;
+      const profilePreview = document.getElementById("profile-preview-headline");
+      if (profilePreview) profilePreview.hidden = true;
     }
   });
 });
@@ -984,20 +930,79 @@ document.getElementById("form-reply_comment")?.addEventListener("submit", (e) =>
   }));
 });
 
+// "Generate from Profile" button — reads full profile, no typing needed
+document.getElementById("headline-from-profile-btn")?.addEventListener("click", async () => {
+  const btn = document.getElementById("headline-from-profile-btn");
+  const statusEl = document.getElementById("headline-load-status");
+  const setStatus = (msg, isError = false) => {
+    if (!statusEl) return;
+    statusEl.textContent = msg;
+    statusEl.className = `read-from-page-status${isError ? " error" : " ok"}`;
+    statusEl.hidden = !msg;
+  };
+
+  const prevText = btn.textContent;
+  btn.textContent = "📖 Reading profile…";
+  btn.disabled = true;
+  setStatus("📖 Reading your LinkedIn profile…");
+
+  try {
+    const activeTabs = await chrome.tabs.query({ active: true });
+    const allTabs = await chrome.tabs.query({});
+    const tab =
+      activeTabs.find(t => t.url?.includes("linkedin.com/in/")) ||
+      allTabs.find(t => t.url?.includes("linkedin.com/in/"));
+
+    if (!tab?.id) throw new Error("Go to your LinkedIn profile page first, then try again.");
+
+    // Read full profile data via executeScript
+    const [result] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => {
+        const getText = (el) => el?.textContent?.replace(/\s+/g, " ").trim() || "";
+        const name = getText(document.querySelector("main h1")) || "";
+        const headlineEl = document.querySelector(".text-body-medium.break-words, div.text-body-medium");
+        const headline = getText(headlineEl);
+        const aboutEl = document.querySelector("#about ~ div span[aria-hidden='true'], section[id*='about'] span[aria-hidden='true']");
+        const about = getText(aboutEl).slice(0, 500);
+        const expItems = Array.from(document.querySelectorAll("li.pvs-list__paged-list-item span[aria-hidden='true']"))
+          .map(el => getText(el)).filter(Boolean).slice(0, 8);
+        return { name, headline, about, experience: expItems };
+      },
+    });
+
+    const profileData = result?.result || {};
+    if (!profileData.name && !profileData.headline) {
+      throw new Error("Could not read profile. Make sure you're on your LinkedIn profile page.");
+    }
+
+    renderProfilePreview("profile-preview-headline", profileData);
+    setStatus("✅ Profile read! Generating headlines…");
+
+    runGeneration("improve_headline", async (userId) => ({
+      userId,
+      headline: profileData.headline || "",
+      profileData,
+    }));
+
+  } catch (err) {
+    setStatus(err.message || "Go to your LinkedIn profile page first.", true);
+    btn.textContent = prevText;
+    btn.disabled = false;
+  }
+});
+
+// "Improve My Headline" form — user pastes their headline
 document.getElementById("form-improve_headline")?.addEventListener("submit", async (e) => {
   e.preventDefault();
   clearError("form-improve_headline");
   const headline = document.getElementById("headline-input")?.value.trim();
   if (!headline) {
-    showError("form-improve_headline", "Type your current headline above, then click Generate.");
+    showError("form-improve_headline", "Paste your current headline above first.");
     document.getElementById("headline-input")?.focus();
     return;
   }
-  runGeneration("improve_headline", async (userId) => {
-    let profileData = {};
-    try { profileData = await getProfileDataFromPage({ requireProfile: false }); } catch { /* headline only */ }
-    return { userId, headline, profileData };
-  });
+  runGeneration("improve_headline", async (userId) => ({ userId, headline, profileData: {} }));
 });
 
 document.getElementById("form-viral_rewriter")?.addEventListener("submit", (e) => {

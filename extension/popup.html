@@ -216,15 +216,28 @@
         <div id="view-improve_headline" class="view">
           <button class="back-btn" data-back>← Back</button>
           <div class="card">
-            <h2 class="form-title">🎯 Improve Headline</h2>
-            <p class="form-hint">ProPostly reads your full LinkedIn profile and generates 3 optimized headlines — no typing needed.</p>
+            <h2 class="form-title">🎯 Headline AI</h2>
             <div id="profile-preview-headline" class="profile-preview" hidden></div>
             <p id="headline-load-status" class="read-from-page-status" hidden></p>
-            <form id="form-improve_headline">
-              <label for="headline-input">Your current headline</label>
-              <input type="text" id="headline-input" name="headline" placeholder="Reading from your profile…" />
-              <button type="submit" class="submit-btn" id="headline-submit-btn">⚡ Generate 3 Headlines</button>
-            </form>
+
+            <!-- Option 1: Generate from profile -->
+            <div class="headline-option-block">
+              <div class="headline-option-label">✨ Auto-generate from profile</div>
+              <p class="headline-option-desc">AI reads your full LinkedIn profile and writes 3 perfect headlines — zero typing.</p>
+              <button type="button" id="headline-from-profile-btn" class="submit-btn">🚀 Generate from Profile</button>
+            </div>
+
+            <div class="headline-divider"><span>or</span></div>
+
+            <!-- Option 2: Improve existing -->
+            <div class="headline-option-block">
+              <div class="headline-option-label">✏️ Improve your current headline</div>
+              <p class="headline-option-desc">Paste your headline below — AI rewrites it into 3 better versions.</p>
+              <form id="form-improve_headline">
+                <input type="text" id="headline-input" name="headline" placeholder="e.g. SOC Analyst | SIEM | Incident Response" />
+                <button type="submit" class="submit-btn headline-improve-btn" id="headline-submit-btn">⚡ Improve My Headline</button>
+              </form>
+            </div>
           </div>
         </div>
 

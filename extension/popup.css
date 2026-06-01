@@ -1378,3 +1378,49 @@ input[type="email"] {
   cursor: pointer;
 }
 .saved-status:hover { border-color: var(--success); color: var(--success); }
+
+/* ── Headline AI two-option layout ── */
+.headline-option-block {
+  margin-bottom: 4px;
+}
+
+.headline-option-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.headline-option-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.headline-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.headline-divider::before,
+.headline-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.headline-improve-btn {
+  background: var(--white) !important;
+  color: var(--linkedin-blue) !important;
+  border: 2px solid var(--linkedin-blue) !important;
+}
+
+.headline-improve-btn:hover {
+  background: var(--linkedin-blue-light) !important;
+}
