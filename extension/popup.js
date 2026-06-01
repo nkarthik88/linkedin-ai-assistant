@@ -556,7 +556,24 @@ function displayResults(feature, options) {
   container.querySelectorAll(".copy-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const text = options[Number(btn.dataset.index)];
-      await navigator.clipboard.writeText(text);
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        // Fallback for when clipboard API is blocked (e.g. popup lost focus)
+        try {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+        } catch {
+          showToast("Could not copy — please select and copy manually", "default");
+          return;
+        }
+      }
       btn.textContent = "Copied!";
       btn.classList.add("copied");
       showToast("Copied to clipboard", "success");
