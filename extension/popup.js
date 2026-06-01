@@ -543,13 +543,16 @@ function displayResults(feature, options) {
   container.innerHTML = "";
 
   const isReply = feature === "reply_comment";
+  const isPost = feature === "generate_post";
+
+  const POST_STYLE_LABELS = ["💼 Professional", "🚀 Inspiring", "😎 Conversational"];
 
   options.forEach((text, i) => {
     const card = document.createElement("div");
     card.className = "option-card";
     const charCount = String(text).length;
     card.innerHTML = `
-      <div class="option-num">Option ${i + 1} <span class="char-count">${charCount} chars</span></div>
+      <div class="option-num">${isPost ? POST_STYLE_LABELS[i] || `Option ${i + 1}` : `Option ${i + 1}`} <span class="char-count">${charCount} chars</span></div>
       <div class="option-text">${escapeHtml(String(text))}</div>
       ${isReply
         ? `<div class="reply-actions">
@@ -636,9 +639,9 @@ function displayResults(feature, options) {
             return;
           }
         }
-        btn.textContent = "Copied!";
+        btn.textContent = "✅ Copied!";
         btn.classList.add("copied");
-        showToast("Copied to clipboard", "success");
+        showToast(isPost ? "✅ Copied! Ready to post on LinkedIn 🚀" : "Copied to clipboard!", "success");
         setTimeout(() => {
           btn.textContent = "Copy";
           btn.classList.remove("copied");
@@ -652,8 +655,18 @@ function displayResults(feature, options) {
 
 // ── Generation runner ──────────────────────────────────────────────────────
 
+const LOADING_MESSAGES = {
+  generate_post: "✍️ Writing your posts…",
+  personalized_dm: "💬 Crafting your DM…",
+  reply_comment: "↩️ Writing replies…",
+  improve_headline: "🎯 Rewriting your headline…",
+  viral_rewriter: "🚀 Boosting your post…",
+};
+
 async function runGeneration(feature, buildBody) {
   showView("view-loading");
+  const loadingText = document.getElementById("loading-text");
+  if (loadingText) loadingText.textContent = LOADING_MESSAGES[feature] || "Generating with AI…";
   try {
     const userId = await getUserId();
     const email = await getUserEmail();
@@ -711,6 +724,10 @@ document.querySelectorAll(".feature-btn").forEach((btn) => {
     }
 
     showView(`view-${feature}`);
+
+    if (feature === "generate_post") {
+      setTimeout(() => document.getElementById("topic")?.focus(), 50);
+    }
 
     if (feature === "improve_headline") {
       try {
