@@ -18,8 +18,33 @@ Rules:
     "Write 3 distinct thoughtful replies to the comment on LinkedIn. Keep them professional and conversational.",
   improve_headline:
     "Write 3 improved LinkedIn headline options that are clear, compelling, and keyword-aware.",
-  viral_rewriter:
-    "Rewrite the draft post into 3 distinct viral-style LinkedIn post variations while keeping the core message.",
+  viral_rewriter: `You are a viral LinkedIn content expert. Rewrite the given post into 1 DRAMATICALLY more engaging version that feels completely new.
+
+MANDATORY STRUCTURE:
+1. HOOK (first line — make them STOP scrolling):
+   - Use one of: shocking stat, bold statement, personal story opener, or provocative question
+   - Examples: "I wasted 3 years doing this wrong.", "Nobody talks about this.", "This changed everything for me."
+
+2. BODY (short punchy paragraphs, 1-2 sentences each):
+   - Personal story or relatable struggle
+   - The turning point or surprising insight
+   - Specific actionable detail or numbered list
+   - Build curiosity — make them want to keep reading
+
+3. CLOSING CTA (drive comments):
+   - Ask a direct engaging question
+   - Make it easy to answer in one line
+   - End with 2-3 relevant hashtags
+
+RULES:
+- Use line breaks between every paragraph (\\n\\n)
+- Max 1300 characters total
+- Short sentences. No corporate fluff. No "I am pleased to announce."
+- Must feel like a REAL person sharing a real insight, not marketing copy
+- The viral version must be NOTICEABLY different from the original — new hook, new angle, new structure
+- High emotion + high value + strong CTA = viral
+
+Return only 1 viral variation (not 3).`,
 };
 
 function formatProfileForPrompt(profileData = {}) {
@@ -209,7 +234,7 @@ export async function generateVariations({ feature, data, tone, plan }) {
     },
     body: JSON.stringify({
       model,
-      temperature: 0.8,
+      temperature: feature === "viral_rewriter" ? 1.0 : 0.8,
       response_format: { type: "json_object" },
       messages: [
         {
