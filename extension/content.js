@@ -591,42 +591,57 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           '.share-creation-state__text-editor .ql-editor[contenteditable="true"]',
           '.editor-content .ql-editor[contenteditable="true"]',
           '.share-box .ql-editor[contenteditable="true"]',
-          'div.ql-editor[contenteditable="true"][data-placeholder*="talk about"]',
+          'div.ql-editor[contenteditable="true"][data-placeholder*="talk"]',
           'div.ql-editor[contenteditable="true"][data-placeholder*="share"]',
+          'div.ql-editor[contenteditable="true"][data-placeholder*="Share"]',
           '.share-creation-state div[contenteditable="true"]',
+          // Broader fallback: any ql-editor NOT inside a comments section
+          'div.ql-editor[contenteditable="true"]',
         ];
 
         const findEditor = () => {
           for (const sel of POST_EDITOR_SELECTORS) {
             const el = document.querySelector(sel);
-            if (el) return el;
+            // Skip comment editors
+            if (el && !el.closest(".comments-comment-box, .comments-reply-box")) {
+              return el;
+            }
           }
           return null;
         };
 
         let editor = findEditor();
 
-        // If post box isn't open, click "Start a post" to open it
+        // Post box not open — click "Start a post" to open it
         if (!editor) {
           const startBtn = document.querySelector(
             '.share-box-feed-entry__trigger, ' +
             'button[aria-label="Start a post"], ' +
             '.share-box-feed-entry__top-bar, ' +
-            '[data-control-name="share.sharebox_trigger"], ' +
-            '.share-promote-surface__reshare-trigger'
+            '[data-control-name="share.sharebox_trigger"]'
           );
           if (startBtn) {
             startBtn.click();
-            // Wait for modal animation
-            await new Promise((r) => setTimeout(r, 900));
+          } else {
+            sendResponse({
+              success: false,
+              error: "Click 'Start a post' at the top of your LinkedIn feed first, then try again.",
+            });
+            return;
+          }
+
+          // Poll until the editor appears (up to 3 seconds)
+          for (let i = 0; i < 12; i++) {
+            await new Promise((r) => setTimeout(r, 250));
             editor = findEditor();
+            if (editor) break;
           }
         }
 
         if (!editor) {
           sendResponse({
             success: false,
-            error: "Could not open LinkedIn post box. Click 'Start a post' at the top of your LinkedIn feed, then try again.",
+            error: "LinkedIn post box didn't open. Try clicking 'Start a post' on LinkedIn first.",
           });
           return;
         }

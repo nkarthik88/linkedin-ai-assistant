@@ -138,16 +138,21 @@ function renderAccountStatus(status) {
 
 async function fetchAccountStatus() {
   const userId = await getUserId();
-  const res = await fetch(
-    `${API_BASE}/api/usage/status?userId=${encodeURIComponent(userId)}`
-  );
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(text || `Could not load account status (${res.status})`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6000);
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/usage/status?userId=${encodeURIComponent(userId)}`,
+      { signal: controller.signal }
+    );
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(text || `Could not load account status (${res.status})`);
+    }
+    return res.json();
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return res.json();
 }
 
 async function refreshAccountStatus() {
@@ -639,7 +644,7 @@ function displayResults(feature, options) {
           const resp = await chrome.tabs.sendMessage(tab.id, {
             type: "FILL_POST_BOX",
             text,
-          });
+          }).catch((e) => ({ success: false, error: e.message }));
           if (!resp?.success) throw new Error(resp?.error || "Could not open LinkedIn post box.");
           btn.textContent = "✅ Ready!";
           showToast("Post ready — click Post on LinkedIn! 🚀", "success");
