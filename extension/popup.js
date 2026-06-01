@@ -403,13 +403,15 @@ document.getElementById("upgrade-prompt-back")?.addEventListener("click", () => 
 // ── Profile helpers ────────────────────────────────────────────────────────
 
 async function getActiveLinkedInTab() {
-  // Check active tab in current window first
-  const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (activeTab?.id && activeTab.url?.includes("linkedin.com")) return activeTab;
-  // Side panel: currentWindow may not include the LinkedIn tab — search all windows
-  const allLinkedIn = await chrome.tabs.query({ url: "*://*.linkedin.com/*" });
-  if (allLinkedIn.length > 0) return allLinkedIn[0];
-  throw new Error("Open a LinkedIn profile page in this tab first.");
+  // Query all active tabs across every window (works from side panel too)
+  const activeTabs = await chrome.tabs.query({ active: true });
+  const activeLinkedIn = activeTabs.find(t => t.url?.includes("linkedin.com"));
+  if (activeLinkedIn) return activeLinkedIn;
+  // Fall back to any open LinkedIn tab
+  const allTabs = await chrome.tabs.query({});
+  const anyLinkedIn = allTabs.find(t => t.url?.includes("linkedin.com"));
+  if (anyLinkedIn) return anyLinkedIn;
+  throw new Error("Open a LinkedIn page in your browser first.");
 }
 
 async function ensureContentScript(tabId) {
@@ -827,10 +829,12 @@ document.querySelectorAll(".feature-btn").forEach((btn) => {
       if (submitBtn) submitBtn.disabled = true;
       setStatus("📖 Reading your profile…");
       try {
-        // Use executeScript directly — bypass content script messaging entirely
-        const tabs = await chrome.tabs.query({ url: "*://*.linkedin.com/in/*" });
-        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        const tab = (activeTab?.url?.includes("linkedin.com/in/") ? activeTab : null) || tabs[0];
+        // Query ALL active tabs across every window (side panel safe)
+        const activeTabs = await chrome.tabs.query({ active: true });
+        const allLinkedInTabs = await chrome.tabs.query({});
+        const tab =
+          activeTabs.find(t => t.url?.includes("linkedin.com/in/")) ||
+          allLinkedInTabs.find(t => t.url?.includes("linkedin.com/in/"));
 
         if (!tab?.id) throw new Error("not on profile");
 
