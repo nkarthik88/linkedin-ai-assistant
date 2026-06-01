@@ -587,25 +587,28 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === "FILL_POST_BOX") {
     (async () => {
       try {
-        const POST_EDITOR_SELECTORS = [
-          '.share-creation-state__text-editor .ql-editor[contenteditable="true"]',
-          '.editor-content .ql-editor[contenteditable="true"]',
-          '.share-box .ql-editor[contenteditable="true"]',
-          'div.ql-editor[contenteditable="true"][data-placeholder*="talk"]',
-          'div.ql-editor[contenteditable="true"][data-placeholder*="share"]',
-          'div.ql-editor[contenteditable="true"][data-placeholder*="Share"]',
-          '.share-creation-state div[contenteditable="true"]',
-          // Broader fallback: any ql-editor NOT inside a comments section
-          'div.ql-editor[contenteditable="true"]',
-        ];
+        const COMMENT_AREA = ".comments-comment-box, .comments-reply-box, .comments-comment-texteditor";
 
         const findEditor = () => {
-          for (const sel of POST_EDITOR_SELECTORS) {
+          // Specific selectors first
+          const specific = [
+            '.share-creation-state__text-editor [contenteditable="true"]',
+            '.editor-content [contenteditable="true"]',
+            '.share-box [contenteditable="true"]',
+            '.share-creation-state [contenteditable="true"]',
+            'div.ql-editor[contenteditable="true"]',
+            'div[role="textbox"][contenteditable="true"]',
+          ];
+          for (const sel of specific) {
             const el = document.querySelector(sel);
-            // Skip comment editors
-            if (el && !el.closest(".comments-comment-box, .comments-reply-box")) {
-              return el;
-            }
+            if (el && !el.closest(COMMENT_AREA)) return el;
+          }
+
+          // Broad fallback: any visible contenteditable not in a comment area
+          for (const el of document.querySelectorAll('div[contenteditable="true"]')) {
+            if (el.closest(COMMENT_AREA)) continue;
+            const r = el.getBoundingClientRect();
+            if (r.width > 100 && r.height > 30) return el;
           }
           return null;
         };
@@ -646,9 +649,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           return;
         }
 
+        // Focus and give React a moment to register it
         editor.focus();
+        editor.click();
+        await new Promise((r) => setTimeout(r, 100));
         document.execCommand("selectAll", false, null);
         document.execCommand("insertText", false, message.text);
+        // Dispatch input event so React/LinkedIn picks up the change
+        editor.dispatchEvent(new InputEvent("input", { bubbles: true }));
         editor.scrollIntoView({ behavior: "smooth", block: "center" });
         sendResponse({ success: true });
       } catch (err) {
