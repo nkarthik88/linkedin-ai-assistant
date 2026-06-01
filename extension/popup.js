@@ -584,10 +584,7 @@ function displayResults(feature, options) {
         : isPost
         ? `<button type="button" class="copy-btn" data-index="${i}">📋 Copy</button>`
         : isDM
-        ? `<div class="reply-actions">
-             <button type="button" class="copy-btn dm-copy-btn" data-index="${i}">📋 Copy DM</button>
-             <button type="button" class="open-messages-btn" data-index="${i}">✉️ Open Messages</button>
-           </div>`
+        ? `<button type="button" class="copy-btn dm-copy-btn" data-index="${i}">📋 Copy DM</button>`
         : `<button type="button" class="copy-btn" data-index="${i}">Copy</button>`}
     `;
     container.appendChild(card);
@@ -730,24 +727,6 @@ function displayResults(feature, options) {
         }, 2000);
       });
     });
-
-  // "Open Messages" button on DM cards
-  container.querySelectorAll(".open-messages-btn").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const text = options[Number(btn.dataset.index)];
-      // Copy the DM first
-      try { await navigator.clipboard.writeText(text); } catch { /* ignore */ }
-      // Open LinkedIn Messaging
-      const msgTabs = await chrome.tabs.query({ url: "*://*.linkedin.com/messaging/*" });
-      if (msgTabs.length > 0) {
-        await chrome.tabs.update(msgTabs[0].id, { active: true });
-        await chrome.windows.update(msgTabs[0].windowId, { focused: true });
-      } else {
-        await chrome.tabs.create({ url: "https://www.linkedin.com/messaging/" });
-      }
-      showToast("✅ DM copied! Find the person on LinkedIn and paste →", "success");
-    });
-  });
 
   showView("view-results");
 }
