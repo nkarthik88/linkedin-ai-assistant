@@ -138,21 +138,19 @@ function renderAccountStatus(status) {
 
 async function fetchAccountStatus() {
   const userId = await getUserId();
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 6000);
-  try {
-    const res = await fetch(
-      `${API_BASE}/api/usage/status?userId=${encodeURIComponent(userId)}`,
-      { signal: controller.signal }
-    );
+  const deadline = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("timeout")), 5000)
+  );
+  const request = fetch(
+    `${API_BASE}/api/usage/status?userId=${encodeURIComponent(userId)}`
+  ).then(async (res) => {
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      throw new Error(text || `Could not load account status (${res.status})`);
+      throw new Error(text || `Status ${res.status}`);
     }
     return res.json();
-  } finally {
-    clearTimeout(timeout);
-  }
+  });
+  return Promise.race([request, deadline]);
 }
 
 async function refreshAccountStatus() {
