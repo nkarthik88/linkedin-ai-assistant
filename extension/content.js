@@ -470,6 +470,15 @@ function extractSearchProfiles(limit = 25) {
   return results;
 }
 
+// Cache the last user selection — clicking the toolbar icon clears window.getSelection()
+// before the side panel can read it, so we must capture it proactively.
+let lastSelectedText = "";
+
+document.addEventListener("selectionchange", () => {
+  const sel = window.getSelection()?.toString()?.trim() || "";
+  if (sel.length > 5) lastSelectedText = sel;
+});
+
 // Selectors for LinkedIn's Quill comment/reply editor (contenteditable divs)
 const COMMENT_BOX_SELECTORS = [
   '.comments-comment-box__form .ql-editor[contenteditable="true"]',
@@ -537,24 +546,29 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.type === "GET_SELECTED_TEXT") {
     try {
-      // First priority: whatever the user has highlighted on the page
-      const selected = window.getSelection()?.toString()?.trim() || "";
-      if (selected.length > 5) {
-        sendResponse({ success: true, text: selected });
+      // Live selection (works when side panel was already open before selecting)
+      const live = window.getSelection()?.toString()?.trim() || "";
+      const text = live.length > 5 ? live : lastSelectedText;
+
+      if (text.length > 5) {
+        lastSelectedText = ""; // consume it so next open starts fresh
+        sendResponse({ success: true, text });
         return true;
       }
-      // Second priority: first visible comment body on the page
+
+      // Last resort: first visible comment body on the page
       for (const sel of COMMENT_TEXT_SELECTORS) {
         const el = document.querySelector(sel);
-        const text = el?.textContent?.trim() || "";
-        if (text.length > 5) {
-          sendResponse({ success: true, text });
+        const fallback = el?.textContent?.trim() || "";
+        if (fallback.length > 5) {
+          sendResponse({ success: true, text: fallback });
           return true;
         }
       }
+
       sendResponse({
         success: false,
-        error: "Select the comment text on LinkedIn first, then click Read from LinkedIn.",
+        error: "Select the comment text on LinkedIn, then click Read from LinkedIn.",
       });
     } catch (err) {
       sendResponse({ success: false, error: err.message });

@@ -705,8 +705,8 @@ document.querySelectorAll(".feature-btn").forEach((btn) => {
 
     if (feature === "reply_comment") {
       showView("view-reply_comment");
-      // Auto-read selected text from LinkedIn page so user never has to copy/paste
-      tryReadFromPage({ silent: true });
+      // Small delay so the view is visible before we update it
+      setTimeout(() => tryReadFromPage({ silent: true }), 80);
       return;
     }
 
