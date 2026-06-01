@@ -587,6 +587,15 @@ function findNearestCommentText() {
   return null;
 }
 
+// Prevent double-registration when re-injected into an already-open tab
+if (window.__propostly_registered) {
+  // Already running — just reset the profile cache so fresh data is read
+  cachedProfile = null;
+  cacheUrl = "";
+} else {
+  window.__propostly_registered = true;
+}
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === "FILL_COMMENT_REPLY") {
     try {
@@ -784,7 +793,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const profileData =
         message.refresh === true ? refreshProfileCache() : getProfileData();
 
-      if (!profileData.isProfilePage) {
+      if (!profileData.isProfilePage && !message.allowAnyPage) {
         sendResponse({
           success: false,
           error:

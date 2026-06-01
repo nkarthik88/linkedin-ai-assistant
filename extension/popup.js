@@ -424,6 +424,9 @@ async function ensureContentScript(tabId) {
     target: { tabId },
     files: ["content.js"],
   });
+
+  // Give the newly-injected script time to register its message listener
+  await new Promise((r) => setTimeout(r, 150));
 }
 
 async function getProfileDataFromPage({ refresh = false, requireProfile = true } = {}) {
@@ -440,6 +443,7 @@ async function getProfileDataFromPage({ refresh = false, requireProfile = true }
   const response = await chrome.tabs.sendMessage(tab.id, {
     type: "GET_PROFILE_DATA",
     refresh,
+    allowAnyPage: !requireProfile,
   });
 
   if (!response?.success) {
