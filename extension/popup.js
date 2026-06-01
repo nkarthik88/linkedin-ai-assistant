@@ -426,10 +426,10 @@ async function ensureContentScript(tabId) {
   });
 }
 
-async function getProfileDataFromPage({ refresh = false } = {}) {
+async function getProfileDataFromPage({ refresh = false, requireProfile = true } = {}) {
   const tab = await getActiveLinkedInTab();
 
-  if (!/\/in\/[^/?#]+/i.test(tab.url || "")) {
+  if (requireProfile && !/\/in\/[^/?#]+/i.test(tab.url || "")) {
     throw new Error(
       "Navigate to a LinkedIn profile (linkedin.com/in/username) before generating DMs."
     );
@@ -823,20 +823,20 @@ document.querySelectorAll(".feature-btn").forEach((btn) => {
       if (submitBtn) submitBtn.disabled = true;
       setStatus("📖 Reading your profile…");
       try {
-        const profileData = await getProfileDataFromPage();
+        const profileData = await getProfileDataFromPage({ requireProfile: false });
         renderProfilePreview("profile-preview-headline", profileData);
         if (profileData.headline) {
           if (input) { input.value = profileData.headline; input.placeholder = "Your current headline"; }
           setStatus("✅ Headline loaded! Edit if needed, then Generate.");
           if (submitBtn) submitBtn.disabled = false;
         } else {
-          if (input) { input.placeholder = "Type your headline here"; }
-          setStatus("⚠️ Go to your LinkedIn profile page first", true);
+          if (input) input.placeholder = "Type your headline here";
+          setStatus("ℹ️ Could not auto-read — type your headline below", true);
           if (submitBtn) submitBtn.disabled = false;
         }
       } catch {
         if (input) input.placeholder = "Type your headline here";
-        setStatus("⚠️ Go to your LinkedIn profile page first", true);
+        setStatus("ℹ️ Could not auto-read — type your headline below", true);
         if (submitBtn) submitBtn.disabled = false;
       }
     }
@@ -958,7 +958,7 @@ document.getElementById("form-improve_headline")?.addEventListener("submit", asy
   }
   runGeneration("improve_headline", async (userId) => {
     let profileData = {};
-    try { profileData = await getProfileDataFromPage(); } catch { /* use headline only */ }
+    try { profileData = await getProfileDataFromPage({ requireProfile: false }); } catch { /* use headline only */ }
     return { userId, headline, profileData };
   });
 });
