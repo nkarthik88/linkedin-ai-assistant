@@ -827,22 +827,50 @@ document.querySelectorAll(".feature-btn").forEach((btn) => {
       if (submitBtn) submitBtn.disabled = true;
       setStatus("📖 Reading your profile…");
       try {
-        const profileData = await getProfileDataFromPage({ requireProfile: false });
-        renderProfilePreview("profile-preview-headline", profileData);
-        if (profileData.headline) {
-          if (input) { input.value = profileData.headline; input.placeholder = "Your current headline"; }
+        // Use executeScript directly — bypass content script messaging entirely
+        const tabs = await chrome.tabs.query({ url: "*://*.linkedin.com/in/*" });
+        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const tab = (activeTab?.url?.includes("linkedin.com/in/") ? activeTab : null) || tabs[0];
+
+        if (!tab?.id) throw new Error("not on profile");
+
+        const [result] = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: () => {
+            const getText = (el) => el?.textContent?.replace(/\s+/g, " ").trim() || "";
+            // Try multiple selectors for the headline
+            const selectors = [
+              ".text-body-medium.break-words",
+              "div.text-body-medium",
+              ".pv-text-details__left-panel .text-body-medium",
+              ".ph5 .text-body-medium",
+              "[data-generated-suggestion-target] .text-body-medium",
+            ];
+            for (const sel of selectors) {
+              const el = document.querySelector(sel);
+              const text = getText(el);
+              if (text && text.length > 5 && text.length < 300) return text;
+            }
+            // Fallback: og:description often has name - headline
+            const og = document.querySelector('meta[property="og:description"]')?.content || "";
+            if (og.length > 5) return og.slice(0, 220);
+            return "";
+          },
+        });
+
+        const headline = result?.result || "";
+        if (headline) {
+          if (input) { input.value = headline; input.placeholder = "Your current headline"; }
           setStatus("✅ Headline loaded! Edit if needed, then Generate.");
-          if (submitBtn) submitBtn.disabled = false;
         } else {
-          if (input) input.placeholder = "Type your headline here";
-          setStatus("ℹ️ Could not auto-read — type your headline below", true);
-          if (submitBtn) submitBtn.disabled = false;
+          if (input) { input.placeholder = "e.g. SOC Analyst | SIEM | Incident Response"; input.focus(); }
+          setStatus("ℹ️ Paste your headline below, we'll improve it!");
         }
       } catch {
-        if (input) input.placeholder = "Type your headline here";
-        setStatus("ℹ️ Could not auto-read — type your headline below", true);
-        if (submitBtn) submitBtn.disabled = false;
+        if (input) { input.placeholder = "e.g. SOC Analyst | SIEM | Incident Response"; input.focus(); }
+        setStatus("ℹ️ Paste your headline below, we'll improve it!");
       }
+      if (submitBtn) submitBtn.disabled = false;
     }
   });
 });
@@ -957,12 +985,13 @@ document.getElementById("form-improve_headline")?.addEventListener("submit", asy
   clearError("form-improve_headline");
   const headline = document.getElementById("headline-input")?.value.trim();
   if (!headline) {
-    showError("form-improve_headline", "Go to your LinkedIn profile page first, then try again.");
+    showError("form-improve_headline", "Type your current headline above, then click Generate.");
+    document.getElementById("headline-input")?.focus();
     return;
   }
   runGeneration("improve_headline", async (userId) => {
     let profileData = {};
-    try { profileData = await getProfileDataFromPage({ requireProfile: false }); } catch { /* use headline only */ }
+    try { profileData = await getProfileDataFromPage({ requireProfile: false }); } catch { /* headline only */ }
     return { userId, headline, profileData };
   });
 });
