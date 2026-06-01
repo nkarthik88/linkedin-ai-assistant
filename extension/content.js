@@ -470,7 +470,65 @@ function extractSearchProfiles(limit = 25) {
   return results;
 }
 
+// Selectors for LinkedIn's Quill comment/reply editor (contenteditable divs)
+const COMMENT_BOX_SELECTORS = [
+  '.comments-comment-box__form .ql-editor[contenteditable="true"]',
+  '.comments-reply-box .ql-editor[contenteditable="true"]',
+  '.feed-shared-update-v2__comments-container .ql-editor[contenteditable="true"]',
+  'div.ql-editor[contenteditable="true"]',
+  'div[contenteditable="true"][data-placeholder*="omment"]',
+  'div[contenteditable="true"][data-placeholder*="eply"]',
+  'div[contenteditable="true"][aria-label*="omment"]',
+  'div[contenteditable="true"][aria-label*="eply"]',
+];
+
+function findCommentBox() {
+  // Prefer whichever comment box is already focused
+  const active = document.activeElement;
+  if (
+    active &&
+    active.contentEditable === "true" &&
+    active.getAttribute("role") !== "textbox" === false || active.tagName !== "INPUT"
+  ) {
+    const inCommentArea = active.closest(
+      ".comments-comment-box, .comments-reply-box, .feed-shared-update-v2__comments-container, .comments-comment-texteditor"
+    );
+    if (inCommentArea) return active;
+  }
+
+  for (const sel of COMMENT_BOX_SELECTORS) {
+    const el = document.querySelector(sel);
+    if (el) return el;
+  }
+  return null;
+}
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.type === "FILL_COMMENT_REPLY") {
+    try {
+      const box = findCommentBox();
+      if (!box) {
+        sendResponse({
+          success: false,
+          error:
+            "No comment box found. Click the Reply button under the LinkedIn comment first, then try again.",
+        });
+        return true;
+      }
+
+      box.focus();
+      // Select all existing text and replace with the reply
+      document.execCommand("selectAll", false, null);
+      document.execCommand("insertText", false, message.text);
+      box.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      sendResponse({ success: true });
+    } catch (err) {
+      sendResponse({ success: false, error: err.message });
+    }
+    return true;
+  }
+
   if (message.type === "PING") {
     sendResponse({ success: true, isProfilePage: isLinkedInProfilePage() });
     return true;

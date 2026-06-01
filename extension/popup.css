@@ -519,6 +519,28 @@ input[type="email"] {
   color: var(--white);
 }
 
+.post-reply-btn {
+  margin-top: 10px;
+  padding: 7px 16px;
+  background: var(--linkedin-blue);
+  color: var(--white);
+  border: none;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.post-reply-btn:hover:not(:disabled) {
+  background: #0a5fa3;
+}
+
+.post-reply-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 /* ── Profile preview ── */
 .profile-preview {
   background: var(--linkedin-blue-light);

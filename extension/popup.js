@@ -542,47 +542,79 @@ function displayResults(feature, options) {
   title.textContent = FEATURE_LABELS[feature] || "Your options";
   container.innerHTML = "";
 
+  const isReply = feature === "reply_comment";
+
   options.forEach((text, i) => {
     const card = document.createElement("div");
     card.className = "option-card";
     card.innerHTML = `
       <div class="option-num">Option ${i + 1}</div>
       <div class="option-text">${escapeHtml(String(text))}</div>
-      <button type="button" class="copy-btn" data-index="${i}">Copy</button>
+      ${isReply
+        ? `<button type="button" class="post-reply-btn" data-index="${i}">↩ Post Reply</button>`
+        : `<button type="button" class="copy-btn" data-index="${i}">Copy</button>`}
     `;
     container.appendChild(card);
   });
 
-  container.querySelectorAll(".copy-btn").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const text = options[Number(btn.dataset.index)];
-      try {
-        await navigator.clipboard.writeText(text);
-      } catch {
-        // Fallback for when clipboard API is blocked (e.g. popup lost focus)
+  if (isReply) {
+    container.querySelectorAll(".post-reply-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const text = options[Number(btn.dataset.index)];
+        const prevText = btn.textContent;
+        btn.textContent = "Posting…";
+        btn.disabled = true;
         try {
-          const ta = document.createElement("textarea");
-          ta.value = text;
-          ta.style.position = "fixed";
-          ta.style.opacity = "0";
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand("copy");
-          document.body.removeChild(ta);
-        } catch {
-          showToast("Could not copy — please select and copy manually", "default");
-          return;
+          const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+          if (!tab?.id || !tab.url?.includes("linkedin.com")) {
+            throw new Error("Switch to your LinkedIn tab first, then try again.");
+          }
+          await ensureContentScript(tab.id);
+          const resp = await chrome.tabs.sendMessage(tab.id, {
+            type: "FILL_COMMENT_REPLY",
+            text,
+          });
+          if (!resp?.success) throw new Error(resp?.error || "Could not fill comment box.");
+          btn.textContent = "✅ Posted!";
+          showToast("Reply ready — click Post on LinkedIn!", "success");
+        } catch (err) {
+          showToast(err.message, "default");
+          btn.textContent = prevText;
+          btn.disabled = false;
         }
-      }
-      btn.textContent = "Copied!";
-      btn.classList.add("copied");
-      showToast("Copied to clipboard", "success");
-      setTimeout(() => {
-        btn.textContent = "Copy";
-        btn.classList.remove("copied");
-      }, 2000);
+      });
     });
-  });
+  } else {
+    container.querySelectorAll(".copy-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const text = options[Number(btn.dataset.index)];
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {
+          try {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.opacity = "0";
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+          } catch {
+            showToast("Could not copy — please select and copy manually", "default");
+            return;
+          }
+        }
+        btn.textContent = "Copied!";
+        btn.classList.add("copied");
+        showToast("Copied to clipboard", "success");
+        setTimeout(() => {
+          btn.textContent = "Copy";
+          btn.classList.remove("copied");
+        }, 2000);
+      });
+    });
+  }
 
   showView("view-results");
 }
