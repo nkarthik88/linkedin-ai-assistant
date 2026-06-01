@@ -584,6 +584,65 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === "FILL_POST_BOX") {
+    (async () => {
+      try {
+        const POST_EDITOR_SELECTORS = [
+          '.share-creation-state__text-editor .ql-editor[contenteditable="true"]',
+          '.editor-content .ql-editor[contenteditable="true"]',
+          '.share-box .ql-editor[contenteditable="true"]',
+          'div.ql-editor[contenteditable="true"][data-placeholder*="talk about"]',
+          'div.ql-editor[contenteditable="true"][data-placeholder*="share"]',
+          '.share-creation-state div[contenteditable="true"]',
+        ];
+
+        const findEditor = () => {
+          for (const sel of POST_EDITOR_SELECTORS) {
+            const el = document.querySelector(sel);
+            if (el) return el;
+          }
+          return null;
+        };
+
+        let editor = findEditor();
+
+        // If post box isn't open, click "Start a post" to open it
+        if (!editor) {
+          const startBtn = document.querySelector(
+            '.share-box-feed-entry__trigger, ' +
+            'button[aria-label="Start a post"], ' +
+            '.share-box-feed-entry__top-bar, ' +
+            '[data-control-name="share.sharebox_trigger"], ' +
+            '.share-promote-surface__reshare-trigger'
+          );
+          if (startBtn) {
+            startBtn.click();
+            // Wait for modal animation
+            await new Promise((r) => setTimeout(r, 900));
+            editor = findEditor();
+          }
+        }
+
+        if (!editor) {
+          sendResponse({
+            success: false,
+            error: "Could not open LinkedIn post box. Click 'Start a post' at the top of your LinkedIn feed, then try again.",
+          });
+          return;
+        }
+
+        editor.focus();
+        document.execCommand("selectAll", false, null);
+        document.execCommand("insertText", false, message.text);
+        editor.scrollIntoView({ behavior: "smooth", block: "center" });
+        sendResponse({ success: true });
+      } catch (err) {
+        sendResponse({ success: false, error: err.message });
+      }
+    })();
+    return true;
+  }
+
   if (message.type === "GET_SELECTED_TEXT") {
     try {
       // Priority 1: live selection

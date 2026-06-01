@@ -559,6 +559,11 @@ function displayResults(feature, options) {
              <button type="button" class="post-reply-btn" data-index="${i}">↩ Post Reply</button>
              <button type="button" class="copy-btn copy-reply-btn" data-index="${i}">Copy</button>
            </div>`
+        : isPost
+        ? `<div class="reply-actions">
+             <button type="button" class="post-to-linkedin-btn" data-index="${i}">📤 Post to LinkedIn</button>
+             <button type="button" class="copy-btn" data-index="${i}">Copy</button>
+           </div>`
         : `<button type="button" class="copy-btn" data-index="${i}">Copy</button>`}
     `;
     container.appendChild(card);
@@ -618,7 +623,36 @@ function displayResults(feature, options) {
         setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 2000);
       });
     });
-  } else {
+  if (isPost) {
+    container.querySelectorAll(".post-to-linkedin-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const text = options[Number(btn.dataset.index)];
+        const prevText = btn.textContent;
+        btn.textContent = "Opening…";
+        btn.disabled = true;
+        try {
+          const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+          if (!tab?.id || !tab.url?.includes("linkedin.com")) {
+            throw new Error("Switch to your LinkedIn tab first, then try again.");
+          }
+          await ensureContentScript(tab.id);
+          const resp = await chrome.tabs.sendMessage(tab.id, {
+            type: "FILL_POST_BOX",
+            text,
+          });
+          if (!resp?.success) throw new Error(resp?.error || "Could not open LinkedIn post box.");
+          btn.textContent = "✅ Ready!";
+          showToast("Post ready — click Post on LinkedIn! 🚀", "success");
+        } catch (err) {
+          showToast(err.message, "default");
+          btn.textContent = prevText;
+          btn.disabled = false;
+        }
+      });
+    });
+  }
+
+  if (!isReply && !isPost) {
     container.querySelectorAll(".copy-btn").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const text = options[Number(btn.dataset.index)];

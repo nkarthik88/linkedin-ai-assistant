@@ -568,6 +568,29 @@ input[type="email"] {
   cursor: default;
 }
 
+.post-to-linkedin-btn {
+  margin-top: 0;
+  flex: 1;
+  padding: 7px 16px;
+  background: var(--linkedin-blue);
+  color: var(--white);
+  border: none;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.post-to-linkedin-btn:hover:not(:disabled) {
+  background: #0a5fa3;
+}
+
+.post-to-linkedin-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 /* ── Reply to Comment: Read from page button ── */
 .read-from-page-btn {
   display: block;
