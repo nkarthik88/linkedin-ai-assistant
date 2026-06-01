@@ -626,6 +626,8 @@ function displayResults(feature, options) {
         setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 2000);
       });
     });
+  }
+
   if (isPost) {
     container.querySelectorAll(".post-to-linkedin-btn").forEach((btn) => {
       btn.addEventListener("click", async () => {
