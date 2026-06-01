@@ -518,6 +518,50 @@ const COMMENT_TEXT_SELECTORS = [
   ".comment__main-content",
 ];
 
+function findNearestCommentText() {
+  // Strategy 1: if a reply box is open, find the comment it belongs to
+  const replyBox = findCommentBox();
+  if (replyBox) {
+    const container = replyBox.closest(
+      ".comments-comment-item, .comments-reply-item, " +
+      ".feed-shared-update-v2__comments-container, " +
+      ".social-details-social-activity"
+    );
+    if (container) {
+      const textEl = container.querySelector(
+        ".comments-comment__main-content, " +
+        ".feed-shared-comment__main-content, " +
+        ".comments-comment-item__main-content, " +
+        ".comments-comment-item__main-content span[dir='ltr'], " +
+        "span[dir='ltr']"
+      );
+      const text = textEl?.textContent?.trim();
+      if (text && text.length > 5) return text;
+    }
+  }
+
+  // Strategy 2: first comment visible inside the viewport
+  for (const sel of COMMENT_TEXT_SELECTORS) {
+    const els = document.querySelectorAll(sel);
+    for (const el of els) {
+      const rect = el.getBoundingClientRect();
+      if (rect.top >= 0 && rect.bottom <= window.innerHeight) {
+        const text = el.textContent?.trim();
+        if (text && text.length > 5) return text;
+      }
+    }
+  }
+
+  // Strategy 3: first comment anywhere on page
+  for (const sel of COMMENT_TEXT_SELECTORS) {
+    const el = document.querySelector(sel);
+    const text = el?.textContent?.trim();
+    if (text && text.length > 5) return text;
+  }
+
+  return null;
+}
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === "FILL_COMMENT_REPLY") {
     try {
@@ -546,29 +590,31 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.type === "GET_SELECTED_TEXT") {
     try {
-      // Live selection (works when side panel was already open before selecting)
+      // Priority 1: live selection
       const live = window.getSelection()?.toString()?.trim() || "";
-      const text = live.length > 5 ? live : lastSelectedText;
+      if (live.length > 5) {
+        sendResponse({ success: true, text: live });
+        return true;
+      }
 
-      if (text.length > 5) {
-        lastSelectedText = ""; // consume it so next open starts fresh
+      // Priority 2: cached selection (captured before toolbar click cleared it)
+      if (lastSelectedText.length > 5) {
+        const text = lastSelectedText;
+        lastSelectedText = "";
         sendResponse({ success: true, text });
         return true;
       }
 
-      // Last resort: first visible comment body on the page
-      for (const sel of COMMENT_TEXT_SELECTORS) {
-        const el = document.querySelector(sel);
-        const fallback = el?.textContent?.trim() || "";
-        if (fallback.length > 5) {
-          sendResponse({ success: true, text: fallback });
-          return true;
-        }
+      // Priority 3: smart page scan — no selection required
+      const nearest = findNearestCommentText();
+      if (nearest) {
+        sendResponse({ success: true, text: nearest });
+        return true;
       }
 
       sendResponse({
         success: false,
-        error: "Select the comment text on LinkedIn, then click Read from LinkedIn.",
+        error: "No comments found on this page. Navigate to a LinkedIn post with comments.",
       });
     } catch (err) {
       sendResponse({ success: false, error: err.message });
