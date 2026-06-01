@@ -1390,6 +1390,30 @@ function displayLeads(leads, opts = {}) {
   getSavedLeads().then((saved) => {
     const savedKeys = new Set(saved.map(leadKey));
     renderLeadCards(visibleLeads, container, false, savedKeys, leads);
+
+    // Next Steps CTA bar at the bottom
+    const existingCta = document.getElementById("leads-next-steps");
+    if (existingCta) existingCta.remove();
+    if (leads.length > 0) {
+      const cta = document.createElement("div");
+      cta.id = "leads-next-steps";
+      cta.className = "leads-next-steps";
+      cta.innerHTML = `
+        <div class="leads-next-label">Next steps →</div>
+        <div class="leads-next-actions">
+          ${hotCount > 0 ? `<button type="button" id="next-copy-hot" class="next-step-btn hot-step">📋 Copy All Hot DMs (${hotCount})</button>` : ""}
+          <button type="button" id="next-export-csv" class="next-step-btn">⬇ Export CSV</button>
+        </div>
+      `;
+      container.appendChild(cta);
+
+      cta.querySelector("#next-export-csv")?.addEventListener("click", () => {
+        document.getElementById("export-leads")?.click();
+      });
+      cta.querySelector("#next-copy-hot")?.addEventListener("click", () => {
+        document.getElementById("copy-all-hot")?.click();
+      });
+    }
   });
 
   showView("view-leads-results");
@@ -1421,13 +1445,15 @@ function renderLeadCards(leadsToShow, container, appendMode = false, savedKeys =
         </div>
         <span class="quality-badge ${q.cls}">${q.icon} ${q.label}</span>
       </div>
-      ${lead.reason ? `<div class="lead-reason">${escapeHtml(lead.reason)}</div>` : ""}
-      <div class="lead-dm-label">Personalized DM</div>
-      <div class="lead-dm">${escapeHtml(lead.dm || "")}</div>
+      ${lead.reason ? `<div class="lead-reason">💡 ${escapeHtml(lead.reason)}</div>` : ""}
+      <details class="lead-dm-details">
+        <summary class="lead-dm-label">💬 Personalized DM <span class="lead-dm-toggle">▾</span></summary>
+        <div class="lead-dm">${escapeHtml(lead.dm || "")}</div>
+      </details>
       <div class="lead-actions">
-        <button type="button" class="copy-btn lead-copy" data-index="${i}">Copy DM</button>
+        <button type="button" class="copy-btn lead-copy" data-index="${i}">📋 Copy DM</button>
         ${lead.url ? `<button type="button" class="lead-view" data-url="${escapeHtml(lead.url)}">View Profile →</button>` : ""}
-        <button type="button" class="lead-save${isSaved ? " saved" : ""}" data-index="${i}">${isSaved ? "★ Saved" : "☆ Save Lead"}</button>
+        <button type="button" class="lead-save${isSaved ? " saved" : ""}" data-index="${i}">${isSaved ? "★ Saved" : "☆ Save"}</button>
       </div>
     `;
     container.appendChild(card);
@@ -1461,7 +1487,14 @@ function renderLeadCards(leadsToShow, container, appendMode = false, savedKeys =
       if (ok) {
         btn.textContent = "★ Saved";
         btn.classList.add("saved");
-        showToast("Lead saved", "success");
+        const hotLeads = leads.filter(l => l.quality === "hot");
+        const savedCount = container.querySelectorAll(".lead-save.saved").length;
+        const hotTotal = hotLeads.length;
+        const msg = hotTotal > 0
+          ? `⭐ Saved! (${savedCount}/${hotTotal} hot leads saved)`
+          : "⭐ Lead saved!";
+        showToast(msg, "success");
+        renderLeadCounter();
       }
     });
   });

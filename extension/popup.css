@@ -1499,3 +1499,64 @@ input[type="email"] {
   text-align: center;
   padding: 6px 0;
 }
+
+/* ── Lead card DM collapsible ── */
+.lead-dm-details {
+  margin: 6px 0 4px;
+}
+.lead-dm-details summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--linkedin-blue);
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.lead-dm-details summary::-webkit-details-marker { display: none; }
+.lead-dm-details[open] .lead-dm-toggle { transform: rotate(180deg); display: inline-block; }
+.lead-dm-toggle { transition: transform .15s; }
+
+/* ── Leads next steps CTA ── */
+.leads-next-steps {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--linkedin-blue-light);
+  border-radius: var(--radius);
+  border: 1px solid #c8dff5;
+}
+.leads-next-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--linkedin-blue);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 8px;
+}
+.leads-next-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.next-step-btn {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  background: var(--white);
+  color: var(--linkedin-blue);
+  border: 1.5px solid var(--linkedin-blue);
+  transition: background .15s;
+}
+.next-step-btn:hover { background: var(--linkedin-blue-light); }
+.next-step-btn.hot-step {
+  background: #fff3ee;
+  border-color: #ff6b35;
+  color: #ff6b35;
+}
+.next-step-btn.hot-step:hover { background: #ffe8dc; }
