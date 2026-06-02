@@ -2,7 +2,7 @@
 export const FREE_TIER_LIMIT = 10;
 
 /** Monthly "Find Leads" search caps — tracked separately from generations. */
-export const LEAD_FREE_LIMIT = 2;
+export const LEAD_FREE_LIMIT = 10;
 export const LEAD_PRO_LIMIT = 50;
 
 export function getLeadLimitForPlan(plan) {

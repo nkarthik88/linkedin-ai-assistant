@@ -260,7 +260,7 @@ export async function consumeLeadSearch(userId) {
     const err = new Error(
       account.plan === "pro" || account.plan === "plus"
         ? "You've used all 50 lead searches this month. Resets next month."
-        : "You've used all 2 free lead searches this month. Upgrade to Pro for 50/month."
+        : "You've used all 10 free lead searches this month. Upgrade to Pro for 50/month."
     );
     err.statusCode = 402;
     err.leadLimit = true;

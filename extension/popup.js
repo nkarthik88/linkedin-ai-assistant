@@ -1101,7 +1101,7 @@ function showLeadLimit() {
   if (msg) {
     msg.textContent = isPro
       ? `You've used all ${limit} lead searches this month.`
-      : "You've used all 2 free lead searches this month. Upgrade to Pro for 50 searches/month.";
+      : "You've used all 10 free lead searches this month. Upgrade to Pro for 50 searches/month.";
   }
 
   const resetsOn = formatResetDate(accountStatus?.resets_on);
