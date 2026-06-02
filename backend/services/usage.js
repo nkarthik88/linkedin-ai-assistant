@@ -4,6 +4,7 @@ import {
   FREE_TIER_LIMIT,
   getLimitForPlan,
   getLeadLimitForPlan,
+  getFeatureLimitForPlan,
   normalizePlan,
 } from "../constants/plans.js";
 
@@ -73,6 +74,7 @@ async function maybeResetUsage(row, table) {
     .update({
       usage_this_month: 0,
       quota_reset_at: nextQuotaReset(),
+      feature_usage: {},
     })
     .eq("id", row.id)
     .select("*")
@@ -97,7 +99,7 @@ async function getAuthUserRow(userId) {
   const { data, error } = await supabaseAdmin
     .from("users")
     .select(
-      "id, email, is_pro, plan, usage_this_month, usage_limit, quota_reset_at"
+      "id, email, is_pro, plan, usage_this_month, usage_limit, quota_reset_at, feature_usage"
     )
     .eq("id", userId)
     .maybeSingle();
@@ -109,7 +111,7 @@ async function getAuthUserRow(userId) {
 async function getExtensionAccount(userId) {
   const { data, error } = await supabaseAdmin
     .from("extension_accounts")
-    .select("id, plan, email, usage_this_month, usage_limit, quota_reset_at")
+    .select("id, plan, email, usage_this_month, usage_limit, quota_reset_at, feature_usage")
     .eq("id", userId)
     .maybeSingle();
 
@@ -155,6 +157,7 @@ export async function resolveAccount(userId) {
       limit,
       quotaResetAt: authUser.quota_reset_at || null,
       remainingCredits: Math.max(0, limit - usedThisMonth),
+      featureUsage: authUser.feature_usage ?? {},
     });
   }
 
@@ -177,6 +180,7 @@ export async function resolveAccount(userId) {
     limit,
     quotaResetAt: ext.quota_reset_at || null,
     remainingCredits: Math.max(0, limit - usedThisMonth),
+    featureUsage: ext.feature_usage ?? {},
   });
 }
 
@@ -204,6 +208,21 @@ export async function getAccountStatus(userId) {
 
   const remaining = Math.max(0, account.limit - account.usedThisMonth);
 
+  // Build per-feature usage summary
+  const featureUsage = account.featureUsage ?? {};
+  const TRACKED_FEATURES = ["generate_post", "personalized_dm", "reply_comment", "improve_headline", "viral_rewriter"];
+  const feature_usage = {};
+  for (const f of TRACKED_FEATURES) {
+    const used = featureUsage[f] ?? 0;
+    const limit = isPro ? null : getFeatureLimitForPlan(f, account.plan);
+    feature_usage[f] = {
+      used,
+      limit,
+      remaining: limit === null ? null : Math.max(0, limit - used),
+      unlimited: isPro,
+    };
+  }
+
   return {
     isPro,
     isOwner: Boolean(account.isOwner),
@@ -217,6 +236,7 @@ export async function getAccountStatus(userId) {
     lead_searches_limit: account.leadSearchLimit,
     lead_searches_remaining: account.leadSearchesRemaining,
     resets_on: account.quotaResetAt || null,
+    feature_usage,
   };
 }
 
@@ -244,6 +264,58 @@ export async function consumeCredit(userId) {
     usedThisMonth: newUsage,
     remainingCredits: Math.max(0, account.limit - newUsage),
   };
+}
+
+/**
+ * Consume one use of a specific feature. Pro accounts are unlimited.
+ * Falls back to the shared credit pool if the feature is unknown.
+ */
+export async function consumeFeatureCredit(userId, feature) {
+  const account = await resolveAccount(userId);
+
+  // Pro / owner → unlimited, just return account state
+  if (account.isOwner || account.plan === "pro" || account.plan === "plus") {
+    return { ...account, featureRemaining: null };
+  }
+
+  const featureUsage = account.featureUsage ?? {};
+  const used = featureUsage[feature] ?? 0;
+  const limit = getFeatureLimitForPlan(feature, account.plan);
+
+  if (limit !== null && used >= limit) {
+    const err = new Error(
+      `You've used all ${limit} free ${featureLabel(feature)} this month. Upgrade to Pro for unlimited.`
+    );
+    err.statusCode = 402;
+    err.featureLimit = true;
+    err.feature = feature;
+    err.limit = limit;
+    throw err;
+  }
+
+  const newUsed = used + 1;
+  const updatedFeatureUsage = { ...featureUsage, [feature]: newUsed };
+
+  const { error } = await supabaseAdmin
+    .from(account.source)
+    .update({ feature_usage: updatedFeatureUsage })
+    .eq("id", userId);
+
+  if (error) throw error;
+
+  const remaining = limit === null ? null : Math.max(0, limit - newUsed);
+  return { ...account, featureUsage: updatedFeatureUsage, featureRemaining: remaining };
+}
+
+function featureLabel(feature) {
+  const labels = {
+    generate_post: "post generations",
+    personalized_dm: "DM generations",
+    reply_comment: "reply generations",
+    improve_headline: "headline generations",
+    viral_rewriter: "viral rewrites",
+  };
+  return labels[feature] ?? "generations";
 }
 
 /**

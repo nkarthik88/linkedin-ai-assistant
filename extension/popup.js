@@ -134,6 +134,40 @@ function renderAccountStatus(status) {
   }
 
   setUpgradeError("");
+  renderFeatureCounters(status);
+}
+
+function renderFeatureCounters(status) {
+  const isPro = Boolean(status?.isPro);
+  const featureUsage = status?.feature_usage || {};
+  const FEATURE_NAMES = ["generate_post", "personalized_dm", "reply_comment", "improve_headline"];
+
+  FEATURE_NAMES.forEach((feature) => {
+    const btn = document.querySelector(`.feature-btn[data-feature="${feature}"]`);
+    if (!btn) return;
+
+    let counterEl = btn.querySelector(".feature-usage-counter");
+    if (!counterEl) {
+      counterEl = document.createElement("span");
+      counterEl.className = "feature-usage-counter";
+      btn.appendChild(counterEl);
+    }
+
+    if (isPro) {
+      counterEl.textContent = "Unlimited";
+      counterEl.className = "feature-usage-counter unlimited";
+    } else {
+      const info = featureUsage[feature];
+      if (info) {
+        const { used, limit, remaining } = info;
+        counterEl.textContent = `${used}/${limit} used · ${remaining} left`;
+        counterEl.className = `feature-usage-counter${remaining === 0 ? " exhausted" : ""}`;
+      } else {
+        counterEl.textContent = "0/10 used · 10 left";
+        counterEl.className = "feature-usage-counter";
+      }
+    }
+  });
 }
 
 async function fetchAccountStatus() {
@@ -501,7 +535,20 @@ async function callApi(body) {
   });
 
   if (res.status === 402) {
-    // Usage limit reached — show upgrade prompt
+    // Usage limit reached — show upgrade prompt with context
+    let limitMsg = "";
+    try {
+      const errData = await res.json();
+      limitMsg = errData.error || "";
+    } catch { /* ignore */ }
+    const titleEl = document.getElementById("upgrade-prompt-title");
+    const descEl = document.getElementById("upgrade-prompt-desc");
+    if (titleEl) titleEl.textContent = "You've reached your free limit";
+    if (descEl) {
+      descEl.innerHTML = limitMsg
+        ? `${escapeHtml(limitMsg)}<br><br>Upgrade to Pro for <strong>unlimited AI generations</strong> — just $9/month.`
+        : `Upgrade to Pro for <strong>unlimited AI generations</strong> every month — just $9/month.`;
+    }
     showView("view-upgrade-prompt");
     throw new Error("__LIMIT_REACHED__");
   }
@@ -527,17 +574,35 @@ async function callApi(body) {
     throw new Error("No options returned. Please try again.");
   }
 
-  if (typeof data.remainingCredits === "number" && accountStatus && !accountStatus.isPro) {
-    const updatedStatus = {
-      ...accountStatus,
-      remaining: data.remainingCredits,
-      usedThisMonth: (accountStatus.limit ?? 10) - data.remainingCredits,
-    };
-    renderAccountStatus(updatedStatus);
-    accountStatus = updatedStatus;
+  if (accountStatus && !accountStatus.isPro) {
+    // Update per-feature counter from response
+    const feature = body?.feature;
+    if (feature && typeof data.featureRemaining === "number" && accountStatus.feature_usage) {
+      const fi = accountStatus.feature_usage[feature];
+      if (fi) {
+        const newUsed = fi.used + 1;
+        const updatedStatus = {
+          ...accountStatus,
+          feature_usage: {
+            ...accountStatus.feature_usage,
+            [feature]: { ...fi, used: newUsed, remaining: data.featureRemaining },
+          },
+        };
+        renderAccountStatus(updatedStatus);
+        accountStatus = updatedStatus;
 
-    if (data.remainingCredits === 0) {
-      showToast("You've used your last free generation — consider upgrading!", "default");
+        if (data.featureRemaining === 0) {
+          showToast("You've used all free generations for this feature — upgrade for unlimited!", "default");
+        }
+      }
+    } else if (typeof data.remainingCredits === "number") {
+      const updatedStatus = {
+        ...accountStatus,
+        remaining: data.remainingCredits,
+        usedThisMonth: (accountStatus.limit ?? 10) - data.remainingCredits,
+      };
+      renderAccountStatus(updatedStatus);
+      accountStatus = updatedStatus;
     }
   }
 
@@ -1198,7 +1263,7 @@ function showLeadLimit() {
   if (msg) {
     msg.textContent = isPro
       ? `You've used all ${limit} lead searches this month.`
-      : "You've used all 10 free lead searches this month. Upgrade to Pro for 50 searches/month.";
+      : "You've used all 5 free lead searches this month. Upgrade to Pro for 50 searches/month.";
   }
 
   const resetsOn = formatResetDate(accountStatus?.resets_on);

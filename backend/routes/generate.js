@@ -2,7 +2,7 @@ import { Router } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { generateVariations, qualifyLeads } from "../services/openrouter.js";
 import {
-  consumeCredit,
+  consumeFeatureCredit,
   consumeLeadSearch,
   logLeadSearchEvent,
 } from "../services/usage.js";
@@ -31,7 +31,7 @@ router.post(
     }
 
     const data = buildDataPayload(req.body);
-    const account = await consumeCredit(userId);
+    const account = await consumeFeatureCredit(userId, feature);
     const variations = await generateVariations({
       feature,
       data,
@@ -42,9 +42,10 @@ router.post(
     // Fire-and-forget emails (never block the response)
     const email = req.body.email || req.body.customerEmail || account.email || null;
     if (email) {
-      if (account.usedThisMonth === 1) {
+      const featureUsed = (account.featureUsage?.[feature] ?? 0);
+      if (featureUsed === 1 && account.usedThisMonth === 0) {
         sendWelcomeEmail(email).catch(() => {});
-      } else if (account.remainingCredits === 2) {
+      } else if (account.featureRemaining === 2) {
         sendUsageWarningEmail(email, { remaining: 2, limit: account.limit }).catch(() => {});
       }
     }
@@ -53,7 +54,8 @@ router.post(
       variations,
       options: variations,
       remainingCredits: account.remainingCredits,
-      limitReached: account.remainingCredits === 0,
+      featureRemaining: account.featureRemaining,
+      limitReached: account.featureRemaining === 0,
     });
   })
 );

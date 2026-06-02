@@ -347,6 +347,22 @@ body.side-panel .option-text {
   grid-column: 1 / -1;
 }
 
+.feature-usage-counter {
+  font-size: 10px;
+  color: var(--text-secondary);
+  line-height: 1.2;
+  margin-top: 1px;
+}
+
+.feature-usage-counter.exhausted {
+  color: var(--error, #e63757);
+  font-weight: 600;
+}
+
+.feature-usage-counter.unlimited {
+  color: var(--linkedin-blue);
+}
+
 /* ── Back button ── */
 .back-btn {
   display: inline-flex;
