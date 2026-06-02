@@ -18,43 +18,23 @@ Rules:
     "Write 3 distinct thoughtful replies to the comment on LinkedIn. Keep them professional and conversational.",
   improve_headline:
     "Write 3 improved LinkedIn headline options that are clear, compelling, and keyword-aware.",
-  viral_rewriter: `You are a viral LinkedIn ghostwriter. Your job is to transform a normal post into a story-driven post that gets thousands of likes.
+  viral_rewriter: `You are a viral LinkedIn ghostwriter. Transform the input post into ONE complete story-driven viral post.
 
-THE VIRAL FORMULA (use this exact structure):
+THE VIRAL FORMULA — write ALL 6 sections, separated by blank lines:
 
-1. CONFLICT HOOK (1 line — stops the scroll):
-   Start with personal conflict, near-failure, or shocking moment.
-   Examples: "I almost got fired for this.", "Nobody warned me.", "This nearly destroyed my reputation."
+1. CONFLICT HOOK (1 line): Personal conflict or shocking moment. "I almost got fired for this." / "Nobody warned me."
+2. EMOTIONAL STAKES (2-3 lines): What was at risk? Show the human cost. Make readers think "I've been there."
+3. TURNING POINT (1-2 lines): "But then something changed." "Here's what nobody tells you."
+4. TRANSFORMATION + PROOF (3-5 lines): Before → After with real specifics. Numbers if possible.
+5. INSIGHT / LESSON (3-5 lines as numbered list): 2-3 specific, actionable takeaways.
+6. STRONG CTA (1-2 lines): Question that makes people want to comment. End with 2-3 hashtags.
 
-2. EMOTIONAL STAKES (2-3 lines):
-   What was at risk? Show the struggle, the fear, the real human cost.
-   Make the reader feel: "I've been there too."
-
-3. TURNING POINT (1-2 lines):
-   The moment everything shifted. "But then something changed." "Here's what nobody tells you."
-
-4. TRANSFORMATION + PROOF (3-5 lines):
-   Before → After. Show REAL results with numbers if possible.
-   "Productivity jumped 40%." "The same people who complained now ask for more."
-   Make it believable and specific.
-
-5. INSIGHT / LESSON (2-4 lines, can use numbered list):
-   The 1-3 things learned. Give actual value. Be specific, not vague.
-
-6. STRONG CTA (1-2 lines):
-   Ask a direct question that makes people WANT to share their story.
-   End with 2-3 hashtags.
-
-STRICT RULES:
-- Every paragraph separated by blank line (\\n\\n)
-- Max 1400 characters
-- First word of post must create tension or curiosity — NEVER start with "I" followed by a boring statement
-- No corporate language. No "leverage", "synergy", "excited to share"
-- Must feel like a real person went through something real
-- The viral version must be COMPLETELY different from the original — different hook, different angle, story-driven
-- If original has no personal story, INVENT a plausible one based on the topic
-
-Return JSON: {"variations": ["<the one viral post>"]}`,
+RULES:
+- Write the COMPLETE post — all 6 sections, ~800-1400 characters total
+- Every section separated by a blank line
+- NEVER start with "I" + boring statement. Open with tension or curiosity
+- No corporate buzzwords. Real, human voice
+- Completely different hook and angle from the original`,
 };
 
 function formatProfileForPrompt(profileData = {}) {
@@ -244,7 +224,8 @@ export async function generateVariations({ feature, data, tone, plan }) {
     },
     body: JSON.stringify({
       model,
-      temperature: feature === "viral_rewriter" ? 1.0 : 0.8,
+      temperature: feature === "viral_rewriter" ? 0.9 : 0.8,
+      max_tokens: feature === "viral_rewriter" ? 700 : 1200,
       response_format: { type: "json_object" },
       messages: [
         {
