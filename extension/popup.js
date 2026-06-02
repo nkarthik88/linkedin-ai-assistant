@@ -1586,6 +1586,17 @@ function filtersToDescription(filters) {
 
 async function runDeepLeadSearch(filters) {
   clearError("form-deep_lead_search");
+
+  // Client-side pre-check: if we already know the limit is hit, show immediately
+  if (
+    accountStatus &&
+    typeof accountStatus.lead_searches_remaining === "number" &&
+    accountStatus.lead_searches_remaining <= 0
+  ) {
+    showLeadLimit();
+    return;
+  }
+
   showView("view-loading");
   setLoading("🔍 Searching LinkedIn…", "Opening results in background");
 

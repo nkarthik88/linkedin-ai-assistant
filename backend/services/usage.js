@@ -31,7 +31,7 @@ async function getLeadSearchesUsed(table, id) {
 
 async function withLeadUsage(account) {
   const used = await getLeadSearchesUsed(account.source, account.id);
-  const limit = account.isOwner ? OWNER_LIMIT : getLeadLimitForPlan(account.plan);
+  const limit = getLeadLimitForPlan(account.plan);
   return {
     ...account,
     leadTrackable: used !== null,
