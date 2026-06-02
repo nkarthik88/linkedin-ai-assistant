@@ -225,7 +225,7 @@ export async function generateVariations({ feature, data, tone, plan }) {
     body: JSON.stringify({
       model,
       temperature: feature === "viral_rewriter" ? 0.9 : 0.8,
-      max_tokens: feature === "viral_rewriter" ? 700 : 1200,
+      max_tokens: feature === "viral_rewriter" ? 1000 : 1200,
       response_format: { type: "json_object" },
       messages: [
         {
@@ -233,10 +233,12 @@ export async function generateVariations({ feature, data, tone, plan }) {
           content: feature === "viral_rewriter"
             ? `${systemInstruction}
 
-Respond with JSON only. The variations array must contain exactly 1 element — the complete viral post:
-{"variations":["<full viral post here>"]}
-
-Write the ENTIRE post in that single string. No markdown fences.`
+CRITICAL OUTPUT RULES:
+- Respond with JSON only: {"variations":["<your complete viral post>"]}
+- The array contains ONE string — the full viral post
+- That string MUST include ALL 6 sections (hook, stakes, turning point, transformation, lessons, CTA)
+- Minimum length: 600 characters. If your response is under 600 chars you have failed
+- Do NOT write 2 or 3 variations. ONE post only. No markdown fences.`
             : `${systemInstruction}
 
 Respond with JSON only, in this exact shape:
@@ -285,10 +287,16 @@ Each variation must be a complete, ready-to-use string. No markdown fences.`,
     throw err;
   }
 
-  const strings = variations
+  let strings = variations
     .slice(0, 3)
     .map((v) => String(v).trim())
     .filter(Boolean);
+
+  // Viral rewriter: model sometimes ignores the "1 variation" instruction and
+  // returns 3 short ones. Always surface the longest (most complete) version first.
+  if (feature === "viral_rewriter" && strings.length > 1) {
+    strings = [...strings].sort((a, b) => b.length - a.length);
+  }
 
   while (strings.length < 3 && strings.length > 0) {
     strings.push(strings[strings.length - 1]);
