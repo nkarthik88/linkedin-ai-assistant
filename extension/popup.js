@@ -1253,27 +1253,45 @@ document.getElementById("headline-from-profile-btn")?.addEventListener("click", 
     statusEl.className = `read-from-page-status${isError ? " error" : " ok"}`;
     statusEl.hidden = !msg;
   };
+  const showManualFallback = () => {
+    setStatus("❌ Couldn't read profile. Type your headline below and use \"Improve My Headline\" instead.", true);
+    document.getElementById("headline-input")?.focus();
+  };
 
   const prevText = btn.textContent;
   btn.textContent = "📖 Reading profile…";
   btn.disabled = true;
   setStatus("📖 Reading your LinkedIn profile…");
 
+  // Progress hint after 2s so the user knows we're still working
+  const hintTimer = setTimeout(() => setStatus("⏳ Still reading — make sure you're on your LinkedIn profile page…"), 2000);
+
   try {
-    // Use the same getProfileDataFromPage that powers the DM feature — already proven to work
-    const profileData = await getProfileDataFromPage({ refresh: true, requireProfile: false });
+    // getProfileDataForDM never throws — uses retry with 0/1200/2500ms delays
+    const { profileData, warning } = await getProfileDataForDM();
+    clearTimeout(hintTimer);
+
+    if (!profileData.name && !profileData.headline) {
+      // No usable profile data — show manual fallback
+      btn.textContent = prevText;
+      btn.disabled = false;
+      showManualFallback();
+      return;
+    }
 
     renderProfilePreview("profile-preview-headline", profileData);
     setStatus("✅ Profile read! Generating headlines…");
 
-    runGeneration("improve_headline", async (userId) => ({
+    await runGeneration("improve_headline", async (userId) => ({
       userId,
       headline: profileData.headline || "",
       profileData,
     }));
 
   } catch (err) {
-    setStatus(err.message || "Go to your LinkedIn profile page first.", true);
+    clearTimeout(hintTimer);
+    showManualFallback();
+  } finally {
     btn.textContent = prevText;
     btn.disabled = false;
   }
