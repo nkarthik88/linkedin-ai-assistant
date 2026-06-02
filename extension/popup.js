@@ -1982,6 +1982,16 @@ function filtersToDescription(filters) {
   return parts.join("\n") || "(not specified)";
 }
 
+function buildNoResultsSuggestions(filters) {
+  const tips = [];
+  if (filters.keywords) tips.push(`Remove the "${filters.keywords}" keyword — it may be too specific`);
+  if (filters.location) tips.push(`Try a broader location like a country instead of a city`);
+  if (filters.title) tips.push(`Try a more general title (e.g. "Engineer" instead of "Senior Software Engineer")`);
+  if (filters.company) tips.push(`Remove the company filter to search across all companies`);
+  tips.push("Make sure you're logged into LinkedIn before searching");
+  return tips;
+}
+
 async function runDeepLeadSearch(filters) {
   clearError("form-deep_lead_search");
 
@@ -1996,20 +2006,42 @@ async function runDeepLeadSearch(filters) {
   }
 
   showView("view-loading");
-  setLoading("🔍 Searching LinkedIn…", "Opening results in background");
+  setLoading("🔍 Searching LinkedIn…", "Opening results in a background tab");
 
   try {
-    const searchUrl = buildLinkedInSearchUrl(filters);
-    const profiles = await autoSearchProfiles(searchUrl);
+    let profiles = [];
+    let usedFilters = filters;
 
-    if (!profiles || profiles.length === 0) {
-      throw new Error(
-        "Couldn't find any profiles. Make sure you're logged into LinkedIn and try again."
-      );
+    // First attempt: full filters
+    profiles = await autoSearchProfiles(buildLinkedInSearchUrl(filters));
+
+    // If no results AND keywords were set, auto-retry without keywords (free — no credit consumed)
+    if ((!profiles || profiles.length === 0) && filters.keywords) {
+      setLoading("🔍 Broadening search…", "Trying without keyword filter");
+      const broaderFilters = { ...filters, keywords: "" };
+      profiles = await autoSearchProfiles(buildLinkedInSearchUrl(broaderFilters));
+      if (profiles?.length > 0) {
+        usedFilters = broaderFilters; // qualify against the broader set
+      }
     }
 
-    const targetDescription = filtersToDescription(filters);
-    await qualifyAndShow(profiles, targetDescription, filters);
+    if (!profiles || profiles.length === 0) {
+      const suggestions = buildNoResultsSuggestions(filters);
+      // Show structured error using the lead search error element directly
+      showView("view-deep_lead_search");
+      renderLeadCounter();
+      const container = document.getElementById("form-deep_lead_search");
+      let err = container?.querySelector(".error-msg");
+      if (!err && container) { err = document.createElement("div"); err.className = "error-msg"; container.prepend(err); }
+      if (err) {
+        err.innerHTML = `<strong>No profiles found for this search.</strong><br><br>Try these adjustments:<ol style="margin:6px 0 0 16px;padding:0">${suggestions.map(s => `<li style="margin-bottom:4px">${escapeHtml(s)}</li>`).join("")}</ol>`;
+        err.hidden = false;
+      }
+      return;
+    }
+
+    const targetDescription = filtersToDescription(usedFilters);
+    await qualifyAndShow(profiles, targetDescription, usedFilters);
   } catch (err) {
     showView("view-deep_lead_search");
     showError("form-deep_lead_search", err.message);
