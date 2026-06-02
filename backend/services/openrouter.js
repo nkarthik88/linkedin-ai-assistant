@@ -230,7 +230,14 @@ export async function generateVariations({ feature, data, tone, plan }) {
       messages: [
         {
           role: "system",
-          content: `${systemInstruction}
+          content: feature === "viral_rewriter"
+            ? `${systemInstruction}
+
+Respond with JSON only. The variations array must contain exactly 1 element — the complete viral post:
+{"variations":["<full viral post here>"]}
+
+Write the ENTIRE post in that single string. No markdown fences.`
+            : `${systemInstruction}
 
 Respond with JSON only, in this exact shape:
 {"variations":["variation 1","variation 2","variation 3"]}
