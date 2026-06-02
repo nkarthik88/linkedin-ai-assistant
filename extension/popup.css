@@ -1040,6 +1040,142 @@ input[type="email"] {
 
 /* ── Find Leads ───────────────────────────────────────────────────────────── */
 
+/* Progress wrap replaces old .lead-counter block */
+.lead-progress-wrap {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+.lead-progress-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.lead-counter-inline {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.lead-counter-inline.limit-hit { color: var(--error); }
+.lead-engagement-msg {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--linkedin-blue);
+}
+.lead-progress-bar-track {
+  height: 5px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+.lead-progress-bar {
+  height: 100%;
+  background: var(--linkedin-blue);
+  border-radius: 99px;
+  transition: width .4s ease;
+}
+.lead-progress-bar.bar-warning { background: #f59e0b; }
+.lead-progress-bar.bar-danger  { background: var(--error); }
+.lead-reset-date {
+  font-size: 10px;
+  color: var(--text-muted, var(--text-secondary));
+  opacity: .75;
+}
+
+/* Templates */
+.lead-templates-section { margin-bottom: 14px; }
+.lead-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  margin-bottom: 7px;
+}
+.lead-templates-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.lead-template-btn {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 7px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.3;
+  transition: border-color .15s, background .15s;
+}
+.lead-template-btn:hover {
+  border-color: var(--linkedin-blue);
+  background: #eff6ff;
+  color: var(--linkedin-blue);
+}
+
+/* Search history */
+.lead-history-section { margin-top: 14px; }
+.lead-history-list { display: flex; flex-direction: column; gap: 5px; }
+.lead-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.lead-history-item:hover { border-color: var(--linkedin-blue); }
+.lead-history-filters {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lead-history-meta {
+  font-size: 10px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Insights bar in results */
+.lead-insights {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius);
+  padding: 7px 10px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #166534;
+}
+.lead-insights-timing {
+  color: var(--text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Keep old .lead-counter for any old references */
 .lead-counter {
   font-size: 12px;
   font-weight: 600;

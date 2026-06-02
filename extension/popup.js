@@ -1059,22 +1059,119 @@ const LEAD_QUALITY = {
 };
 
 function renderLeadCounter() {
-  const els = [
-    document.getElementById("lead-counter"),
-    document.getElementById("lead-counter-results"),
-  ];
+  // Results-view pill (unchanged)
+  const pill = document.getElementById("lead-counter-results");
   const s = accountStatus;
-  let text = "Lead searches available";
-  if (s && typeof s.lead_searches_remaining === "number") {
-    const used = s.lead_searches_used ?? 0;
-    const limit = s.lead_searches_limit ?? 2;
-    text = `${used}/${limit} lead searches used · ${s.lead_searches_remaining} remaining`;
+  if (pill) {
+    if (s && typeof s.lead_searches_remaining === "number") {
+      const used = s.lead_searches_used ?? 0;
+      const limit = s.lead_searches_limit ?? 10;
+      pill.textContent = `🔎 ${used}/${limit} searches used`;
+      pill.style.color = s.lead_searches_remaining === 0 ? "var(--error)" : "";
+    } else {
+      pill.textContent = "";
+    }
   }
-  els.forEach((el) => {
-    if (!el) return;
-    el.textContent = text;
-    el.style.color =
-      s && s.lead_searches_remaining === 0 ? "var(--error)" : "";
+
+  // New progress-bar UI
+  const counterEl = document.getElementById("lead-counter");
+  const barEl = document.getElementById("lead-progress-bar");
+  const engagEl = document.getElementById("lead-engagement-msg");
+  const resetEl = document.getElementById("lead-reset-date");
+
+  if (!s || typeof s.lead_searches_remaining !== "number") {
+    if (counterEl) counterEl.textContent = "Lead searches available";
+    return;
+  }
+
+  const used = s.lead_searches_used ?? 0;
+  const limit = s.lead_searches_limit ?? 10;
+  const remaining = s.lead_searches_remaining;
+  const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+  const isPro = Boolean(s.isPro);
+
+  if (counterEl) {
+    counterEl.textContent = `🔎 ${used}/${limit} searches used · ${remaining} remaining`;
+    counterEl.classList.toggle("limit-hit", remaining === 0);
+  }
+
+  if (barEl) {
+    barEl.style.width = `${pct}%`;
+    barEl.className = "lead-progress-bar" +
+      (pct >= 100 ? " bar-danger" : pct >= 80 ? " bar-warning" : "");
+  }
+
+  if (engagEl) {
+    if (remaining === 0) {
+      engagEl.textContent = isPro ? "Monthly limit reached" : "Upgrade for 50 searches →";
+    } else if (!isPro && used >= Math.floor(limit * 0.8)) {
+      engagEl.textContent = `🎯 ${remaining} left — upgrade for 50/month!`;
+    } else if (!isPro && used >= Math.floor(limit * 0.5)) {
+      engagEl.textContent = "🔥 You're halfway there!";
+    } else {
+      engagEl.textContent = "";
+    }
+  }
+
+  if (resetEl && s.resets_on) {
+    const date = formatResetDate(s.resets_on);
+    resetEl.textContent = date ? `Resets ${date}` : "";
+  }
+}
+
+// ── Search History ────────────────────────────────────────────────────────────
+
+async function getSearchHistory() {
+  const { leadSearchHistory } = await chrome.storage.local.get("leadSearchHistory");
+  return Array.isArray(leadSearchHistory) ? leadSearchHistory : [];
+}
+
+async function saveSearchHistory(filters, leadsCount, hotCount) {
+  const history = await getSearchHistory();
+  const parts = [filters.title, filters.company, filters.location, filters.keywords]
+    .filter(Boolean).join(" · ");
+  const entry = { filters, leadsCount, hotCount, label: parts, ts: Date.now() };
+  // dedupe by label (keep newest)
+  const deduped = history.filter((h) => h.label !== parts);
+  const next = [entry, ...deduped].slice(0, 10);
+  await chrome.storage.local.set({ leadSearchHistory: next });
+}
+
+function filtersLabel(filters) {
+  return [filters.title, filters.company, filters.location, filters.keywords]
+    .filter(Boolean).join(" · ") || "(any)";
+}
+
+async function renderSearchHistory() {
+  const section = document.getElementById("lead-history-section");
+  const list = document.getElementById("lead-history-list");
+  if (!section || !list) return;
+
+  const history = await getSearchHistory();
+  if (history.length === 0) { section.hidden = true; return; }
+
+  section.hidden = false;
+  list.innerHTML = "";
+  history.slice(0, 5).forEach((entry) => {
+    const item = document.createElement("div");
+    item.className = "lead-history-item";
+    const ago = relativeTime(entry.ts);
+    const meta = entry.leadsCount != null
+      ? `${entry.hotCount ?? 0}🔥 · ${ago}`
+      : ago;
+    item.innerHTML = `
+      <span class="lead-history-filters" title="${escapeHtml(entry.label)}">${escapeHtml(entry.label)}</span>
+      <span class="lead-history-meta">${escapeHtml(meta)}</span>
+    `;
+    item.addEventListener("click", () => {
+      const f = entry.filters;
+      const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ""; };
+      setVal("filter-title", f.title);
+      setVal("filter-company", f.company);
+      setVal("filter-location", f.location);
+      setVal("filter-keywords", f.keywords);
+    });
+    list.appendChild(item);
   });
 }
 
@@ -1093,7 +1190,7 @@ function formatResetDate(iso) {
 
 function showLeadLimit() {
   const isPro = Boolean(accountStatus?.isPro);
-  const limit = accountStatus?.lead_searches_limit ?? (isPro ? 50 : 2);
+  const limit = accountStatus?.lead_searches_limit ?? (isPro ? 50 : 10);
   const msg = document.getElementById("lead-limit-msg");
   const resetEl = document.getElementById("lead-limit-reset");
   const upBtn = document.getElementById("lead-limit-upgrade");
@@ -1526,6 +1623,7 @@ async function qualifyAndShow(profiles, targetDescription, filters = null) {
     "Qualifying leads with AI"
   );
 
+  const searchStart = Date.now();
   const userId = await getUserId();
   const res = await fetch(API_URL_LEADS, {
     method: "POST",
@@ -1554,12 +1652,36 @@ async function qualifyAndShow(profiles, targetDescription, filters = null) {
   }
 
   if (typeof data.leadSearchesRemaining === "number" && accountStatus) {
-    const limit = data.leadSearchLimit ?? accountStatus.lead_searches_limit ?? 2;
+    const limit = data.leadSearchLimit ?? accountStatus.lead_searches_limit ?? 10;
     accountStatus.lead_searches_limit = limit;
     accountStatus.lead_searches_remaining = data.leadSearchesRemaining;
     accountStatus.lead_searches_used = Math.max(0, limit - data.leadSearchesRemaining);
   }
   renderLeadCounter();
+
+  // Search insights
+  const elapsed = Math.round((Date.now() - searchStart) / 1000);
+  const hotCount  = leads.filter((l) => l.quality === "hot").length;
+  const warmCount = leads.filter((l) => l.quality === "warm").length;
+  const coldCount = leads.filter((l) => l.quality === "cold").length;
+  const insightsEl = document.getElementById("lead-insights");
+  const breakdownEl = document.getElementById("lead-insights-breakdown");
+  const timingEl = document.getElementById("lead-insights-timing");
+  if (insightsEl && breakdownEl && timingEl) {
+    const parts = [];
+    if (hotCount)  parts.push(`🔥 ${hotCount} Hot`);
+    if (warmCount) parts.push(`⚡ ${warmCount} Warm`);
+    if (coldCount) parts.push(`❄️ ${coldCount} Cold`);
+    breakdownEl.textContent = parts.join("  ·  ") || `${leads.length} leads`;
+    timingEl.textContent = `⚡ ${elapsed}s`;
+    insightsEl.hidden = false;
+  }
+
+  // Save to search history
+  if (filters) {
+    await saveSearchHistory(filters, leads.length, hotCount);
+    renderSearchHistory();
+  }
 
   const ts = Date.now();
   await persistLeadResults(leads, targetDescription);
@@ -1638,8 +1760,11 @@ document.getElementById("form-deep_lead_search")?.addEventListener("submit", (e)
 // "New Search" — clear persisted results and start fresh.
 document.getElementById("back-to-search")?.addEventListener("click", async () => {
   await clearLeadResults();
+  const insightsEl = document.getElementById("lead-insights");
+  if (insightsEl) insightsEl.hidden = true;
   showView("view-deep_lead_search");
   renderLeadCounter();
+  renderSearchHistory();
 });
 
 document.getElementById("copy-all-hot")?.addEventListener("click", async () => {
@@ -1656,9 +1781,25 @@ document.getElementById("copy-all-hot")?.addEventListener("click", async () => {
 
 document.getElementById("export-leads")?.addEventListener("click", exportLeadsCSV);
 
+function wireTemplateButtons() {
+  document.querySelectorAll(".lead-template-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ""; };
+      setVal("filter-title",    btn.dataset.title);
+      setVal("filter-company",  btn.dataset.company);
+      setVal("filter-location", btn.dataset.location);
+      setVal("filter-keywords", btn.dataset.keywords);
+      // Auto-submit
+      document.getElementById("form-deep_lead_search")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+  });
+}
+
 async function openDeepLeadSearch() {
   renderLeadCounter();
   refreshAccountStatus();
+  wireTemplateButtons();
+  renderSearchHistory();
   const cached = await getLeadResults();
   if (cached?.leads?.length) {
     displayLeads(cached.leads, { ts: cached.ts });

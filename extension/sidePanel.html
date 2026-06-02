@@ -255,8 +255,31 @@
           <button class="back-btn" data-back>← Back</button>
           <div class="card">
             <h2 class="form-title">🔎 Deep Lead Search</h2>
-            <p class="form-hint">Enter your target filters — ProPostly searches LinkedIn and returns ONLY qualified leads that match.</p>
-            <p id="lead-counter" class="lead-counter">—</p>
+            <p class="form-hint">Searches LinkedIn and returns ONLY qualified leads that match your filters.</p>
+
+            <!-- Usage progress bar -->
+            <div id="lead-progress-wrap" class="lead-progress-wrap">
+              <div class="lead-progress-top">
+                <span id="lead-counter" class="lead-counter-inline">—</span>
+                <span id="lead-engagement-msg" class="lead-engagement-msg"></span>
+              </div>
+              <div class="lead-progress-bar-track">
+                <div id="lead-progress-bar" class="lead-progress-bar" style="width:0%"></div>
+              </div>
+              <div id="lead-reset-date" class="lead-reset-date"></div>
+            </div>
+
+            <!-- Quick Templates -->
+            <div class="lead-templates-section">
+              <div class="lead-section-label">⚡ Quick Start</div>
+              <div class="lead-templates-grid">
+                <button type="button" class="lead-template-btn" data-title="CEO" data-company="startup" data-location="India" data-keywords="SaaS">🏢 CEOs · Startups · India</button>
+                <button type="button" class="lead-template-btn" data-title="Product Manager" data-company="fintech" data-location="" data-keywords="payment SaaS">💼 PMs · Fintech</button>
+                <button type="button" class="lead-template-btn" data-title="Founder" data-company="startup" data-location="India" data-keywords="AI">🤖 AI Founders · India</button>
+                <button type="button" class="lead-template-btn" data-title="Investor" data-company="" data-location="India" data-keywords="venture capital">💰 VCs &amp; Investors</button>
+              </div>
+            </div>
+
             <form id="form-deep_lead_search">
               <label for="filter-title">Job Title</label>
               <input type="text" id="filter-title" name="filterTitle" placeholder="e.g. CEO, Founder, CTO" />
@@ -268,6 +291,12 @@
               <input type="text" id="filter-keywords" name="filterKeywords" placeholder="e.g. SaaS, AI, automation" />
               <button type="submit" class="submit-btn">🔍 Search Deep</button>
             </form>
+
+            <!-- Recent Searches -->
+            <div id="lead-history-section" class="lead-history-section" hidden>
+              <div class="lead-section-label">🕐 Recent Searches</div>
+              <div id="lead-history-list" class="lead-history-list"></div>
+            </div>
           </div>
         </div>
 
@@ -276,6 +305,11 @@
           <div class="leads-results-header">
             <button class="back-btn" id="back-to-search">← New Search</button>
             <span id="lead-counter-results" class="lead-counter-pill"></span>
+          </div>
+          <!-- Search insights bar -->
+          <div id="lead-insights" class="lead-insights" hidden>
+            <span id="lead-insights-breakdown"></span>
+            <span id="lead-insights-timing" class="lead-insights-timing"></span>
           </div>
           <div id="leads-celebrate" class="leads-celebrate" hidden></div>
           <div class="leads-results-subhead">
