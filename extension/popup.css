@@ -1819,7 +1819,17 @@ input[type="email"] {
   font-size: 12px;
   color: var(--error);
   text-align: center;
-  padding: 6px 0;
+  padding: 8px 10px;
+  background: #fff5f5;
+  border-radius: 6px;
+  border: 1px solid #fecaca;
+  line-height: 1.5;
+}
+
+.viral-fallback {
+  color: var(--text-secondary);
+  background: var(--bg);
+  border-color: var(--border);
 }
 
 /* ── Lead card DM collapsible ── */

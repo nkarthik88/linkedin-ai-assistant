@@ -869,15 +869,22 @@ function displayResults(feature, options) {
   // 🔥 Make it Viral button
   if (isPost) {
     container.querySelectorAll(".viral-btn").forEach((btn) => {
-      btn.addEventListener("click", async () => {
+      let viralAttempts = 0;
+      const MAX_VIRAL_ATTEMPTS = 3;
+
+      async function runViral() {
         const i = Number(btn.dataset.index);
         const originalText = options[i];
         const resultBox = document.getElementById(`viral-result-${i}`);
-        const prevLabel = btn.textContent;
+        viralAttempts++;
 
-        btn.textContent = "🔥 Making it viral…";
+        const attemptLabel = viralAttempts > 1 ? ` (attempt ${viralAttempts}/${MAX_VIRAL_ATTEMPTS})` : "";
+        btn.textContent = `🔥 Making it viral…${attemptLabel}`;
         btn.disabled = true;
-        if (resultBox) { resultBox.hidden = false; resultBox.innerHTML = `<div class="viral-loading">🔥 Rewriting for maximum engagement…</div>`; }
+        if (resultBox) {
+          resultBox.hidden = false;
+          resultBox.innerHTML = `<div class="viral-loading">🔥 Rewriting for maximum engagement… ⏳ May take 10–20 seconds</div>`;
+        }
 
         try {
           const userId = await getUserId();
@@ -889,6 +896,9 @@ function displayResults(feature, options) {
             draftPost: originalText,
           });
           const viralText = viralOptions[0];
+
+          // Reset attempt counter on success so "Redo Viral" can retry fresh
+          viralAttempts = 0;
 
           resultBox.innerHTML = `
             <div class="viral-label">🔥 Viral Version</div>
@@ -914,14 +924,38 @@ function displayResults(feature, options) {
           btn.textContent = "🔄 Redo Viral";
           btn.disabled = false;
           showToast("🔥 Viral version ready!", "success");
+
         } catch (err) {
-          if (err.message !== "__LIMIT_REACHED__") {
-            if (resultBox) resultBox.innerHTML = `<div class="viral-error">Could not rewrite. Try again.</div>`;
-            btn.textContent = prevLabel;
+          if (err.message === "__LIMIT_REACHED__") return;
+
+          if (viralAttempts < MAX_VIRAL_ATTEMPTS) {
+            // Show retry option
+            const retryLabel = viralAttempts === MAX_VIRAL_ATTEMPTS - 1 ? "🔄 Retry (last attempt)" : "🔄 Retry Viral";
+            btn.textContent = retryLabel;
             btn.disabled = false;
+            if (resultBox) {
+              resultBox.hidden = false;
+              resultBox.innerHTML = `<div class="viral-error">❌ Failed to make viral — click Retry to try again</div>`;
+            }
+            showToast("❌ Viral generation failed — tap Retry", "default");
+          } else {
+            // 3 failures — show fallback
+            btn.textContent = "Use original instead";
+            btn.disabled = true;
+            if (resultBox) {
+              resultBox.hidden = false;
+              resultBox.innerHTML = `
+                <div class="viral-error viral-fallback">
+                  ❌ Couldn't generate viral version after 3 attempts.<br>
+                  No worries — the original post above is great! 📋 Copy it and post.
+                </div>`;
+            }
+            showToast("Viral failed 3× — use the original post", "default");
           }
         }
-      });
+      }
+
+      btn.addEventListener("click", runViral);
     });
   }
 
