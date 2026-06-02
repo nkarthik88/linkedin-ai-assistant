@@ -574,6 +574,27 @@ async function getProfileDataFromPage({ refresh = false, requireProfile = true }
   return response.profileData;
 }
 
+// Like getProfileDataFromPage but never throws — returns { profileData, warning }
+async function getProfileDataForDM() {
+  try {
+    const tab = await getActiveLinkedInTab();
+    if (!/\/in\/[^/?#]+/i.test(tab.url || "")) {
+      return { profileData: {}, warning: "Navigate to a LinkedIn profile (linkedin.com/in/username) first." };
+    }
+    await ensureContentScript(tab.id);
+    const response = await chrome.tabs.sendMessage(tab.id, { type: "GET_PROFILE_DATA", refresh: true });
+    if (response?.profileData && (response.profileData.name || response.profileData.headline)) {
+      return { profileData: response.profileData, warning: null };
+    }
+    return {
+      profileData: response?.profileData || {},
+      warning: response?.error || "Profile details couldn't be read — paste them manually below.",
+    };
+  } catch (err) {
+    return { profileData: {}, warning: err.message };
+  }
+}
+
 function renderProfilePreview(elId, profileData) {
   const el = document.getElementById(elId);
   if (!el) return;
@@ -1043,17 +1064,20 @@ document.querySelectorAll(".feature-btn").forEach((btn) => {
 
     if (feature === "personalized_dm") {
       showView("view-loading");
-      try {
-        const profileData = await getProfileDataFromPage({ refresh: true });
-        showView("view-personalized_dm");
+      const { profileData, warning } = await getProfileDataForDM();
+      showView("view-personalized_dm");
+      const previewEl = document.getElementById("profile-preview-dm");
+      if (profileData.name || profileData.headline) {
         renderProfilePreview("profile-preview-dm", profileData);
-      } catch (err) {
-        showView("view-personalized_dm");
-        const el = document.getElementById("profile-preview-dm");
-        if (el) {
-          el.hidden = false;
-          el.innerHTML = `<strong>Note</strong><span>${escapeHtml(err.message)}</span>`;
+        if (previewEl) {
+          previewEl.hidden = false;
+          // Store partial data for submit
+          previewEl.dataset.profileJson = JSON.stringify(profileData);
         }
+      } else if (warning && previewEl) {
+        previewEl.hidden = false;
+        previewEl.dataset.profileJson = "";
+        previewEl.innerHTML = `<strong>Note</strong><span>${escapeHtml(warning)}</span>`;
       }
       return;
     }
@@ -1161,9 +1185,26 @@ document.querySelectorAll(".intent-chip").forEach((chip) => {
 document.getElementById("form-personalized_dm")?.addEventListener("submit", async (e) => {
   e.preventDefault();
   clearError("form-personalized_dm");
+
+  // Clear any Note from initial load — only one message at a time
+  const previewEl = document.getElementById("profile-preview-dm");
+
   try {
-    const profileData = await getProfileDataFromPage({ refresh: true });
-    renderProfilePreview("profile-preview-dm", profileData);
+    // Use cached profile from button-click load if available, otherwise re-read
+    let profileData = {};
+    const cachedJson = previewEl?.dataset.profileJson;
+    if (cachedJson) {
+      try { profileData = JSON.parse(cachedJson); } catch { /* fall through */ }
+    }
+    if (!profileData.name && !profileData.headline) {
+      const result = await getProfileDataForDM();
+      profileData = result.profileData;
+      // If we got profile data, update the preview and clear any Note
+      if (profileData.name || profileData.headline) {
+        renderProfilePreview("profile-preview-dm", profileData);
+      }
+    }
+
     const dmContext = document.getElementById("dm-context")?.value.trim();
     const intentChip = document.querySelector(".intent-chip.active");
     const intent = intentChip?.dataset.intent || "";
@@ -1174,6 +1215,10 @@ document.getElementById("form-personalized_dm")?.addEventListener("submit", asyn
       topic: topicParts.join(". ") || undefined,
     }));
   } catch (err) {
+    // Hide Note box so only one error is visible
+    if (previewEl && previewEl.innerHTML.includes("<strong>Note</strong>")) {
+      previewEl.hidden = true;
+    }
     showError("form-personalized_dm", err.message);
   }
 });
