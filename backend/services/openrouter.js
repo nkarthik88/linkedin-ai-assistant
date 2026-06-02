@@ -208,12 +208,10 @@ No markdown fences.`;
   });
 }
 
-export async function generateVariations({ feature, data, tone, plan }) {
-  const model = getModelForPlan(plan);
-  const systemInstruction =
-    FEATURE_INSTRUCTIONS[feature] ||
-    "Generate 3 distinct professional LinkedIn text variations for the request.";
+const VIRAL_MIN_LENGTH = 400; // chars — below this the post is definitely truncated
 
+async function callOpenRouter({ model, feature, systemInstruction, userPrompt }) {
+  const isViral = feature === "viral_rewriter";
   const response = await fetch(OPENROUTER_URL, {
     method: "POST",
     headers: {
@@ -224,13 +222,13 @@ export async function generateVariations({ feature, data, tone, plan }) {
     },
     body: JSON.stringify({
       model,
-      temperature: feature === "viral_rewriter" ? 0.9 : 0.8,
-      max_tokens: feature === "viral_rewriter" ? 1000 : 1200,
+      temperature: isViral ? 0.9 : 0.8,
+      max_tokens: isViral ? 1000 : 1200,
       response_format: { type: "json_object" },
       messages: [
         {
           role: "system",
-          content: feature === "viral_rewriter"
+          content: isViral
             ? `${systemInstruction}
 
 CRITICAL OUTPUT RULES:
@@ -246,19 +244,14 @@ Respond with JSON only, in this exact shape:
 
 Each variation must be a complete, ready-to-use string. No markdown fences.`,
         },
-        {
-          role: "user",
-          content: buildUserPrompt(feature, data, tone),
-        },
+        { role: "user", content: userPrompt },
       ],
     }),
   });
 
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    const err = new Error(
-      text || `OpenRouter request failed (${response.status})`
-    );
+    const err = new Error(text || `OpenRouter request failed (${response.status})`);
     err.statusCode = response.status >= 500 ? 502 : 400;
     throw err;
   }
@@ -292,9 +285,8 @@ Each variation must be a complete, ready-to-use string. No markdown fences.`,
     .map((v) => String(v).trim())
     .filter(Boolean);
 
-  // Viral rewriter: model sometimes ignores the "1 variation" instruction and
-  // returns 3 short ones. Always surface the longest (most complete) version first.
-  if (feature === "viral_rewriter" && strings.length > 1) {
+  // Always surface the longest variation first (handles model returning 3 short ones)
+  if (isViral && strings.length > 1) {
     strings = [...strings].sort((a, b) => b.length - a.length);
   }
 
@@ -302,10 +294,47 @@ Each variation must be a complete, ready-to-use string. No markdown fences.`,
     strings.push(strings[strings.length - 1]);
   }
 
+  return strings;
+}
+
+export async function generateVariations({ feature, data, tone, plan }) {
+  const model = getModelForPlan(plan);
+  const systemInstruction =
+    FEATURE_INSTRUCTIONS[feature] ||
+    "Generate 3 distinct professional LinkedIn text variations for the request.";
+  const userPrompt = buildUserPrompt(feature, data, tone);
+
+  const isViral = feature === "viral_rewriter";
+  const MAX_ATTEMPTS = isViral ? 3 : 1;
+
+  let strings = [];
+  let lastError;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      strings = await callOpenRouter({ model, feature, systemInstruction, userPrompt });
+
+      // For viral: validate the best result is long enough to be a complete post
+      if (isViral) {
+        const best = strings[0] ?? "";
+        if (best.length >= VIRAL_MIN_LENGTH) break; // good — stop retrying
+        // Too short — treat as a soft failure and retry
+        lastError = new Error(`Viral post too short (${best.length} chars) — retrying`);
+        console.warn(`[viral_rewriter] attempt ${attempt}: best variation ${best.length} chars < ${VIRAL_MIN_LENGTH}, retrying`);
+        strings = []; // clear so we don't return the short version
+      } else {
+        break;
+      }
+    } catch (err) {
+      lastError = err;
+      if (!isViral || attempt === MAX_ATTEMPTS) throw err;
+      console.warn(`[viral_rewriter] attempt ${attempt} failed: ${err.message}`);
+    }
+  }
+
   if (strings.length === 0) {
-    const err = new Error("No valid variations in AI response");
-    err.statusCode = 502;
-    throw err;
+    // All retries exhausted — throw the last error
+    throw lastError ?? new Error("No valid variations in AI response");
   }
 
   return strings.slice(0, 3);
