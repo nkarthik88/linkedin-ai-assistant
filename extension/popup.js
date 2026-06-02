@@ -1187,13 +1187,18 @@ document.getElementById("form-personalized_dm")?.addEventListener("submit", asyn
   e.preventDefault();
   if (dmGenerating) return;
   dmGenerating = true;
-  clearError("form-personalized_dm");
 
-  // Clear any Note from initial load — only one message at a time
+  // Disable button and show loading immediately — no visual dead zone
+  const submitBtn = e.target.querySelector("button[type=submit]");
+  const originalBtnText = submitBtn?.textContent ?? "";
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "⏳ Generating…"; }
+  showView("view-loading");
+  const loadingText = document.getElementById("loading-text");
+  if (loadingText) loadingText.textContent = "💬 Crafting your DM…";
+
   const previewEl = document.getElementById("profile-preview-dm");
-
   try {
-    // Use cached profile from button-click load if available, otherwise re-read
+    // Use profile cached from button-click load; re-read only if missing
     let profileData = {};
     const cachedJson = previewEl?.dataset.profileJson;
     if (cachedJson) {
@@ -1202,10 +1207,6 @@ document.getElementById("form-personalized_dm")?.addEventListener("submit", asyn
     if (!profileData.name && !profileData.headline) {
       const result = await getProfileDataForDM();
       profileData = result.profileData;
-      // If we got profile data, update the preview and clear any Note
-      if (profileData.name || profileData.headline) {
-        renderProfilePreview("profile-preview-dm", profileData);
-      }
     }
 
     const dmContext = document.getElementById("dm-context")?.value.trim();
@@ -1218,13 +1219,14 @@ document.getElementById("form-personalized_dm")?.addEventListener("submit", asyn
       topic: topicParts.join(". ") || undefined,
     }));
   } catch (err) {
-    // Hide Note box so only one error is visible
+    showView("view-personalized_dm");
     if (previewEl && previewEl.innerHTML.includes("<strong>Note</strong>")) {
       previewEl.hidden = true;
     }
     showError("form-personalized_dm", err.message);
   } finally {
     dmGenerating = false;
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalBtnText; }
   }
 });
 
