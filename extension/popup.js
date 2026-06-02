@@ -120,17 +120,18 @@ function renderAccountStatus(status) {
     usageEl.textContent = "Unlimited uses";
     upgradeBtn.hidden = true;
   } else {
-    const remaining = status?.remaining ?? 0;
-    const used = status?.usedThisMonth ?? 0;
-    const limit = status?.limit ?? 10;
-    usageEl.textContent = `${remaining} of ${limit} remaining`;
+    // Find the most-used feature to surface in the header
+    const fu = status?.feature_usage || {};
+    const entries = Object.values(fu);
+    const anyExhausted = entries.some((f) => f.remaining === 0);
+    const minRemaining = entries.length
+      ? Math.min(...entries.map((f) => f.remaining ?? 10))
+      : 10;
+    usageEl.textContent = anyExhausted
+      ? "Some features at limit — upgrade"
+      : `10 uses/feature/month`;
+    usageEl.style.color = anyExhausted ? "var(--error)" : "";
     upgradeBtn.hidden = false;
-
-    if (remaining === 0) {
-      usageEl.style.color = "var(--error)";
-    } else {
-      usageEl.style.color = "";
-    }
   }
 
   setUpgradeError("");
@@ -230,34 +231,83 @@ async function renderAccountPage(status) {
     badgeEl.classList.toggle("pro", isPro);
   }
 
-  const used = status.usedThisMonth ?? 0;
-  const limit = status.limit ?? 10;
-  const remaining = status.remaining ?? 0;
-  const pct = isPro ? 0 : Math.min(100, Math.round((used / limit) * 100));
-
   if (usageText) {
-    usageText.textContent = isPro ? "Unlimited" : `${used} / ${limit} used`;
+    usageText.textContent = isPro ? "Unlimited" : "10 uses / feature / month";
   }
 
-  if (usageBar) {
-    usageBar.style.width = isPro ? "0%" : `${pct}%`;
-    usageBar.classList.toggle("full", !isPro && remaining === 0);
-  }
+  // Hide the aggregate progress bar for free users — per-feature bars replace it
+  if (usageBar) usageBar.style.width = "0%";
 
+  const resetsOn = status.resets_on ? formatResetDate(status.resets_on) : null;
   if (usageNote) {
     if (isPro) {
       usageNote.textContent = "Unlimited AI generations every month";
-    } else if (remaining === 0) {
-      usageNote.textContent = "Limit reached — upgrade for unlimited access";
-      usageNote.style.color = "var(--error)";
-    } else {
-      usageNote.textContent = `Resets next month`;
       usageNote.style.color = "";
+    } else {
+      usageNote.textContent = resetsOn ? `Resets ${resetsOn}` : "Resets on the 1st of each month";
+      usageNote.style.color = "";
+    }
+  }
+
+  // Per-feature breakdown (free users)
+  const breakdownEl = document.getElementById("feature-usage-breakdown");
+  if (breakdownEl) {
+    if (isPro) {
+      breakdownEl.hidden = true;
+    } else {
+      breakdownEl.hidden = false;
+      const fu = status.feature_usage || {};
+      const leadUsed = status.lead_searches_used ?? 0;
+      const leadLimit = status.lead_searches_limit ?? 5;
+      const leadRemaining = status.lead_searches_remaining ?? leadLimit;
+
+      breakdownEl.querySelectorAll(".feature-usage-row").forEach((row) => {
+        const feature = row.dataset.feature;
+        const counterEl = row.querySelector(".fur-counter");
+        if (!counterEl) return;
+
+        if (feature === "deep_lead_search") {
+          const pct = leadLimit > 0 ? Math.min(100, Math.round((leadUsed / leadLimit) * 100)) : 0;
+          counterEl.textContent = `${leadUsed}/${leadLimit} · ${leadRemaining} left`;
+          counterEl.className = `fur-counter${leadRemaining === 0 ? " fur-exhausted" : ""}`;
+          updateFurBar(row, pct, leadRemaining === 0);
+        } else {
+          const info = fu[feature];
+          if (info) {
+            const { used, limit, remaining } = info;
+            const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+            counterEl.textContent = `${used}/${limit} · ${remaining} left`;
+            counterEl.className = `fur-counter${remaining === 0 ? " fur-exhausted" : ""}`;
+            updateFurBar(row, pct, remaining === 0);
+          } else {
+            counterEl.textContent = "0/10 · 10 left";
+            counterEl.className = "fur-counter";
+            updateFurBar(row, 0, false);
+          }
+        }
+      });
     }
   }
 
   if (proSection) proSection.hidden = !isPro;
   if (freeSection) freeSection.hidden = isPro;
+}
+
+function updateFurBar(row, pct, exhausted) {
+  let barWrap = row.querySelector(".fur-bar-bg");
+  if (!barWrap) {
+    barWrap = document.createElement("div");
+    barWrap.className = "fur-bar-bg";
+    const fill = document.createElement("div");
+    fill.className = "fur-bar-fill";
+    barWrap.appendChild(fill);
+    row.appendChild(barWrap);
+  }
+  const fill = barWrap.querySelector(".fur-bar-fill");
+  if (fill) {
+    fill.style.width = `${pct}%`;
+    fill.className = `fur-bar-fill${exhausted ? " fur-bar-danger" : pct >= 80 ? " fur-bar-warning" : ""}`;
+  }
 }
 
 document.getElementById("account-tab-btn")?.addEventListener("click", async () => {

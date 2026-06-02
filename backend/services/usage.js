@@ -332,7 +332,7 @@ export async function consumeLeadSearch(userId) {
     const err = new Error(
       account.plan === "pro" || account.plan === "plus"
         ? "You've used all 50 lead searches this month. Resets next month."
-        : "You've used all 10 free lead searches this month. Upgrade to Pro for 50/month."
+        : "You've used all 5 free lead searches this month. Upgrade to Pro for 50/month."
     );
     err.statusCode = 402;
     err.leadLimit = true;
@@ -401,6 +401,10 @@ export async function updatePlanForUser(userId, plan) {
 
 export async function setProStatusForUser(userId, isPro) {
   const pro = Boolean(isPro);
+  // On upgrade to Pro, reset per-feature usage so the user starts fresh.
+  const resetFields = pro
+    ? { feature_usage: {}, lead_searches_this_month: 0 }
+    : {};
 
   const { data: authUser } = await supabaseAdmin
     .from("users")
@@ -411,7 +415,7 @@ export async function setProStatusForUser(userId, isPro) {
   if (authUser) {
     const { error } = await supabaseAdmin
       .from("users")
-      .update({ is_pro: pro })
+      .update({ is_pro: pro, ...resetFields })
       .eq("id", userId);
     if (error) throw error;
     return;
@@ -419,6 +423,9 @@ export async function setProStatusForUser(userId, isPro) {
 
   const { error } = await supabaseAdmin
     .from("extension_accounts")
-    .upsert({ id: userId, plan: pro ? "pro" : "free" }, { onConflict: "id" });
+    .upsert(
+      { id: userId, plan: pro ? "pro" : "free", ...resetFields },
+      { onConflict: "id" }
+    );
   if (error) throw error;
 }
