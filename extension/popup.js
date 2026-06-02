@@ -1729,16 +1729,22 @@ function displayLeads(leads, opts = {}) {
   const warmCount = leads.filter((l) => l.quality === "warm").length;
   const coldCount = leads.filter((l) => l.quality === "cold").length;
 
-  // Show only hot + warm by default
+  // Show only hot + warm; if none, show a hint rather than dumping cold leads
   const qualifiedLeads = leads.filter((l) => l.quality === "hot" || l.quality === "warm");
-  const visibleLeads = qualifiedLeads.length > 0 ? qualifiedLeads : leads;
+  const visibleLeads = qualifiedLeads;
 
   if (title) {
     const parts = [];
     if (hotCount > 0) parts.push(`🔥 ${hotCount} Hot`);
     if (warmCount > 0) parts.push(`⚡ ${warmCount} Warm`);
-    if (coldCount > 0) parts.push(`❄️ ${coldCount} Cold`);
-    title.textContent = parts.length > 0 ? parts.join("  ·  ") : "No leads found";
+    if (parts.length > 0) {
+      if (coldCount > 0) parts.push(`(${coldCount} others filtered out)`);
+      title.textContent = parts.join("  ·  ");
+    } else {
+      title.textContent = coldCount > 0
+        ? `No close matches — try broader filters`
+        : "No leads found";
+    }
   }
   if (tsEl) {
     tsEl.textContent = opts.ts ? `Last search: ${relativeTime(opts.ts)}` : "";
@@ -1754,6 +1760,16 @@ function displayLeads(leads, opts = {}) {
   if (copyAllBtn) copyAllBtn.hidden = hotCount === 0;
 
   container.innerHTML = "";
+
+  // If nothing matched, show actionable hint
+  if (visibleLeads.length === 0) {
+    const hint = document.createElement("div");
+    hint.className = "leads-empty-hint";
+    hint.innerHTML = coldCount > 0
+      ? `<strong>No close matches found.</strong><br>Try broadening your filters — use a more general title (e.g. "Engineer" not "DevOps Engineer"), remove the company filter, or use a country instead of a city.`
+      : `<strong>No profiles were found.</strong><br>Make sure you're on a LinkedIn search results page, then try again.`;
+    container.appendChild(hint);
+  }
 
   // Add cold leads toggle if there are cold leads hidden
   if (coldCount > 0 && qualifiedLeads.length > 0) {

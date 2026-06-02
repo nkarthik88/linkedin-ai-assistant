@@ -91,7 +91,14 @@ function buildFiltersBlock(filters) {
  */
 export async function qualifyLeads({ profiles, targetDescription, filters, plan }) {
   const model = getModelForPlan(plan);
-  const list = (Array.isArray(profiles) ? profiles : []).slice(0, MAX_LEAD_PROFILES);
+
+  // Strip profiles that have no usable data — they'll always be cold and waste tokens
+  const rawList = (Array.isArray(profiles) ? profiles : []).slice(0, MAX_LEAD_PROFILES);
+  const list = rawList.filter((p) => {
+    const hasName = (p.name || "").trim().length > 1;
+    const hasRole = (p.title || "").trim().length > 1 || (p.company || "").trim().length > 1;
+    return hasName && hasRole;
+  });
 
   const profilesForPrompt = list.map((p, i) => ({
     index: i,
@@ -104,30 +111,46 @@ export async function qualifyLeads({ profiles, targetDescription, filters, plan 
 
   const filtersBlock = buildFiltersBlock(filters);
 
-  const systemPrompt = `You are a B2B lead qualifier. The user has entered SPECIFIC search filters for their ideal customer. Your job is to score each LinkedIn profile STRICTLY against those filters.
+  const systemPrompt = `You are a B2B lead qualifier. Score each LinkedIn profile against the user's filters using FUZZY / SEMANTIC matching — not exact string matching.
 
-${filtersBlock ? `USER'S EXACT FILTERS:\n${filtersBlock}\n\nCRITICAL RULES:` : "TARGET DESCRIPTION RULES:"}
-${filters?.company ? `- If company filter is "${filters.company}": ONLY rate as hot/warm profiles WHERE the person works AT that company or a company with that exact name. "CEO at Google" when searching for "${filters.company}" → COLD.` : ""}
-${filters?.title ? `- If title filter is "${filters.title}": ONLY rate as hot/warm profiles with that job title or very close variant (e.g. "CEO" matches "Co-Founder & CEO" but NOT "Marketing Manager").` : ""}
-${filters?.location ? `- If location filter is "${filters.location}": prefer profiles in that location; non-matching location alone makes warm→cold.` : ""}
-${filters?.keywords ? `- Keywords "${filters.keywords}": profile's title, headline, or company must contain at least one of these keywords to be hot/warm.` : ""}
+${filtersBlock ? `USER'S FILTERS:\n${filtersBlock}` : ""}
 
-SCORING (be strict — if a filter doesn't match, downgrade):
-- Title matches title filter: +2 pts
-- Company matches company filter: +2 pts
-- Headline/title contains keyword(s): +1 pt
-- Location matches location filter: +1 pt
+MATCHING RULES (apply common sense, not exact text matching):
 
-QUALITY ASSIGNMENT:
-- "hot"  = 3+ pts AND matches at least one primary filter (title or company) exactly
-- "warm" = 2 pts OR partial primary filter match (close but not exact)
-- "cold" = <2 pts OR primary filter clearly doesn't match
+${filters?.title ? `TITLE FILTER "${filters.title}":
+- HOT: profile's title contains the search term OR is a clear role synonym (e.g. "Developer" → matches "Software Engineer", "SDE", "Full Stack Dev", "Programmer", "Frontend Dev", "Backend Dev", "AI/ML Developer"; "CEO" → matches "Founder", "Co-Founder", "Managing Director"; "PM" → matches "Product Manager", "Product Lead")
+- WARM: title is in the same broad role family but seniority/stack differs
+- COLD: entirely different function (e.g. searching "Developer" → "HR Manager" is cold)` : ""}
+
+${filters?.company ? `COMPANY FILTER "${filters.company}":
+- HOT: profile's company name contains the search term OR the search term describes the company's industry/type (e.g. "AI" → matches any company with "AI", "ML", "artificial intelligence", "deeptech" in name OR if profile's headline mentions AI/ML work; "SaaS" → matches software/cloud/platform companies; "startup" → matches early-stage / Series A-B / founded companies)
+- WARM: profile headline or about strongly suggests they work in that space even if company name doesn't match
+- COLD: no connection whatsoever` : ""}
+
+${filters?.location ? `LOCATION FILTER "${filters.location}":
+- HOT/WARM boost: profile location contains the search term or nearby metro area
+- A location mismatch alone does NOT make a profile cold if other filters match well` : ""}
+
+${filters?.keywords ? `KEYWORDS "${filters.keywords}":
+- Treat each word as a separate keyword; match in title, headline, company, or location
+- Even one matching keyword is a positive signal` : ""}
+
+SCORING:
+- Title fuzzy-matches title filter: +2 pts
+- Company fuzzy-matches company filter: +2 pts
+- Any keyword found in title/headline/company: +1 pt
+- Location matches: +1 pt
+
+QUALITY:
+- "hot"  = 3+ pts OR strong match on the most important filter
+- "warm" = 1–2 pts OR partial / indirect match
+- "cold" = 0 pts AND no plausible connection to any filter
 
 For EACH profile return:
 - "index": integer copied from input
 - "quality": "hot", "warm", or "cold"
-- "reason": 1 sentence (max 120 chars) explaining WHY — reference their actual title/company and which filters matched/didn't, e.g. "Founder at n8n — matches both company and automation keywords 🔥" or "CEO at Google — doesn't match n8n company filter ❄️"
-- "dm": personalized LinkedIn DM (under 300 chars), names the person, references their specific role/company, no generic openers
+- "reason": 1 sentence (≤120 chars) — name the specific matched/unmatched signal, e.g. "Full Stack Dev at AI startup — matches Developer title and AI company 🔥"
+- "dm": personalized LinkedIn DM (≤300 chars), greets by name, references their role/company, no generic openers
 
 Respond with JSON only:
 {"leads":[{"index":0,"quality":"hot","reason":"...","dm":"..."}]}

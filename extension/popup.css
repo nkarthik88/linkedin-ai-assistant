@@ -1852,6 +1852,17 @@ input[type="email"] {
 .lead-dm-toggle { transition: transform .15s; }
 
 /* ── Leads next steps CTA ── */
+.leads-empty-hint {
+  padding: 14px 16px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.leads-empty-hint strong { color: var(--text-primary); display: block; margin-bottom: 4px; }
+
 .leads-next-steps {
   margin-top: 16px;
   padding: 12px;
