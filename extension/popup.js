@@ -138,6 +138,8 @@ function renderAccountStatus(status) {
   renderFeatureCounters(status);
 }
 
+const FEATURE_DEFAULT_LIMIT = { generate_post: 10, personalized_dm: 10, reply_comment: 10, improve_headline: 10 };
+
 function renderFeatureCounters(status) {
   const isPro = Boolean(status?.isPro);
   const featureUsage = status?.feature_usage || {};
@@ -147,6 +149,7 @@ function renderFeatureCounters(status) {
     const btn = document.querySelector(`.feature-btn[data-feature="${feature}"]`);
     if (!btn) return;
 
+    // Counter text
     let counterEl = btn.querySelector(".feature-usage-counter");
     if (!counterEl) {
       counterEl = document.createElement("span");
@@ -154,18 +157,50 @@ function renderFeatureCounters(status) {
       btn.appendChild(counterEl);
     }
 
+    // Mini progress bar
+    let barWrap = btn.querySelector(".feature-btn-bar-bg");
+    if (!barWrap) {
+      barWrap = document.createElement("div");
+      barWrap.className = "feature-btn-bar-bg";
+      const fill = document.createElement("div");
+      fill.className = "feature-btn-bar-fill";
+      barWrap.appendChild(fill);
+      btn.appendChild(barWrap);
+    }
+    const barFill = barWrap.querySelector(".feature-btn-bar-fill");
+
     if (isPro) {
       counterEl.textContent = "Unlimited";
       counterEl.className = "feature-usage-counter unlimited";
+      barWrap.hidden = true;
+      btn.disabled = false;
+      btn.classList.remove("feature-locked");
     } else {
       const info = featureUsage[feature];
-      if (info) {
-        const { used, limit, remaining } = info;
-        counterEl.textContent = `${used}/${limit} used · ${remaining} left`;
-        counterEl.className = `feature-usage-counter${remaining === 0 ? " exhausted" : ""}`;
+      const defaultLimit = FEATURE_DEFAULT_LIMIT[feature] ?? 10;
+      const used = info?.used ?? 0;
+      const limit = info?.limit ?? defaultLimit;
+      const remaining = info?.remaining ?? (limit - used);
+      const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+
+      if (remaining === 0) {
+        counterEl.textContent = `${used}/${limit} · 🔒 Limit reached`;
+        counterEl.className = "feature-usage-counter exhausted";
+        btn.disabled = true;
+        btn.classList.add("feature-locked");
       } else {
-        counterEl.textContent = "0/10 used · 10 left";
-        counterEl.className = "feature-usage-counter";
+        counterEl.textContent = `${used}/${limit} used · ${remaining} left`;
+        counterEl.className = `feature-usage-counter${pct >= 80 ? " warn" : ""}`;
+        btn.disabled = false;
+        btn.classList.remove("feature-locked");
+      }
+
+      // Color the bar
+      barWrap.hidden = false;
+      if (barFill) {
+        barFill.style.width = `${pct}%`;
+        barFill.className = "feature-btn-bar-fill" +
+          (pct >= 100 ? " bar-danger" : pct >= 80 ? " bar-warn" : pct >= 50 ? " bar-mid" : "");
       }
     }
   });
@@ -624,36 +659,50 @@ async function callApi(body) {
     throw new Error("No options returned. Please try again.");
   }
 
-  if (accountStatus && !accountStatus.isPro) {
-    // Update per-feature counter from response
-    const feature = body?.feature;
-    if (feature && typeof data.featureRemaining === "number" && accountStatus.feature_usage) {
-      const fi = accountStatus.feature_usage[feature];
-      if (fi) {
-        const newUsed = fi.used + 1;
-        const updatedStatus = {
-          ...accountStatus,
-          feature_usage: {
-            ...accountStatus.feature_usage,
-            [feature]: { ...fi, used: newUsed, remaining: data.featureRemaining },
-          },
-        };
-        renderAccountStatus(updatedStatus);
-        accountStatus = updatedStatus;
+  const feature = body?.feature;
+  if (feature && typeof data.featureUsed === "number" && data.featureLimit !== null) {
+    // Server returned authoritative counts — update local state regardless of whether
+    // accountStatus was loaded (fixes the case where init() hasn't resolved yet)
+    const used = data.featureUsed;
+    const limit = data.featureLimit;
+    const remaining = data.featureRemaining ?? Math.max(0, limit - used);
 
-        if (data.featureRemaining === 0) {
-          showToast("You've used all free generations for this feature — upgrade for unlimited!", "default");
-        }
-      }
-    } else if (typeof data.remainingCredits === "number") {
-      const updatedStatus = {
-        ...accountStatus,
-        remaining: data.remainingCredits,
-        usedThisMonth: (accountStatus.limit ?? 10) - data.remainingCredits,
-      };
-      renderAccountStatus(updatedStatus);
-      accountStatus = updatedStatus;
+    // Merge into accountStatus (create skeleton if not yet populated)
+    const base = accountStatus || { isPro: false, feature_usage: {}, lead_searches_used: 0, lead_searches_limit: 5, lead_searches_remaining: 5 };
+    const updatedStatus = {
+      ...base,
+      feature_usage: {
+        ...(base.feature_usage || {}),
+        [feature]: { used, limit, remaining, unlimited: false },
+      },
+    };
+    renderAccountStatus(updatedStatus);
+    accountStatus = updatedStatus;
+
+    // Toast with emoji + count
+    const featureEmoji = { generate_post: "✍️", personalized_dm: "💬", reply_comment: "↩️", improve_headline: "🎯", viral_rewriter: "🚀" };
+    const emoji = featureEmoji[feature] || "✅";
+    showToast(`${emoji} ${used}/${limit} used · ${remaining} remaining`, "success");
+
+    // Engagement messages at milestones
+    const pct = limit > 0 ? (used / limit) * 100 : 0;
+    if (remaining === 0) {
+      // handled by upgrade prompt on next attempt
+    } else if (remaining === 1) {
+      setTimeout(() => showToast(`⚠️ Last free use for this feature — upgrade for unlimited!`, "default"), 3200);
+    } else if (pct >= 80 && pct < 90) {
+      setTimeout(() => showToast(`⚠️ ${remaining} uses left — ready to upgrade?`, "default"), 3200);
+    } else if (pct >= 50 && used === Math.ceil(limit * 0.5)) {
+      setTimeout(() => showToast(`🔥 Halfway through — you're on a roll!`, "default"), 3200);
     }
+  } else if (accountStatus && !accountStatus.isPro && typeof data.remainingCredits === "number") {
+    const updatedStatus = {
+      ...accountStatus,
+      remaining: data.remainingCredits,
+      usedThisMonth: (accountStatus.limit ?? 10) - data.remainingCredits,
+    };
+    renderAccountStatus(updatedStatus);
+    accountStatus = updatedStatus;
   }
 
   return options.slice(0, 3);
@@ -1766,11 +1815,19 @@ async function qualifyAndShow(profiles, targetDescription, filters = null) {
     throw new Error("No leads returned. Try a broader search.");
   }
 
-  if (typeof data.leadSearchesRemaining === "number" && accountStatus) {
-    const limit = data.leadSearchLimit ?? accountStatus.lead_searches_limit ?? 10;
-    accountStatus.lead_searches_limit = limit;
-    accountStatus.lead_searches_remaining = data.leadSearchesRemaining;
-    accountStatus.lead_searches_used = Math.max(0, limit - data.leadSearchesRemaining);
+  if (typeof data.leadSearchesRemaining === "number") {
+    const limit = data.leadSearchLimit ?? (accountStatus?.lead_searches_limit ?? 5);
+    const used = Math.max(0, limit - data.leadSearchesRemaining);
+    const base = accountStatus || { isPro: false, feature_usage: {} };
+    accountStatus = { ...base, lead_searches_limit: limit, lead_searches_remaining: data.leadSearchesRemaining, lead_searches_used: used };
+    renderAccountStatus(accountStatus);
+    showToast(`🔎 ${used}/${limit} searches used · ${data.leadSearchesRemaining} remaining`, "success");
+    const pct = limit > 0 ? (used / limit) * 100 : 0;
+    if (data.leadSearchesRemaining === 1) {
+      setTimeout(() => showToast("⚠️ Last free lead search — upgrade for 50/month!", "default"), 3200);
+    } else if (pct >= 80 && used === Math.ceil(limit * 0.8)) {
+      setTimeout(() => showToast(`⚠️ ${data.leadSearchesRemaining} searches left — ready to upgrade?`, "default"), 3200);
+    }
   }
   renderLeadCounter();
 
@@ -1942,6 +1999,6 @@ window.addEventListener("focus", () => {
 
 (async function init() {
   await checkOnboarding();
-  refreshAccountStatus();
+  await refreshAccountStatus();
   renderSavedLeads();
 })();

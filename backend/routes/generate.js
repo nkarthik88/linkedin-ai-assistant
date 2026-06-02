@@ -55,6 +55,8 @@ router.post(
       options: variations,
       remainingCredits: account.remainingCredits,
       featureRemaining: account.featureRemaining,
+      featureUsed: account.featureUsed ?? null,
+      featureLimit: account.featureLimit ?? null,
       limitReached: account.featureRemaining === 0,
     });
   })

@@ -304,7 +304,13 @@ export async function consumeFeatureCredit(userId, feature) {
   if (error) throw error;
 
   const remaining = limit === null ? null : Math.max(0, limit - newUsed);
-  return { ...account, featureUsage: updatedFeatureUsage, featureRemaining: remaining };
+  return {
+    ...account,
+    featureUsage: updatedFeatureUsage,
+    featureRemaining: remaining,
+    featureUsed: newUsed,
+    featureLimit: limit,
+  };
 }
 
 function featureLabel(feature) {

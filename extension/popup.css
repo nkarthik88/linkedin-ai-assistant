@@ -359,8 +359,46 @@ body.side-panel .option-text {
   font-weight: 600;
 }
 
+.feature-usage-counter.warn {
+  color: #d97706;
+  font-weight: 600;
+}
+
 .feature-usage-counter.unlimited {
   color: var(--linkedin-blue);
+}
+
+/* Mini progress bar inside feature buttons */
+.feature-btn-bar-bg {
+  width: 100%;
+  height: 3px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.feature-btn-bar-fill {
+  height: 100%;
+  background: var(--linkedin-blue);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.feature-btn-bar-fill.bar-mid  { background: #2563eb; }
+.feature-btn-bar-fill.bar-warn { background: #d97706; }
+.feature-btn-bar-fill.bar-danger { background: var(--error, #e63757); }
+
+/* Locked feature button */
+.feature-btn.feature-locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+  border-color: var(--error, #e63757);
+}
+
+.feature-btn.feature-locked:hover {
+  box-shadow: none;
+  transform: none;
 }
 
 /* ── Back button ── */
