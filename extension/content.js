@@ -1,3 +1,9 @@
+// Guard against re-injection (extension reload into an already-injected tab)
+if (window.__propostlyInjected) {
+  // Already running — skip re-declaration to avoid SyntaxError on let/const
+} else {
+window.__propostlyInjected = true;
+
 function getText(el) {
   return el?.textContent?.replace(/\s+/g, " ").trim() || "";
 }
@@ -74,10 +80,19 @@ function extractName() {
     "h1.text-heading-xlarge",
     ".pv-text-details__left-panel h1",
     ".ph5 h1",
+    'section[data-view-name="profile-card"] h1',
+    'div[data-view-name="profile-card"] h1',
     "main section h1",
     "main h1",
+    "h1", // broadest fallback
   ]);
-  return getText(el);
+  const name = getText(el);
+  // Reject strings that are clearly not a person's name
+  if (name && name.length < 80 && !/^\d+$/.test(name)) return name;
+  // OG meta fallback
+  const og = document.querySelector('meta[property="og:title"]')?.content || "";
+  const m = og.match(/^([^|–\-]+)/);
+  return m ? m[1].replace(/\s*on\s+LinkedIn.*$/i, "").trim() : "";
 }
 
 function extractHeadline() {
@@ -85,6 +100,7 @@ function extractHeadline() {
     "main section.artdeco-card",
     ".pv-top-card",
     '[data-view-name="profile-top-card"]',
+    '[data-view-name="profile-card"]',
     "main .ph5",
   ]);
 
@@ -94,13 +110,23 @@ function extractHeadline() {
       "div.text-body-medium",
       ".pv-text-details__left-panel .text-body-medium",
       ".ph5 .text-body-medium",
+      '[data-field="headline"]',
+      ".pv-top-card--experience-list-item span",
     ],
     topCard || document
   );
 
   const text = getText(el);
-  if (!text || text.length > 300) return "";
-  return text;
+  if (text && text.length <= 300) return text;
+
+  // OG meta fallback — often contains "Name | Headline | LinkedIn"
+  const og = document.querySelector('meta[property="og:title"]')?.content || "";
+  const parts = og.split(/\s*[|–\-]\s*/);
+  if (parts.length >= 2) {
+    const candidate = parts[1].replace(/\s*LinkedIn.*$/i, "").trim();
+    if (candidate.length > 3 && candidate.length <= 300) return candidate;
+  }
+  return "";
 }
 
 function extractAbout() {
@@ -789,34 +815,52 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   if (message.type === "GET_PROFILE_DATA") {
-    try {
-      const profileData =
-        message.refresh === true ? refreshProfileCache() : getProfileData();
+    (async () => {
+      try {
+        // LinkedIn is a React SPA — retry with increasing delays so DOM can settle
+        const DELAYS = [0, 1200, 2500];
 
-      if (!profileData.isProfilePage && !message.allowAnyPage) {
+        for (let attempt = 0; attempt < DELAYS.length; attempt++) {
+          if (DELAYS[attempt] > 0) {
+            await new Promise((r) => setTimeout(r, DELAYS[attempt]));
+          }
+
+          // Force-clear cache on each attempt
+          cachedProfile = null;
+          cacheUrl = "";
+
+          const profileData = extractProfileData();
+
+          if (!profileData.isProfilePage && !message.allowAnyPage) {
+            sendResponse({
+              success: false,
+              error: "Open a LinkedIn profile page (linkedin.com/in/username) in this tab.",
+              profileData,
+            });
+            return;
+          }
+
+          if (profileData.name || profileData.headline || profileData.about) {
+            cachedProfile = profileData;
+            cacheUrl = window.location.href;
+            sendResponse({ success: true, profileData });
+            return;
+          }
+        }
+
+        // All 3 attempts failed — return partial data so the DM form still opens
+        const partial = extractProfileData();
         sendResponse({
           success: false,
-          error:
-            "Open a LinkedIn profile page (linkedin.com/in/username) in this tab.",
-          profileData,
+          error: "Could not read profile details automatically.",
+          profileData: partial,
         });
-        return true;
+      } catch (err) {
+        sendResponse({ success: false, error: err.message });
       }
-
-      if (!profileData.name && !profileData.headline && !profileData.about) {
-        sendResponse({
-          success: false,
-          error:
-            "Could not read profile details. Scroll the profile page, wait for it to load, then try again.",
-          profileData,
-        });
-        return true;
-      }
-
-      sendResponse({ success: true, profileData });
-    } catch (err) {
-      sendResponse({ success: false, error: err.message });
-    }
-    return true;
+    })();
+    return true; // keep message channel open for async response
   }
 });
+
+} // end __propostlyInjected guard
