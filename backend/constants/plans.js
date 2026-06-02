@@ -11,12 +11,13 @@ export const FEATURE_FREE_LIMITS = {
   personalized_dm: 10,
   reply_comment: 10,
   improve_headline: 10,
-  viral_rewriter: 10,
+  // viral_rewriter is a refinement sub-tool of generate_post — no separate limit
 };
 
 export function getFeatureLimitForPlan(feature, plan) {
   if (plan === "pro" || plan === "plus") return null; // unlimited
-  return FEATURE_FREE_LIMITS[feature] ?? FREE_TIER_LIMIT;
+  if (!(feature in FEATURE_FREE_LIMITS)) return null; // unlisted features are unlimited
+  return FEATURE_FREE_LIMITS[feature];
 }
 
 export function getLeadLimitForPlan(plan) {
