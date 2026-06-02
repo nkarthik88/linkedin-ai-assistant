@@ -1182,8 +1182,11 @@ document.querySelectorAll(".intent-chip").forEach((chip) => {
   });
 });
 
+let dmGenerating = false;
 document.getElementById("form-personalized_dm")?.addEventListener("submit", async (e) => {
   e.preventDefault();
+  if (dmGenerating) return;
+  dmGenerating = true;
   clearError("form-personalized_dm");
 
   // Clear any Note from initial load — only one message at a time
@@ -1220,6 +1223,8 @@ document.getElementById("form-personalized_dm")?.addEventListener("submit", asyn
       previewEl.hidden = true;
     }
     showError("form-personalized_dm", err.message);
+  } finally {
+    dmGenerating = false;
   }
 });
 
