@@ -2061,12 +2061,45 @@ async function qualifyAndShow(profiles, targetDescription, filters = null) {
   displayLeads(leads, { ts });
 }
 
-function buildLinkedInSearchUrl(filters) {
+function filtersKey(filters) {
+  return [filters.title, filters.company, filters.keywords, filters.location]
+    .map((s) => (s || "").trim().toLowerCase())
+    .join("|");
+}
+
+async function getSearchPage(filters) {
+  const key = "searchPage_" + filtersKey(filters);
+  const stored = await chrome.storage.local.get(key);
+  return stored[key] || 1;
+}
+
+async function advanceSearchPage(filters) {
+  const key = "searchPage_" + filtersKey(filters);
+  const current = await getSearchPage(filters);
+  // Cycle through pages 1–5 so searches stay fresh
+  const next = current >= 5 ? 1 : current + 1;
+  await chrome.storage.local.set({ [key]: next });
+  return current;
+}
+
+async function getSeenUrls() {
+  const { seenLeadUrls } = await chrome.storage.local.get("seenLeadUrls");
+  return Array.isArray(seenLeadUrls) ? seenLeadUrls : [];
+}
+
+async function addSeenUrls(urls) {
+  const existing = await getSeenUrls();
+  const merged = [...new Set([...existing, ...urls])].slice(-500); // keep last 500
+  await chrome.storage.local.set({ seenLeadUrls: merged });
+}
+
+function buildLinkedInSearchUrl(filters, page = 1) {
   const parts = [filters.title, filters.company, filters.keywords, filters.location].filter(Boolean);
   const keywords = parts.join(" ");
   const params = new URLSearchParams();
   if (keywords) params.set("keywords", keywords);
   if (filters.title) params.set("title", filters.title);
+  if (page > 1) params.set("page", String(page));
   return `https://www.linkedin.com/search/results/people/?${params.toString()}`;
 }
 
@@ -2109,16 +2142,28 @@ async function runDeepLeadSearch(filters) {
     let profiles = [];
     let usedFilters = filters;
 
-    // First attempt: full filters
-    profiles = await autoSearchProfiles(buildLinkedInSearchUrl(filters));
+    // Advance to next LinkedIn results page so repeat searches return fresh people
+    const page = await advanceSearchPage(filters);
+    const seenUrls = await getSeenUrls();
+
+    // First attempt: full filters on the current page
+    profiles = await autoSearchProfiles(buildLinkedInSearchUrl(filters, page));
+
+    // Filter out profiles the user has already seen
+    if (seenUrls.length > 0) {
+      const seenSet = new Set(seenUrls);
+      const fresh = profiles.filter((p) => !p.url || !seenSet.has(p.url));
+      // Only apply dedup if we still have enough leads; otherwise show all
+      if (fresh.length >= 3) profiles = fresh;
+    }
 
     // If no results AND keywords were set, auto-retry without keywords (free — no credit consumed)
     if ((!profiles || profiles.length === 0) && filters.keywords) {
       setLoading("🔍 Broadening search…", "Trying without keyword filter");
       const broaderFilters = { ...filters, keywords: "" };
-      profiles = await autoSearchProfiles(buildLinkedInSearchUrl(broaderFilters));
+      profiles = await autoSearchProfiles(buildLinkedInSearchUrl(broaderFilters, page));
       if (profiles?.length > 0) {
-        usedFilters = broaderFilters; // qualify against the broader set
+        usedFilters = broaderFilters;
       }
     }
 
@@ -2136,6 +2181,9 @@ async function runDeepLeadSearch(filters) {
       }
       return;
     }
+
+    // Track these profile URLs so they're excluded from future same-criteria searches
+    await addSeenUrls(profiles.map((p) => p.url).filter(Boolean));
 
     const targetDescription = filtersToDescription(usedFilters);
     await qualifyAndShow(profiles, targetDescription, usedFilters);
