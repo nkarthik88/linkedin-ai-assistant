@@ -564,7 +564,7 @@ async function startUpgrade(triggerBtn = null) {
     await chrome.storage.local.set({ pendingUpgrade: true });
     chrome.windows.create({ url: checkoutUrl, type: "popup", width: 480, height: 720 });
 
-    upgradeBtn.textContent = "Waiting for payment…";
+    if (btn) btn.textContent = "Waiting for payment…";
 
     // Poll for Pro status for up to 3 minutes after checkout opens
     let pollCount = 0;
@@ -576,12 +576,12 @@ async function startUpgrade(triggerBtn = null) {
           clearInterval(pollInterval);
           await chrome.storage.local.set({ isPro: true, pendingUpgrade: false });
           renderAccountStatus(status);
-          upgradeBtn.textContent = "✅ Pro activated!";
+          if (btn) btn.textContent = "✅ Pro activated!";
           showToast("🎉 You're now Pro! Unlimited access unlocked.", "success");
           setTimeout(() => showView("view-home"), 1500);
-        } else if (pollCount >= 18) { // 3 min at 10s intervals
+        } else if (pollCount >= 18) {
           clearInterval(pollInterval);
-          upgradeBtn.textContent = "Complete payment, then reopen";
+          if (btn) btn.textContent = "Complete payment, then reopen";
         }
       } catch { /* ignore */ }
     }, 10000);
