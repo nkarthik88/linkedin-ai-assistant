@@ -600,32 +600,47 @@ document.getElementById("upgrade-prompt-back")?.addEventListener("click", () => 
 // ── Profile helpers ────────────────────────────────────────────────────────
 
 async function getActiveLinkedInTab() {
-  // Query all active tabs across every window (works from side panel too)
+  // Prefer the active tab in the current window (side panel is attached to this window)
+  try {
+    const currentWindowTabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const currentLinkedIn = currentWindowTabs.find(t => t.url?.includes("linkedin.com"));
+    if (currentLinkedIn) return currentLinkedIn;
+  } catch { /* ignore */ }
+
+  // Fall back to any active LinkedIn tab across all windows
   const activeTabs = await chrome.tabs.query({ active: true });
   const activeLinkedIn = activeTabs.find(t => t.url?.includes("linkedin.com"));
   if (activeLinkedIn) return activeLinkedIn;
-  // Fall back to any open LinkedIn tab
+
+  // Last resort: any open LinkedIn tab
   const allTabs = await chrome.tabs.query({});
-  const anyLinkedIn = allTabs.find(t => t.url?.includes("linkedin.com"));
+  const anyLinkedIn = allTabs.find(t => t.url?.includes("linkedin.com/in/"));
   if (anyLinkedIn) return anyLinkedIn;
+  const anyLinkedInTab = allTabs.find(t => t.url?.includes("linkedin.com"));
+  if (anyLinkedInTab) return anyLinkedInTab;
   throw new Error("Open a LinkedIn page in your browser first.");
 }
 
 async function ensureContentScript(tabId) {
+  // Check if already injected
   try {
     const ping = await chrome.tabs.sendMessage(tabId, { type: "PING" });
     if (ping?.success) return;
-  } catch {
-    /* inject below */
+  } catch { /* not yet injected */ }
+
+  // Inject and wait for it to register its listener
+  try {
+    await chrome.scripting.executeScript({ target: { tabId }, files: ["content.js"] });
+  } catch { /* already injected (guard fired) or no permission */ }
+
+  // Retry PING up to 3 times to confirm listener is ready
+  for (let i = 0; i < 3; i++) {
+    await new Promise((r) => setTimeout(r, 200));
+    try {
+      const ping = await chrome.tabs.sendMessage(tabId, { type: "PING" });
+      if (ping?.success) return;
+    } catch { /* keep waiting */ }
   }
-
-  await chrome.scripting.executeScript({
-    target: { tabId },
-    files: ["content.js"],
-  });
-
-  // Give the newly-injected script time to register its message listener
-  await new Promise((r) => setTimeout(r, 150));
 }
 
 async function getProfileDataFromPage({ refresh = false, requireProfile = true } = {}) {
@@ -1348,6 +1363,18 @@ document.getElementById("headline-from-profile-btn")?.addEventListener("click", 
     // getProfileDataForDM never throws — uses retry with 0/1200/2500ms delays
     const { profileData, warning } = await getProfileDataForDM();
     clearTimeout(hintTimer);
+
+    if (!profileData.name && !profileData.headline) {
+      // Last-ditch: try to extract name/headline from the active tab's title
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab?.title) {
+          const parts = tab.title.replace(/^\(\d+\)\s*/, "").split(/\s*[|\-–]\s*/);
+          if (parts[0] && parts[0].trim().length > 1) profileData.name = parts[0].trim();
+          if (parts[1] && !/linkedin/i.test(parts[1])) profileData.headline = parts[1].trim();
+        }
+      } catch { /* ignore */ }
+    }
 
     if (!profileData.name && !profileData.headline) {
       // No usable profile data — show manual fallback
