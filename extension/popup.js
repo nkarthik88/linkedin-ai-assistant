@@ -562,7 +562,7 @@ async function startUpgrade(triggerBtn = null) {
     if (!checkoutUrl) throw new Error("No checkout URL returned from server.");
 
     await chrome.storage.local.set({ pendingUpgrade: true });
-    chrome.windows.create({ url: checkoutUrl, type: "popup", width: 480, height: 720 });
+    chrome.tabs.create({ url: checkoutUrl, active: true });
 
     if (btn) btn.textContent = "Waiting for payment…";
 
