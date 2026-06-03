@@ -83,4 +83,42 @@ router.post(
   })
 );
 
+// Extension-only registration: store userId + email in extension_accounts.
+// Called after onboarding so emails are in DB from day 1 (no password required).
+router.post(
+  "/register-extension",
+  asyncHandler(async (req, res) => {
+    const userId = String(req.body?.userId || "").trim();
+    const email  = String(req.body?.email  || "").trim();
+    const name   = String(req.body?.name   || "").trim();
+
+    const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!userId || !uuidRe.test(userId)) {
+      return res.status(400).json({ error: "Invalid userId" });
+    }
+
+    const fields = { id: userId };
+    if (email && email.includes("@")) fields.email = email;
+    if (name) fields.name = name;
+
+    const { error } = await supabaseAdmin
+      .from("extension_accounts")
+      .upsert(fields, { onConflict: "id", ignoreDuplicates: false });
+
+    if (error) {
+      // Column 'name' may not exist — retry without it
+      if (name && error.message?.includes("name")) {
+        const { error: e2 } = await supabaseAdmin
+          .from("extension_accounts")
+          .upsert({ id: userId, ...(email && email.includes("@") ? { email } : {}) }, { onConflict: "id" });
+        if (e2) return res.status(500).json({ error: e2.message });
+      } else {
+        return res.status(500).json({ error: error.message });
+      }
+    }
+
+    res.json({ ok: true });
+  })
+);
+
 export default router;

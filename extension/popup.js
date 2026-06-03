@@ -77,6 +77,16 @@ async function getUserName() {
   return upgradeName || "";
 }
 
+async function registerWithBackend(userId, email, name) {
+  try {
+    await fetch(`${API_BASE}/api/auth/register-extension`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, email: email || undefined, name: name || undefined }),
+    });
+  } catch { /* non-fatal — fire and forget */ }
+}
+
 function updateHeaderName(name) {
   const el = document.getElementById("header-user-name");
   if (!el) return;
@@ -114,6 +124,10 @@ document.getElementById("onboarding-start")?.addEventListener("click", async () 
   updateHeaderName(name);
   const overlay = document.getElementById("onboarding");
   if (overlay) overlay.hidden = true;
+
+  // Register with backend so email is in DB from day 1
+  const userId = await getUserId();
+  registerWithBackend(userId, email, name);
 });
 
 // ── Account status ─────────────────────────────────────────────────────────
@@ -145,21 +159,20 @@ function renderAccountStatus(status) {
   tierEl.classList.toggle("pro", isPro);
 
   if (isPro) {
-    usageEl.textContent = "Unlimited uses";
+    usageEl.textContent = "Unlimited access";
     upgradeBtn.hidden = true;
   } else {
-    // Find the most-used feature to surface in the header
     const fu = status?.feature_usage || {};
     const entries = Object.values(fu);
     const anyExhausted = entries.some((f) => f.remaining === 0);
-    const minRemaining = entries.length
-      ? Math.min(...entries.map((f) => f.remaining ?? 10))
-      : 10;
-    usageEl.textContent = anyExhausted
+    const leadExhausted = (status?.lead_searches_remaining ?? 1) === 0;
+    const limitHit = anyExhausted || leadExhausted;
+    usageEl.textContent = limitHit
       ? "Some features at limit — upgrade"
-      : `10 uses/feature/month`;
-    usageEl.style.color = anyExhausted ? "var(--error)" : "";
-    upgradeBtn.hidden = false;
+      : "10 uses/feature/month · 5 lead searches";
+    usageEl.style.color = limitHit ? "var(--error)" : "";
+    // Only show upgrade button when a limit is actually hit
+    upgradeBtn.hidden = !limitHit;
   }
 
   setUpgradeError("");
@@ -404,6 +417,10 @@ document.getElementById("account-email-save")?.addEventListener("click", async (
   const emailUnsetSection = document.getElementById("account-email-unset");
   if (emailUnsetSection) emailUnsetSection.hidden = true;
 
+  const userId = await getUserId();
+  const name = await getUserName();
+  registerWithBackend(userId, email, name);
+
   if (statusEl) {
     statusEl.textContent = "✓ Email saved";
     statusEl.style.color = "var(--success)";
@@ -468,30 +485,26 @@ document.getElementById("cancel-subscription-btn")?.addEventListener("click", as
 });
 
 // Account page upgrade button
-document.getElementById("account-upgrade-btn")?.addEventListener("click", () => {
-  startUpgrade();
+document.getElementById("account-upgrade-btn")?.addEventListener("click", (e) => {
+  startUpgrade(e.currentTarget);
 });
 
 // ── Upgrade flow ───────────────────────────────────────────────────────────
 
-async function startUpgrade(fromPrompt = false) {
-  const upgradeBtn = fromPrompt
-    ? document.getElementById("upgrade-prompt-btn")
-    : document.getElementById("upgrade-btn");
+async function startUpgrade(triggerBtn = null) {
+  const btn = triggerBtn instanceof HTMLElement ? triggerBtn : null;
+  if (btn?.disabled) return;
 
-  if (!upgradeBtn || upgradeBtn.disabled) return;
-
-  const errorSetter = fromPrompt
-    ? (msg) => {
-        const el = document.getElementById("upgrade-prompt-error");
-        if (el) { el.textContent = msg; el.hidden = !msg; }
-      }
-    : setUpgradeError;
+  const errorSetter = (msg) => {
+    setUpgradeError(msg);
+    const promptErr = document.getElementById("upgrade-prompt-error");
+    if (promptErr) { promptErr.textContent = msg; promptErr.hidden = !msg; }
+    const leadErr = document.getElementById("lead-limit-error");
+    if (leadErr) { leadErr.textContent = msg; leadErr.hidden = !msg; }
+  };
 
   errorSetter("");
-  upgradeBtn.disabled = true;
-  const prevText = upgradeBtn.textContent;
-  upgradeBtn.textContent = "Opening checkout…";
+  if (btn) { btn.disabled = true; btn.dataset.prevText = btn.textContent; btn.textContent = "Opening checkout…"; }
 
   try {
     const userId = await getUserId();
@@ -551,17 +564,37 @@ async function startUpgrade(fromPrompt = false) {
     await chrome.storage.local.set({ pendingUpgrade: true });
     chrome.windows.create({ url: checkoutUrl, type: "popup", width: 480, height: 720 });
 
-    upgradeBtn.textContent = "Complete payment, then reopen";
+    upgradeBtn.textContent = "Waiting for payment…";
+
+    // Poll for Pro status for up to 3 minutes after checkout opens
+    let pollCount = 0;
+    const pollInterval = setInterval(async () => {
+      pollCount++;
+      try {
+        const status = await fetchAccountStatus();
+        if (status?.isPro) {
+          clearInterval(pollInterval);
+          await chrome.storage.local.set({ isPro: true, pendingUpgrade: false });
+          renderAccountStatus(status);
+          upgradeBtn.textContent = "✅ Pro activated!";
+          showToast("🎉 You're now Pro! Unlimited access unlocked.", "success");
+          setTimeout(() => showView("view-home"), 1500);
+        } else if (pollCount >= 18) { // 3 min at 10s intervals
+          clearInterval(pollInterval);
+          upgradeBtn.textContent = "Complete payment, then reopen";
+        }
+      } catch { /* ignore */ }
+    }, 10000);
   } catch (err) {
     errorSetter(err.message);
-    upgradeBtn.textContent = prevText;
+    if (btn) btn.textContent = btn.dataset.prevText || "Upgrade to Pro — $9/month";
   } finally {
-    upgradeBtn.disabled = false;
+    if (btn) btn.disabled = false;
   }
 }
 
-document.getElementById("upgrade-btn")?.addEventListener("click", () => startUpgrade(false));
-document.getElementById("upgrade-prompt-btn")?.addEventListener("click", () => startUpgrade(true));
+document.getElementById("upgrade-btn")?.addEventListener("click", (e) => startUpgrade(e.currentTarget));
+document.getElementById("upgrade-prompt-btn")?.addEventListener("click", (e) => startUpgrade(e.currentTarget));
 document.getElementById("upgrade-prompt-back")?.addEventListener("click", () => showView("view-home"));
 
 // ── Profile helpers ────────────────────────────────────────────────────────
@@ -2178,7 +2211,7 @@ async function openDeepLeadSearch() {
 }
 
 document.getElementById("lead-limit-back")?.addEventListener("click", () => showView("view-home"));
-document.getElementById("lead-limit-upgrade")?.addEventListener("click", () => startUpgrade(false));
+document.getElementById("lead-limit-upgrade")?.addEventListener("click", (e) => startUpgrade(e.currentTarget));
 
 // ── Visibility / focus refresh ─────────────────────────────────────────────
 
