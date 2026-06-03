@@ -172,9 +172,8 @@ export async function createDodoCheckoutSession({
     confirm: false,
     customer: {
       email,
-      name: customerName || "ProPostly User",
+      name: customerName || undefined,
     },
-    billing_address: billing,
     metadata: buildMetadata(userId),
   };
 
@@ -242,7 +241,9 @@ export async function createDodoPaymentLink({
 }
 
 /**
- * Preferred order: static URL → checkout session → payment link API.
+ * Preferred order: checkout session API → payment link → static URL fallback.
+ * Static URL is last because it pre-fills billing address as locked fields,
+ * which prevents users from editing the form (mouse clicks appear blocked).
  */
 export async function createUpgradeCheckoutUrl({
   userId,
@@ -254,37 +255,30 @@ export async function createUpgradeCheckoutUrl({
   const checkoutOpts = { userId, customerEmail, customerName, country, india };
   const indiaCheckout = isIndiaCheckout({ country, india });
 
-  // India: Checkout Session API first (UPI requires IN + INR + upi_collect)
-  if (indiaCheckout && (config.dodoSecretKey || config.dodoApiKey)) {
+  // Checkout Session API — proper interactive hosted page, all fields editable
+  if (config.dodoSecretKey || config.dodoApiKey) {
     try {
       return {
         checkoutUrl: await createDodoCheckoutSession(checkoutOpts),
-        method: "session_india",
+        method: indiaCheckout ? "session_india" : "session",
       };
     } catch {
-      // fall through to static + other fallbacks
+      // fall through to payment link
+    }
+
+    try {
+      return {
+        checkoutUrl: await createDodoPaymentLink(checkoutOpts),
+        method: "payment_link",
+      };
+    } catch {
+      // fall through to static URL
     }
   }
 
-  // Static URL — reliable redirect for extension; includes UPI params when IN
-  try {
-    return {
-      checkoutUrl: buildStaticCheckoutUrl(checkoutOpts),
-      method: indiaCheckout ? "static_india" : "static",
-    };
-  } catch (staticErr) {
-    if (!config.dodoSecretKey && !config.dodoApiKey) throw staticErr;
-  }
-
-  try {
-    return {
-      checkoutUrl: await createDodoCheckoutSession(checkoutOpts),
-      method: "session",
-    };
-  } catch {
-    return {
-      checkoutUrl: await createDodoPaymentLink(checkoutOpts),
-      method: "payment_link",
-    };
-  }
+  // Last resort: static URL (fields may be pre-filled but still functional)
+  return {
+    checkoutUrl: buildStaticCheckoutUrl(checkoutOpts),
+    method: "static",
+  };
 }
