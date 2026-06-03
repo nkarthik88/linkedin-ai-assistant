@@ -96,25 +96,25 @@ function extractName() {
 }
 
 function extractHeadline() {
+  const HEADLINE_SELECTORS = [
+    ".text-body-medium.break-words",
+    ".pv-text-details__left-panel .text-body-medium",
+    ".ph5 .text-body-medium",
+    '[data-field="headline"]',
+    ".pv-top-card--experience-list-item span",
+  ];
+
   const topCard = queryFirst([
-    "main section.artdeco-card",
     ".pv-top-card",
     '[data-view-name="profile-top-card"]',
     '[data-view-name="profile-card"]',
     "main .ph5",
+    "main section.artdeco-card",
   ]);
 
-  const el = queryFirst(
-    [
-      ".text-body-medium.break-words",
-      "div.text-body-medium",
-      ".pv-text-details__left-panel .text-body-medium",
-      ".ph5 .text-body-medium",
-      '[data-field="headline"]',
-      ".pv-top-card--experience-list-item span",
-    ],
-    topCard || document
-  );
+  // Search within topCard first; fall back to full document if not found there
+  let el = topCard ? queryFirst(HEADLINE_SELECTORS, topCard) : null;
+  if (!el) el = queryFirst(HEADLINE_SELECTORS, document);
 
   const text = getText(el);
   if (text && text.length <= 300) return text;
