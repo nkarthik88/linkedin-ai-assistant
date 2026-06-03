@@ -1763,30 +1763,10 @@ async function renderSavedLeads() {
 // ── Background-tab auto search ────────────────────────────────────────────────
 
 async function autoSearchProfiles(searchUrl) {
-  // The popup runs in its own window, so navigating a LinkedIn tab in the main
-  // browser window does NOT close the popup. We can reuse ANY LinkedIn tab
-  // (including the one the user was viewing) without disrupting the popup UX.
-  const allLinkedInTabs = await chrome.tabs.query({ url: "*://*.linkedin.com/*" });
-  const reusedTab = allLinkedInTabs[0] || null;
-  const originalUrl = reusedTab?.url || null;
-
-  let tab;
-  if (reusedTab) {
-    // Navigate silently — active: false prevents Chrome from focusing the tab
-    await chrome.tabs.update(reusedTab.id, { url: searchUrl, active: false });
-    tab = reusedTab;
-  } else {
-    // No LinkedIn tab open — create one in the background, close it after
-    tab = await chrome.tabs.create({ url: searchUrl, active: false });
-  }
+  // Always open a fresh background tab — never navigate the user's current page.
+  // The tab is invisible to the user (active: false) and removed after scraping.
+  const tab = await chrome.tabs.create({ url: searchUrl, active: false });
   const tabId = tab.id;
-
-  // After navigating, re-assert the popup window stays focused so the tab
-  // switch Chrome triggers on update() is immediately reversed.
-  try {
-    const popupWin = await chrome.windows.getCurrent();
-    await chrome.windows.update(popupWin.id, { focused: true });
-  } catch { /* non-fatal */ }
 
   try {
     const deadline = Date.now() + 28000;
@@ -1807,12 +1787,7 @@ async function autoSearchProfiles(searchUrl) {
     return profiles;
   } finally {
     try {
-      if (reusedTab && originalUrl) {
-        // Restore tab silently — don't re-focus it
-        await chrome.tabs.update(tabId, { url: originalUrl, active: false });
-      } else {
-        await chrome.tabs.remove(tabId);
-      }
+      await chrome.tabs.remove(tabId);
     } catch {
       /* tab already closed */
     }
