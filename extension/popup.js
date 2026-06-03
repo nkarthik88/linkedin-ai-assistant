@@ -587,7 +587,7 @@ async function startUpgrade(triggerBtn = null) {
     }, 10000);
   } catch (err) {
     errorSetter(err.message);
-    if (btn) btn.textContent = btn.dataset.prevText || "Upgrade to Pro — $9/month";
+    if (btn) btn.textContent = btn.dataset.prevText || "Upgrade to Pro — ₹862/month";
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -730,8 +730,8 @@ async function callApi(body) {
     if (titleEl) titleEl.textContent = "You've reached your free limit";
     if (descEl) {
       descEl.innerHTML = limitMsg
-        ? `${escapeHtml(limitMsg)}<br><br>Upgrade to Pro for <strong>unlimited AI generations</strong> — just $9/month.`
-        : `Upgrade to Pro for <strong>unlimited AI generations</strong> every month — just $9/month.`;
+        ? `${escapeHtml(limitMsg)}<br><br>Upgrade to Pro for <strong>unlimited AI generations</strong> — just ₹862/month.`
+        : `Upgrade to Pro for <strong>unlimited AI generations</strong> every month — just ₹862/month.`;
     }
     showView("view-upgrade-prompt");
     throw new Error("__LIMIT_REACHED__");

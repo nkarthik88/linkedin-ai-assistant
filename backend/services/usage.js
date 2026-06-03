@@ -326,7 +326,7 @@ function featureLabel(feature) {
 
 /**
  * Consume one Find Leads search. Enforces the per-plan monthly lead cap
- * (free: 2, pro/plus: 50). If the lead column isn't present yet, it degrades
+ * (free: 5, pro/plus: 50). If the lead column isn't present yet, it degrades
  * to allowing the search rather than erroring.
  */
 export async function consumeLeadSearch(userId) {
@@ -409,7 +409,7 @@ export async function setProStatusForUser(userId, isPro) {
   const pro = Boolean(isPro);
   // On upgrade to Pro, reset per-feature usage so the user starts fresh.
   const resetFields = pro
-    ? { feature_usage: {}, lead_searches_this_month: 0 }
+    ? { feature_usage: {}, lead_searches_this_month: 0, usage_this_month: 0 }
     : {};
 
   const { data: authUser } = await supabaseAdmin
