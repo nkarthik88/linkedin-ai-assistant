@@ -1763,9 +1763,18 @@ async function renderSavedLeads() {
 // ── Background-tab auto search ────────────────────────────────────────────────
 
 async function autoSearchProfiles(searchUrl) {
-  setLoading("🔍 Searching LinkedIn…", "Opening results in a background tab");
+  // Reuse an existing inactive LinkedIn tab to avoid opening a new visible tab.
+  const existingTabs = await chrome.tabs.query({ url: "*://*.linkedin.com/*", active: false });
+  const reusedTab = existingTabs.length > 0 ? existingTabs[0] : null;
+  const originalUrl = reusedTab?.url || null;
 
-  const tab = await chrome.tabs.create({ url: searchUrl, active: false });
+  let tab;
+  if (reusedTab) {
+    await chrome.tabs.update(reusedTab.id, { url: searchUrl });
+    tab = reusedTab;
+  } else {
+    tab = await chrome.tabs.create({ url: searchUrl, active: false });
+  }
   const tabId = tab.id;
 
   try {
@@ -1787,9 +1796,13 @@ async function autoSearchProfiles(searchUrl) {
     return profiles;
   } finally {
     try {
-      await chrome.tabs.remove(tabId);
+      if (reusedTab && originalUrl) {
+        await chrome.tabs.update(tabId, { url: originalUrl });
+      } else {
+        await chrome.tabs.remove(tabId);
+      }
     } catch {
-      /* already closed */
+      /* tab already closed */
     }
   }
 }
@@ -2100,7 +2113,7 @@ async function runDeepLeadSearch(filters) {
   }
 
   showView("view-loading");
-  setLoading("🔍 Searching LinkedIn…", "Opening results in a background tab");
+  setLoading("🔍 Searching LinkedIn…", "Scanning profiles, please wait…");
 
   try {
     let profiles = [];
