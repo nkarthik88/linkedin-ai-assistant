@@ -77,6 +77,12 @@ async function getUserName() {
   return upgradeName || "";
 }
 
+function updateHeaderName(name) {
+  const el = document.getElementById("header-user-name");
+  if (!el) return;
+  el.textContent = name ? `Hi, ${name} 👋` : "AI-powered content for your LinkedIn";
+}
+
 // ── Onboarding ─────────────────────────────────────────────────────────────
 
 async function checkOnboarding() {
@@ -88,7 +94,24 @@ async function checkOnboarding() {
 }
 
 document.getElementById("onboarding-start")?.addEventListener("click", async () => {
-  await chrome.storage.local.set({ onboardingDone: true });
+  const nameInput = document.getElementById("onboarding-name");
+  const emailInput = document.getElementById("onboarding-email");
+  const errorEl = document.getElementById("onboarding-error");
+
+  const name = nameInput?.value.trim() || "";
+  const email = emailInput?.value.trim() || "";
+
+  if (!name) {
+    if (errorEl) { errorEl.textContent = "Please enter your name."; errorEl.hidden = false; }
+    nameInput?.focus();
+    return;
+  }
+
+  const save = { onboardingDone: true, upgradeName: name };
+  if (email && email.includes("@")) save.upgradeEmail = email;
+  await chrome.storage.local.set(save);
+
+  updateHeaderName(name);
   const overlay = document.getElementById("onboarding");
   if (overlay) overlay.hidden = true;
 });
@@ -250,18 +273,22 @@ async function refreshAccountStatus() {
 // ── Account page ───────────────────────────────────────────────────────────
 
 async function renderAccountPage(status) {
-  const emailEl = document.getElementById("account-email");
+  const nameEl = document.getElementById("account-name");
+  const emailTextEl = document.getElementById("account-email-text");
   const badgeEl = document.getElementById("account-tier-badge");
   const usageText = document.getElementById("account-usage-text");
   const usageBar = document.getElementById("account-usage-bar");
   const usageNote = document.getElementById("account-usage-note");
   const proSection = document.getElementById("account-pro-section");
   const freeSection = document.getElementById("account-free-section");
-  const emailInput = document.getElementById("account-email-input");
+  const emailUnsetSection = document.getElementById("account-email-unset");
 
+  const name = await getUserName();
   const email = await getUserEmail();
-  if (emailEl) emailEl.textContent = email || "No email saved";
-  if (emailInput && email) emailInput.value = email;
+
+  if (nameEl) nameEl.textContent = name || "—";
+  if (emailTextEl) emailTextEl.textContent = email || "No email saved";
+  if (emailUnsetSection) emailUnsetSection.hidden = Boolean(email);
 
   if (!status) return;
 
@@ -372,8 +399,10 @@ document.getElementById("account-email-save")?.addEventListener("click", async (
   }
 
   await chrome.storage.local.set({ upgradeEmail: email });
-  const emailEl = document.getElementById("account-email");
-  if (emailEl) emailEl.textContent = email;
+  const emailTextEl = document.getElementById("account-email-text");
+  if (emailTextEl) emailTextEl.textContent = email;
+  const emailUnsetSection = document.getElementById("account-email-unset");
+  if (emailUnsetSection) emailUnsetSection.hidden = true;
 
   if (statusEl) {
     statusEl.textContent = "✓ Email saved";
@@ -2167,6 +2196,8 @@ window.addEventListener("focus", () => {
 
 (async function init() {
   await checkOnboarding();
+  const name = await getUserName();
+  updateHeaderName(name);
   await refreshAccountStatus();
   renderSavedLeads();
 })();

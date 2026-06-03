@@ -20,8 +20,13 @@
           <li><span class="of-icon">🎯</span><span><strong>Improve Headline</strong> — keyword-optimized rewrites</span></li>
           <li><span class="of-icon">🚀</span><span><strong>Viral Post Rewriter</strong> — boost your post's engagement</span></li>
         </ul>
-        <p class="onboarding-free">Free plan: <strong>10 AI generations/month</strong></p>
-        <button id="onboarding-start" class="submit-btn">Get Started →</button>
+        <p class="onboarding-free">Free plan: <strong>10 AI generations/month per feature</strong></p>
+        <div class="onboarding-form">
+          <input type="text" id="onboarding-name" placeholder="Your full name" autocomplete="name" />
+          <input type="email" id="onboarding-email" placeholder="your@email.com (for receipts)" autocomplete="email" />
+          <p id="onboarding-error" class="onboarding-error" hidden></p>
+          <button id="onboarding-start" class="submit-btn">Save &amp; Get Started →</button>
+        </div>
       </div>
     </div>
 
@@ -33,7 +38,7 @@
         <div class="header-inner">
           <div>
             <h1>ProPostly</h1>
-            <p>AI-powered content for your LinkedIn</p>
+            <p id="header-user-name" class="header-user-name">AI-powered content for your LinkedIn</p>
           </div>
           <button id="account-tab-btn" class="account-tab-btn" title="Account" aria-label="Account">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -109,7 +114,8 @@
                 </svg>
               </div>
               <div>
-                <div id="account-email" class="account-email">—</div>
+                <div id="account-name" class="account-name">—</div>
+                <div id="account-email" class="account-email-locked"><span id="account-email-text">—</span> <span class="lock-icon" title="Email locked after first setup">🔒</span></div>
                 <span id="account-tier-badge" class="tier-badge">Free Tier</span>
               </div>
             </div>
@@ -123,6 +129,28 @@
                 <div id="account-usage-bar" class="usage-bar-fill" style="width:0%"></div>
               </div>
               <p id="account-usage-note" class="usage-note"></p>
+              <div id="feature-usage-breakdown" class="feature-usage-breakdown" hidden>
+                <div class="feature-usage-row" data-feature="generate_post">
+                  <span class="fur-label">✍️ Generate Post</span>
+                  <span class="fur-counter">—</span>
+                </div>
+                <div class="feature-usage-row" data-feature="personalized_dm">
+                  <span class="fur-label">💬 Personalized DM</span>
+                  <span class="fur-counter">—</span>
+                </div>
+                <div class="feature-usage-row" data-feature="reply_comment">
+                  <span class="fur-label">↩️ Reply to Comment</span>
+                  <span class="fur-counter">—</span>
+                </div>
+                <div class="feature-usage-row" data-feature="improve_headline">
+                  <span class="fur-label">🎯 Improve Headline</span>
+                  <span class="fur-counter">—</span>
+                </div>
+                <div class="feature-usage-row" data-feature="deep_lead_search">
+                  <span class="fur-label">🔎 Deep Lead Search</span>
+                  <span class="fur-counter">—</span>
+                </div>
+              </div>
             </div>
 
             <div id="account-pro-section" class="account-pro-section" hidden>
@@ -142,8 +170,8 @@
               </button>
             </div>
 
-            <div class="account-email-edit">
-              <label for="account-email-input" style="margin-top:16px;">Email (for receipts &amp; alerts)</label>
+            <div id="account-email-unset" class="account-email-unset" hidden>
+              <p class="email-unset-hint">Add your email to receive receipts and upgrade alerts.</p>
               <div class="email-edit-row">
                 <input type="email" id="account-email-input" placeholder="your@email.com" />
                 <button id="account-email-save" class="email-save-btn">Save</button>
