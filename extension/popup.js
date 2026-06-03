@@ -1763,16 +1763,20 @@ async function renderSavedLeads() {
 // ── Background-tab auto search ────────────────────────────────────────────────
 
 async function autoSearchProfiles(searchUrl) {
-  // Reuse an existing inactive LinkedIn tab to avoid opening a new visible tab.
-  const existingTabs = await chrome.tabs.query({ url: "*://*.linkedin.com/*", active: false });
-  const reusedTab = existingTabs.length > 0 ? existingTabs[0] : null;
+  // The popup runs in its own window, so navigating a LinkedIn tab in the main
+  // browser window does NOT close the popup. We can reuse ANY LinkedIn tab
+  // (including the one the user was viewing) without disrupting the popup UX.
+  const allLinkedInTabs = await chrome.tabs.query({ url: "*://*.linkedin.com/*" });
+  const reusedTab = allLinkedInTabs[0] || null;
   const originalUrl = reusedTab?.url || null;
 
   let tab;
   if (reusedTab) {
+    // Navigate their existing LinkedIn tab silently in the background
     await chrome.tabs.update(reusedTab.id, { url: searchUrl });
     tab = reusedTab;
   } else {
+    // No LinkedIn tab open — create one in the background, close it after
     tab = await chrome.tabs.create({ url: searchUrl, active: false });
   }
   const tabId = tab.id;
@@ -1797,6 +1801,7 @@ async function autoSearchProfiles(searchUrl) {
   } finally {
     try {
       if (reusedTab && originalUrl) {
+        // Restore the tab to where the user was
         await chrome.tabs.update(tabId, { url: originalUrl });
       } else {
         await chrome.tabs.remove(tabId);
