@@ -1763,8 +1763,8 @@ async function renderSavedLeads() {
 // ── Background-tab auto search ────────────────────────────────────────────────
 
 async function autoSearchProfiles(searchUrl) {
-  // Always open a fresh background tab — never navigate the user's current page.
-  // The tab is invisible to the user (active: false) and removed after scraping.
+  // Open a background tab. content.js is declared in manifest content_scripts
+  // so it auto-injects — we never call executeScript() which would steal focus.
   const tab = await chrome.tabs.create({ url: searchUrl, active: false });
   const tabId = tab.id;
 
@@ -1774,14 +1774,17 @@ async function autoSearchProfiles(searchUrl) {
     while (Date.now() < deadline) {
       await sleepMs(1500);
       try {
-        await ensureContentScript(tabId);
+        // Only use sendMessage — never executeScript — to avoid focus stealing.
+        // content.js injects automatically via manifest; just wait for PING.
+        const ping = await chrome.tabs.sendMessage(tabId, { type: "PING" });
+        if (!ping?.success) continue;
         const resp = await chrome.tabs.sendMessage(tabId, { type: "AUTO_SCRAPE" });
         if (resp?.success && resp.profiles?.length) {
           profiles = resp.profiles;
           break;
         }
       } catch {
-        /* tab still loading, keep waiting */
+        /* tab still loading — content script not ready yet */
       }
     }
     return profiles;

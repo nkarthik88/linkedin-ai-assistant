@@ -338,8 +338,14 @@ async function autoScrapeSearch(maxMs = 12000, debug = false) {
   let passes = 0;
   let maxAnchors = 0;
 
+  // Skip scroll in hidden/background tabs — scrolling a hidden tab causes Chrome
+  // to bring it to the foreground, stealing focus from the extension popup.
+  const isBackground = document.visibilityState === "hidden";
+
   while (Date.now() - start < maxMs) {
-    window.scrollTo(0, document.body.scrollHeight);
+    if (!isBackground) {
+      window.scrollTo(0, document.body.scrollHeight);
+    }
     await sleep(750);
     const count = document.querySelectorAll('a[href*="/in/"]').length;
     maxAnchors = Math.max(maxAnchors, count);
@@ -356,7 +362,7 @@ async function autoScrapeSearch(maxMs = 12000, debug = false) {
     lastCount = count;
   }
 
-  window.scrollTo(0, 0);
+  if (!isBackground) window.scrollTo(0, 0);
   await sleep(200);
   const profiles = extractSearchProfiles();
   const diag = {
