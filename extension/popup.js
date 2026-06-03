@@ -72,6 +72,11 @@ async function getUserEmail() {
   return upgradeEmail || "";
 }
 
+async function getUserName() {
+  const { upgradeName } = await chrome.storage.local.get("upgradeName");
+  return upgradeName || "";
+}
+
 // ── Onboarding ─────────────────────────────────────────────────────────────
 
 async function checkOnboarding() {
@@ -464,6 +469,7 @@ async function startUpgrade(fromPrompt = false) {
     if (!userId) throw new Error("Could not identify your account. Reload the extension and try again.");
 
     let customerEmail = await getUserEmail();
+    let customerName = await getUserName();
 
     if (!customerEmail) {
       const prompted = window.prompt(
@@ -473,6 +479,14 @@ async function startUpgrade(fromPrompt = false) {
       if (prompted && prompted.includes("@")) {
         customerEmail = prompted.trim();
         await chrome.storage.local.set({ upgradeEmail: customerEmail });
+      }
+    }
+
+    if (!customerName) {
+      const prompted = window.prompt("Enter your full name for the checkout form (optional):", "");
+      if (prompted && prompted.trim()) {
+        customerName = prompted.trim();
+        await chrome.storage.local.set({ upgradeName: customerName });
       }
     }
 
@@ -489,6 +503,8 @@ async function startUpgrade(fromPrompt = false) {
         userId: String(userId),
         email: customerEmail || undefined,
         customerEmail: customerEmail || undefined,
+        name: customerName || undefined,
+        customerName: customerName || undefined,
         country: india ? "IN" : undefined,
         india,
       }),

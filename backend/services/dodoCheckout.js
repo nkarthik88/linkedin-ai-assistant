@@ -91,7 +91,7 @@ export function buildStaticCheckoutUrl({
   url.searchParams.set("redirect_url", returnUrl);
 
   url.searchParams.set("email", email);
-  url.searchParams.set("fullName", "ProPostly User");
+  url.searchParams.set("fullName", customerName || "");
   url.searchParams.set("country", billing.country);
   url.searchParams.set("addressLine", billing.street);
   url.searchParams.set("city", billing.city);
