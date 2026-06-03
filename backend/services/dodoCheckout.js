@@ -71,6 +71,7 @@ function buildMetadata(userId) {
 export function buildStaticCheckoutUrl({
   userId,
   customerEmail,
+  customerName,
   country,
   india,
 }) {
