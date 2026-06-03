@@ -1772,14 +1772,21 @@ async function autoSearchProfiles(searchUrl) {
 
   let tab;
   if (reusedTab) {
-    // Navigate their existing LinkedIn tab silently in the background
-    await chrome.tabs.update(reusedTab.id, { url: searchUrl });
+    // Navigate silently — active: false prevents Chrome from focusing the tab
+    await chrome.tabs.update(reusedTab.id, { url: searchUrl, active: false });
     tab = reusedTab;
   } else {
     // No LinkedIn tab open — create one in the background, close it after
     tab = await chrome.tabs.create({ url: searchUrl, active: false });
   }
   const tabId = tab.id;
+
+  // After navigating, re-assert the popup window stays focused so the tab
+  // switch Chrome triggers on update() is immediately reversed.
+  try {
+    const popupWin = await chrome.windows.getCurrent();
+    await chrome.windows.update(popupWin.id, { focused: true });
+  } catch { /* non-fatal */ }
 
   try {
     const deadline = Date.now() + 28000;
@@ -1801,8 +1808,8 @@ async function autoSearchProfiles(searchUrl) {
   } finally {
     try {
       if (reusedTab && originalUrl) {
-        // Restore the tab to where the user was
-        await chrome.tabs.update(tabId, { url: originalUrl });
+        // Restore tab silently — don't re-focus it
+        await chrome.tabs.update(tabId, { url: originalUrl, active: false });
       } else {
         await chrome.tabs.remove(tabId);
       }
