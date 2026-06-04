@@ -500,7 +500,7 @@
     .pricing-note { font-size:12px; color:var(--gray-400); text-align:center; margin-top:8px; }
     .pricing-value { text-align:center; margin-top:28px; font-size:14px; color:var(--gray-400); }
 
-    /* ── Social & Support Section ──────────────────────────── */
+    /* ── Social / Platform Section ────────────────────────── */
     .social-section { background:var(--gray-50); }
     .social-grid-3 {
       display:grid; grid-template-columns:repeat(3,1fr); gap:20px;
@@ -513,11 +513,10 @@
       transition:box-shadow .2s, border-color .2s, transform .3s;
     }
     .social-card-new:hover { transform:translateY(-3px); box-shadow:0 8px 32px rgba(0,0,0,.08); }
-    .social-card-new.coming { opacity:.8; }
-    .social-card-new.twitter-live {
+    .social-card-new.coming { opacity:.82; }
+    .social-card-new.support-live {
       border:2px solid transparent;
       background:linear-gradient(white,white) padding-box, linear-gradient(135deg,#22c55e,#16a34a) border-box;
-      opacity:1;
     }
     .social-badge {
       display:inline-flex; align-items:center; gap:5px;
@@ -525,71 +524,66 @@
       border-radius:100px; margin-bottom:20px;
     }
     .coming-badge { background:var(--gray-100); color:var(--gray-500); border:1px solid var(--gray-200); }
-    .live-badge {
-      background:rgba(34,197,94,.12); color:#16a34a;
-      border:1px solid rgba(34,197,94,.3);
-    }
-    .live-dot {
-      width:6px; height:6px; border-radius:50%; background:#22c55e;
-      animation:livePulse 1.5s ease infinite;
-    }
+    .live-badge { background:rgba(34,197,94,.12); color:#16a34a; border:1px solid rgba(34,197,94,.3); }
+    .live-dot { width:6px; height:6px; border-radius:50%; background:#22c55e; animation:livePulse 1.5s ease infinite; display:inline-block; }
     .social-icon-new {
       width:60px; height:60px; border-radius:16px; margin:0 auto 16px;
-      display:flex; align-items:center; justify-content:center; font-size:30px;
+      display:flex; align-items:center; justify-content:center;
     }
     .social-icon-new.ig { background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); }
     .social-icon-new.reddit-bg { background:#ff4500; }
     .social-icon-new.twitter-bg { background:#000; }
-    .social-handle { font-size:18px; font-weight:800; color:var(--black); margin-bottom:8px; }
-    .social-desc { font-size:14px; color:var(--gray-400); line-height:1.5; margin-bottom:24px; }
+    .social-card-title { font-size:17px; font-weight:800; color:var(--black); margin-bottom:10px; }
+    .social-desc { font-size:14px; color:var(--gray-400); line-height:1.55; margin-bottom:8px; }
+    .social-sub-desc { font-size:13px; color:var(--gray-500); line-height:1.5; margin-bottom:24px; }
     .btn-social-off {
       display:block; padding:12px; border-radius:var(--radius);
       background:var(--gray-100); color:var(--gray-400);
       font-size:14px; font-weight:600; cursor:not-allowed;
-      border:1px solid var(--gray-200);
+      border:1px solid var(--gray-200); width:100%;
     }
     .btn-social-live {
       display:block; padding:12px; border-radius:var(--radius);
       background:linear-gradient(135deg,#22c55e,#16a34a); color:#fff;
       font-size:14px; font-weight:700; text-align:center;
-      transition:opacity .2s, box-shadow .2s;
+      transition:opacity .2s, box-shadow .2s; width:100%;
     }
     .btn-social-live:hover { opacity:.9; box-shadow:0 4px 16px rgba(34,197,94,.4); }
+    .social-respond { font-size:12px; color:#16a34a; font-weight:600; margin-top:8px; }
 
-    /* Content Previews */
+    /* Platform Previews */
     .preview-section { margin-top:56px; }
-    .preview-title {
-      font-size:20px; font-weight:800; color:var(--black);
-      text-align:center; margin-bottom:28px; letter-spacing:-0.5px;
-    }
-    .preview-grid {
-      display:grid; grid-template-columns:repeat(3,1fr); gap:16px;
-    }
+    .preview-title { font-size:20px; font-weight:800; color:var(--black); text-align:center; margin-bottom:28px; letter-spacing:-0.5px; }
+    .preview-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
     .preview-card {
       background:var(--white); border:1px solid var(--gray-200);
       border-radius:var(--radius-lg); padding:20px;
-      transition:transform .2s, box-shadow .2s;
-      position:relative; overflow:hidden;
+      transition:transform .2s, box-shadow .2s; position:relative; overflow:hidden;
     }
     .preview-card:hover { transform:translateY(-3px); box-shadow:0 8px 32px rgba(0,0,0,.08); }
-    .preview-platform {
-      font-size:12px; font-weight:700; color:var(--gray-500);
-      margin-bottom:10px;
+    .preview-card.muted { opacity:.75; }
+    .preview-card.highlight {
+      border:2px solid transparent;
+      background:linear-gradient(white,white) padding-box, linear-gradient(135deg,#6366f1,#8b5cf6) border-box;
     }
+    .preview-platform { font-size:12px; font-weight:700; color:var(--gray-500); margin-bottom:10px; }
     .preview-divider { height:1px; background:var(--gray-100); margin-bottom:12px; }
-    .preview-text { font-size:14px; color:var(--gray-700); line-height:1.6; margin-bottom:12px; font-style:italic; }
-    .preview-tags { font-size:12px; color:var(--accent); margin-bottom:12px; }
-    .preview-votes { font-size:12px; color:var(--gray-400); font-weight:600; margin-bottom:12px; }
-    .preview-cta {
-      display:inline-block; font-size:13px; font-weight:700;
-      color:var(--indigo); margin-bottom:12px;
-    }
-    .preview-ai-badge {
+    .preview-label { font-size:12px; font-weight:600; color:var(--gray-400); margin-bottom:8px; }
+    .preview-text { font-size:14px; color:var(--gray-700); line-height:1.6; margin-bottom:14px; font-style:italic; }
+    .preview-cs-badge {
       display:inline-flex; align-items:center; gap:4px;
-      font-size:11px; font-weight:700; padding:3px 8px;
-      background:rgba(99,102,241,.08); color:var(--indigo);
-      border:1px solid rgba(99,102,241,.15); border-radius:100px;
+      font-size:11px; font-weight:700; padding:3px 10px;
+      background:var(--gray-100); color:var(--gray-500);
+      border:1px solid var(--gray-200); border-radius:100px;
     }
+    .preview-install {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:10px 18px; font-size:13px; font-weight:700;
+      background:linear-gradient(135deg,#6366f1,#8b5cf6);
+      color:#fff; border-radius:100px; text-decoration:none;
+      transition:transform .2s, box-shadow .2s;
+    }
+    .preview-install:hover { transform:translateY(-1px); box-shadow:0 4px 16px rgba(99,102,241,.4); }
 
     /* ── FAQ ───────────────────────────────────────────────── */
     .faq { background:var(--white); }
@@ -1025,26 +1019,27 @@
       </div>
     </section>
 
-    <!-- ── Social & Support ────────────────────────────────────── -->
+    <!-- ── Platform Roadmap & Support ───────────────────────── -->
     <section class="social-section" id="community">
       <div class="container">
         <div class="aos" style="text-align:center;">
-          <p class="section-label">Connect &amp; Support</p>
-          <h2 class="section-title">Connect &amp; Get Support 🚀</h2>
-          <p class="section-sub">Follow us for updates or reach out if you need help with anything</p>
+          <p class="section-label">Platform Roadmap</p>
+          <h2 class="section-title">Coming to More Platforms 🚀</h2>
+          <p class="section-sub">ProPostly works on LinkedIn today.<br>Instagram and Reddit support is coming soon!</p>
         </div>
 
-        <!-- 3 Social Cards -->
+        <!-- 3 Cards -->
         <div class="social-grid-3">
+
           <!-- Instagram -->
           <div class="social-card-new coming aos d1">
             <div class="social-badge coming-badge">Coming Soon 🔜</div>
             <div class="social-icon-new ig">
               <svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
             </div>
-            <div class="social-handle">@ProPostly</div>
-            <div class="social-desc">Daily LinkedIn tips &amp; AI content examples</div>
-            <button class="btn-social-off" disabled title="Coming soon!">Follow on Instagram</button>
+            <div class="social-card-title">ProPostly for Instagram</div>
+            <div class="social-desc">Generate AI-powered captions, story ideas and bio rewrites directly inside Instagram — just like LinkedIn</div>
+            <button class="btn-social-off" disabled title="Coming soon — stay tuned!">Get Notified</button>
           </div>
 
           <!-- Reddit -->
@@ -1053,51 +1048,60 @@
             <div class="social-icon-new reddit-bg">
               <svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
             </div>
-            <div class="social-handle">r/ProPostly</div>
-            <div class="social-desc">Community discussions &amp; LinkedIn growth hacks</div>
-            <button class="btn-social-off" disabled title="Coming soon!">Join Community</button>
+            <div class="social-card-title">ProPostly for Reddit</div>
+            <div class="social-desc">Generate AI-powered posts, comments and replies directly inside Reddit — same magic as LinkedIn</div>
+            <button class="btn-social-off" disabled title="Coming soon — stay tuned!">Get Notified</button>
           </div>
 
-          <!-- Twitter/X — LIVE -->
-          <div class="social-card-new twitter-live aos d3">
-            <div class="social-badge live-badge"><span class="live-dot"></span>✅ Live Now</div>
+          <!-- Contact & Support — LIVE -->
+          <div class="social-card-new support-live aos d3">
+            <div class="social-badge live-badge"><span class="live-dot"></span>&nbsp;✅ Live Now</div>
             <div class="social-icon-new twitter-bg">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
             </div>
-            <div class="social-handle">@Karthik23n</div>
-            <div class="social-desc">Reach out directly for support, feedback or feature requests</div>
-            <a href="https://x.com/Karthik23n" target="_blank" rel="noopener" class="btn-social-live">DM on Twitter/X →</a>
+            <div class="social-card-title">Contact &amp; Support</div>
+            <div class="social-desc">Have a question, issue or feature request? Reach out directly on Twitter/X — I reply to everyone!</div>
+            <div class="social-sub-desc">DM or tweet @Karthik23n for help, feedback or just to say hi 👋</div>
+            <a href="https://x.com/Karthik23n" target="_blank" rel="noopener" class="btn-social-live">Contact on Twitter/X →</a>
+            <p class="social-respond">We respond within 24 hours</p>
           </div>
         </div>
 
-        <!-- Content Previews -->
+        <!-- Platform Previews -->
         <div class="preview-section aos d2">
-          <p class="preview-title">Here's what we'll be posting 👇</p>
+          <p class="preview-title">What ProPostly will do on each platform 👇</p>
           <div class="preview-grid">
-            <!-- Instagram preview -->
-            <div class="preview-card">
-              <div class="preview-platform">📱 Instagram · @ProPostly</div>
+
+            <!-- Instagram -->
+            <div class="preview-card muted">
+              <div class="preview-platform">📱 Instagram</div>
+              <div style="font-size:13px;font-weight:700;color:var(--black);margin-bottom:8px;">ProPostly for Instagram</div>
               <div class="preview-divider"></div>
-              <div class="preview-text">"5 LinkedIn hooks that got 10,000+ impressions. Generated with AI ✨"</div>
-              <div class="preview-tags">#LinkedIn #AI #PersonalBrand</div>
-              <div class="preview-ai-badge">🤖 AI Generated</div>
+              <div class="preview-label">Generate captions like:</div>
+              <div class="preview-text">"Just launched our new product! Here's the story behind it ✨ #Entrepreneur #Startup"</div>
+              <span class="preview-cs-badge">Coming Soon 🔜</span>
             </div>
-            <!-- Reddit preview -->
-            <div class="preview-card">
-              <div class="preview-platform">🤖 r/ProPostly</div>
+
+            <!-- Reddit -->
+            <div class="preview-card muted">
+              <div class="preview-platform">🤖 Reddit</div>
+              <div style="font-size:13px;font-weight:700;color:var(--black);margin-bottom:8px;">ProPostly for Reddit</div>
               <div class="preview-divider"></div>
-              <div class="preview-text">"I used AI to write LinkedIn posts for 30 days. Here's what happened to my views"</div>
-              <div class="preview-votes">👍 2.4k &nbsp;&nbsp; 💬 342</div>
-              <div class="preview-ai-badge">🤖 AI Generated</div>
+              <div class="preview-label">Generate posts like:</div>
+              <div class="preview-text">"I spent 6 months building my side project. Here's everything I learned..."</div>
+              <span class="preview-cs-badge">Coming Soon 🔜</span>
             </div>
-            <!-- ProPostly tip -->
-            <div class="preview-card">
-              <div class="preview-platform">💡 ProPostly Tip</div>
+
+            <!-- LinkedIn — AVAILABLE NOW -->
+            <div class="preview-card highlight">
+              <div class="preview-platform">💼 <span style="color:#22c55e;font-weight:800;">✅ Available NOW</span></div>
+              <div style="font-size:13px;font-weight:700;color:var(--black);margin-bottom:8px;">ProPostly for LinkedIn</div>
               <div class="preview-divider"></div>
-              <div class="preview-text">"Use Deep Lead Search to find 10 qualified prospects in 10 seconds. Here's how:"</div>
-              <a href="https://chrome.google.com/webstore/detail/propostly/hggehcjcbnfpdglbildpaiidhigfcnbb" target="_blank" rel="noopener" class="preview-cta">Try it Free →</a>
-              <div class="preview-ai-badge">🤖 AI Generated</div>
+              <div class="preview-label">Already generating:</div>
+              <div class="preview-text">Posts, DMs, Replies, Headlines &amp; Lead Search — directly on LinkedIn!</div>
+              <a href="https://chrome.google.com/webstore/detail/propostly/hggehcjcbnfpdglbildpaiidhigfcnbb" target="_blank" rel="noopener" class="preview-install">Install Free →</a>
             </div>
+
           </div>
         </div>
 
@@ -1138,7 +1142,7 @@
           </div>
           <div class="faq-item">
             <button class="faq-trigger" aria-expanded="false">How do I get support or report an issue?<svg class="faq-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></button>
-            <div class="faq-body"><p>The fastest way to reach us is directly on Twitter/X — DM <a href="https://x.com/Karthik23n" target="_blank" rel="noopener">@Karthik23n</a> and you'll get a real response. You can also email us at <a href="mailto:support@propostly.com">support@propostly.com</a>.</p></div>
+            <div class="faq-body"><p>The fastest way to reach us is directly on Twitter/X — DM <a href="https://x.com/Karthik23n" target="_blank" rel="noopener">@Karthik23n</a> and you'll get a real response. You can also email us at <a href="mailto:support@propostly.com">support@propostly.com</a>. For fastest response, DM us directly on Twitter/X: <a href="https://x.com/Karthik23n" target="_blank" rel="noopener">@Karthik23n →</a></p></div>
           </div>
         </div>
       </div>
@@ -1168,7 +1172,7 @@
         <div class="footer-logo">in</div>
         <div>
           <div>© 2026 ProPostly. Not affiliated with LinkedIn Corporation.</div>
-          <div class="footer-support">Need help? DM us on X → <a href="https://x.com/Karthik23n" target="_blank" rel="noopener">@Karthik23n</a></div>
+          <div class="footer-support">Need help or have feedback? Contact us on Twitter/X: <a href="https://x.com/Karthik23n" target="_blank" rel="noopener">@Karthik23n</a></div>
         </div>
       </div>
       <div class="footer-links">
