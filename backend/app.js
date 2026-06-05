@@ -1,4 +1,5 @@
 import express from "express";
+import { rateLimit } from "express-rate-limit";
 import { corsMiddleware } from "./middleware/cors.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import generateRouter from "./routes/generate.js";
@@ -11,6 +12,33 @@ import waitlistRouter from "./routes/waitlist.js";
 const app = express();
 
 app.use(corsMiddleware);
+
+// Rate limiting — keyed by IP
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,       // 1 minute
+  max: 60,                   // 60 req/min globally per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests, please slow down." },
+});
+
+const generateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,                   // 20 generate calls/min per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many generation requests. Please wait a moment." },
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,  // 15 minutes
+  max: 30,                   // 30 auth attempts per 15 min
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests. Try again later." },
+});
+
+app.use(globalLimiter);
 
 app.use(
   "/api/webhook",
@@ -36,8 +64,8 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
 
-app.use("/api/generate", generateRouter);
-app.use("/api/auth", authRouter);
+app.use("/api/generate", generateLimiter, generateRouter);
+app.use("/api/auth", authLimiter, authRouter);
 app.use("/api/usage", usageRouter);
 app.use("/api/payments", paymentsRouter);
 app.use("/api/webhook", webhookRouter);

@@ -10,6 +10,8 @@ import { sendWelcomeEmail, sendUsageWarningEmail } from "../services/email.js";
 
 const router = Router();
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 function buildDataPayload(body) {
   if (body.data && typeof body.data === "object") {
     return body.data;
@@ -22,12 +24,14 @@ function buildDataPayload(body) {
 router.post(
   "/",
   asyncHandler(async (req, res) => {
-    const { userId, feature, tone } = req.body;
+    const { feature, tone } = req.body;
+    const userId = String(req.body?.userId || "").trim();
 
-    if (!userId || !feature) {
-      return res.status(400).json({
-        error: "userId and feature are required",
-      });
+    if (!userId || !UUID_RE.test(userId)) {
+      return res.status(400).json({ error: "Valid userId is required" });
+    }
+    if (!feature || typeof feature !== "string") {
+      return res.status(400).json({ error: "feature is required" });
     }
 
     const data = buildDataPayload(req.body);
@@ -65,22 +69,20 @@ router.post(
 router.post(
   "/leads",
   asyncHandler(async (req, res) => {
-    const { userId, profiles, targetDescription, filters } = req.body;
+    const { profiles, targetDescription, filters } = req.body;
+    const userId = String(req.body?.userId || "").trim();
 
+    if (!userId || !UUID_RE.test(userId)) {
+      return res.status(400).json({ error: "Valid userId is required" });
+    }
     if (!Array.isArray(profiles) || profiles.length === 0) {
       return res.status(400).json({
         error: "No profiles found. Open a LinkedIn people search results page and try again.",
       });
     }
 
-    // userId is optional: when present we enforce + consume the monthly lead
-    // quota; when absent (e.g. smoke test) we process without tracking.
-    let plan = "free";
-    let leadAccount = null;
-    if (userId) {
-      leadAccount = await consumeLeadSearch(String(userId));
-      plan = leadAccount.plan;
-    }
+    const leadAccount = await consumeLeadSearch(userId);
+    const plan = leadAccount.plan;
 
     const leads = await qualifyLeads({ profiles, targetDescription, filters, plan });
 
@@ -95,9 +97,9 @@ router.post(
 
     res.json({
       leads,
-      leadSearchesRemaining: leadAccount ? leadAccount.leadSearchesRemaining : null,
-      leadSearchLimit: leadAccount ? leadAccount.leadSearchLimit : null,
-      limitReached: leadAccount ? leadAccount.leadSearchesRemaining === 0 : false,
+      leadSearchesRemaining: leadAccount.leadSearchesRemaining,
+      leadSearchLimit: leadAccount.leadSearchLimit,
+      limitReached: leadAccount.leadSearchesRemaining === 0,
     });
   })
 );

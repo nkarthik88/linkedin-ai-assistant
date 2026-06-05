@@ -42,9 +42,9 @@ router.post(
     // Always await email so Vercel doesn't kill the function before it sends
     try {
       await sendWelcomeEmail(email);
-      console.log(`[waitlist] Welcome email sent to ${email}`);
+      console.log("[waitlist] Welcome email sent");
     } catch (emailErr) {
-      console.error(`[waitlist] Email send failed for ${email}:`, emailErr?.message || emailErr);
+      console.error("[waitlist] Email send failed:", emailErr?.message || emailErr);
       // Don't fail the request — just log. User is still on the list.
     }
 
@@ -65,10 +65,14 @@ router.get(
   })
 );
 
-// GET /api/waitlist/all — all emails (for admin use)
+// GET /api/waitlist/all — all emails (admin only — requires X-Admin-Key header)
 router.get(
   "/all",
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (req, res) => {
+    const adminKey = process.env.ADMIN_SECRET_KEY;
+    if (!adminKey || req.headers["x-admin-key"] !== adminKey) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
     const { data, error } = await supabaseAdmin
       .from("waitlist_emails")
       .select("email, signed_up_at, source")

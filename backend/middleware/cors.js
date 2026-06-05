@@ -2,6 +2,13 @@ import cors from "cors";
 
 const chromeExtensionOrigin = /^chrome-extension:\/\/.+$/;
 
+// Explicit allowlist of Vercel preview URLs for this project only
+const ALLOWED_VERCEL_PREFIXES = [
+  "https://linkedin-ai-landing",
+  "https://linkedin-ai-backend",
+  "https://propostly",
+];
+
 export const corsMiddleware = cors({
   origin(origin, callback) {
     if (!origin) {
@@ -11,10 +18,9 @@ export const corsMiddleware = cors({
       chromeExtensionOrigin.test(origin) ||
       origin === "http://localhost:3000" ||
       origin.startsWith("http://127.0.0.1:") ||
-      origin === "https://linkedin-ai-backend-rho.vercel.app" ||
       origin === "https://propostly.com" ||
       origin === "https://www.propostly.com" ||
-      origin.endsWith(".vercel.app")
+      ALLOWED_VERCEL_PREFIXES.some((p) => origin.startsWith(p) && origin.endsWith(".vercel.app"))
     ) {
       return callback(null, true);
     }

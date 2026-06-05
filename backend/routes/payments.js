@@ -71,8 +71,23 @@ router.post(
       return res.status(400).json({ error: "Invalid userId format" });
     }
 
+    // Verify the caller knows the email on file — prevents strangers from
+    // cancelling another user's subscription by guessing their UUID.
+    const callerEmail = String(req.body?.email || "").trim().toLowerCase();
+    if (callerEmail) {
+      const { data: acct } = await supabaseAdmin
+        .from("extension_accounts")
+        .select("email")
+        .eq("id", userId)
+        .maybeSingle();
+      const onFile = (acct?.email || "").trim().toLowerCase();
+      if (onFile && onFile !== callerEmail) {
+        return res.status(403).json({ error: "Email does not match account" });
+      }
+    }
+
     // Get email before downgrading
-    let email = String(req.body?.email || "").trim();
+    let email = callerEmail;
 
     if (!email) {
       try {
