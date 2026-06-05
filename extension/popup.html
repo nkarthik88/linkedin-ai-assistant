@@ -7,25 +7,22 @@
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <!-- Onboarding overlay (shown first time only) -->
+    <!-- Onboarding overlay (shown first time only, cannot be skipped) -->
     <div id="onboarding" class="onboarding" hidden>
       <div class="onboarding-card">
-        <div class="onboarding-logo">🚀</div>
-        <h2>Welcome to ProPostly</h2>
-        <p>Your AI copilot for LinkedIn — generate posts, write personalized DMs, craft replies, and more.</p>
+        <div class="onboarding-logo">👋</div>
+        <h2>Welcome to ProPostly!</h2>
+        <p class="onboarding-subtitle">Your AI copilot for LinkedIn</p>
         <ul class="onboarding-features">
-          <li><span class="of-icon">✍️</span><span><strong>Generate Post</strong> — 3 options from any topic</span></li>
-          <li><span class="of-icon">💬</span><span><strong>Personalized DM</strong> — reads profiles &amp; writes outreach</span></li>
-          <li><span class="of-icon">↩️</span><span><strong>Reply to Comment</strong> — thoughtful, professional replies</span></li>
-          <li><span class="of-icon">🎯</span><span><strong>Improve Headline</strong> — keyword-optimized rewrites</span></li>
-          <li><span class="of-icon">🚀</span><span><strong>Viral Post Rewriter</strong> — boost your post's engagement</span></li>
+          <li><span class="of-icon">✓</span><span>10 uses per feature/month</span></li>
+          <li><span class="of-icon">✓</span><span>5 lead searches/month</span></li>
+          <li><span class="of-icon">✓</span><span>No credit card needed</span></li>
         </ul>
-        <p class="onboarding-free">Free plan: <strong>10 AI generations/month per feature</strong></p>
         <div class="onboarding-form">
-          <input type="text" id="onboarding-name" placeholder="Your full name" autocomplete="name" />
-          <input type="email" id="onboarding-email" placeholder="your@email.com (for receipts)" autocomplete="email" />
+          <label class="onboarding-label">Enter your email to start:</label>
+          <input type="email" id="onboarding-email" placeholder="your@email.com" autocomplete="email" />
           <p id="onboarding-error" class="onboarding-error" hidden></p>
-          <button id="onboarding-start" class="submit-btn">Save &amp; Get Started →</button>
+          <button id="onboarding-start" class="submit-btn">Get Started Free →</button>
         </div>
       </div>
     </div>
@@ -377,20 +374,20 @@
           <div id="results-container"></div>
         </div>
 
-        <!-- Upgrade prompt (shown when limit reached) -->
+        <!-- Upgrade prompt (shown when limit reached — no skip option) -->
         <div id="view-upgrade-prompt" class="view">
           <div class="upgrade-prompt-card">
             <div class="upgrade-prompt-icon">🔒</div>
-            <h2 id="upgrade-prompt-title">Feature limit reached</h2>
-            <p id="upgrade-prompt-desc">Upgrade to Pro for <strong>unlimited AI generations</strong> every month — just ₹862/month.</p>
+            <h2 id="upgrade-prompt-title">Free limit reached!</h2>
+            <p id="upgrade-prompt-desc">You've used all free uses for this feature this month.</p>
             <ul class="upgrade-perks">
-              <li>✓ Unlimited posts, DMs, headlines &amp; rewrites</li>
-              <li>✓ 50 Deep Lead Searches/month</li>
-              <li>✓ Advanced AI (smarter responses)</li>
+              <li>✓ Unlimited everything</li>
+              <li>✓ 50 lead searches/month</li>
+              <li>✓ Just ₹862/month ($9)</li>
               <li>✓ Cancel anytime</li>
             </ul>
-            <button id="upgrade-prompt-btn" class="submit-btn upgrade-prompt-btn-main">Upgrade to Pro — ₹862/month</button>
-            <button id="upgrade-prompt-back" class="back-link-btn">← Back to home</button>
+            <button id="upgrade-prompt-btn" class="submit-btn upgrade-prompt-btn-main">Upgrade to Pro Now →</button>
+            <p id="upgrade-prompt-reset" class="upgrade-prompt-reset" hidden></p>
             <p id="upgrade-prompt-error" class="upgrade-error" hidden></p>
           </div>
         </div>

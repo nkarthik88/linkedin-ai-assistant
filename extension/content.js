@@ -775,6 +775,33 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === "GET_MY_LINKEDIN_ID") {
+    // Try to find the logged-in user's own LinkedIn profile ID from the nav bar
+    try {
+      const meLink = document.querySelector(
+        'a[href*="/in/"][aria-label*="me" i], ' +
+        'a.global-nav__primary-link[href*="/in/"], ' +
+        '.profile-rail-card__actor-link[href*="/in/"], ' +
+        'a[data-control-name="identity_profile_photo"][href*="/in/"]'
+      );
+      if (meLink) {
+        const match = meLink.href.match(/\/in\/([^/?#]+)/i);
+        if (match) { sendResponse({ linkedinId: match[1].toLowerCase() }); return true; }
+      }
+      // Fallback: if user is on their own feed, try the nav "Me" section
+      const navMeSection = document.querySelector('.global-nav__me-photo, .nav-item__profile-member-photo');
+      if (navMeSection) {
+        const link = navMeSection.closest('a[href*="/in/"]');
+        if (link) {
+          const match = link.href.match(/\/in\/([^/?#]+)/i);
+          if (match) { sendResponse({ linkedinId: match[1].toLowerCase() }); return true; }
+        }
+      }
+      sendResponse({ linkedinId: null });
+    } catch { sendResponse({ linkedinId: null }); }
+    return true;
+  }
+
   if (message.type === "GET_SEARCH_PROFILES") {
     try {
       if (!isLinkedInSearchPage()) {

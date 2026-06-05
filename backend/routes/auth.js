@@ -147,4 +147,52 @@ router.post(
   })
 );
 
+// Link a LinkedIn profile ID to an account — and detect if this LinkedIn ID
+// already belongs to a different account (reinstall + new email bypass).
+router.post(
+  "/link-linkedin",
+  asyncHandler(async (req, res) => {
+    const userId     = String(req.body?.userId     || "").trim();
+    const linkedinId = String(req.body?.linkedinId || "").trim().toLowerCase();
+
+    if (!userId || !linkedinId) {
+      return res.status(400).json({ error: "userId and linkedinId required" });
+    }
+
+    // Check extension_accounts for this LinkedIn ID on a DIFFERENT account
+    const { data: existingExt } = await supabaseAdmin
+      .from("extension_accounts")
+      .select("id")
+      .eq("linkedin_id", linkedinId)
+      .neq("id", userId)
+      .maybeSingle();
+
+    if (existingExt) {
+      // Same LinkedIn user, different local UUID — return canonical account
+      return res.json({ ok: true, canonicalUserId: existingExt.id });
+    }
+
+    // Check users table too
+    const { data: existingUser } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("linkedin_id", linkedinId)
+      .neq("id", userId)
+      .maybeSingle();
+
+    if (existingUser) {
+      return res.json({ ok: true, canonicalUserId: existingUser.id });
+    }
+
+    // No conflict — store LinkedIn ID on this account (best-effort, column may not exist yet)
+    await supabaseAdmin
+      .from("extension_accounts")
+      .update({ linkedin_id: linkedinId })
+      .eq("id", userId)
+      .then(() => {}).catch(() => {});
+
+    res.json({ ok: true, canonicalUserId: userId });
+  })
+);
+
 export default router;

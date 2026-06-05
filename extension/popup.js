@@ -115,19 +115,12 @@ async function checkOnboarding() {
 }
 
 document.getElementById("onboarding-start")?.addEventListener("click", async () => {
-  const nameInput = document.getElementById("onboarding-name");
   const emailInput = document.getElementById("onboarding-email");
   const errorEl = document.getElementById("onboarding-error");
   const btn = document.getElementById("onboarding-start");
 
-  const name = nameInput?.value.trim() || "";
   const email = emailInput?.value.trim() || "";
 
-  if (!name) {
-    if (errorEl) { errorEl.textContent = "Please enter your name."; errorEl.hidden = false; }
-    nameInput?.focus();
-    return;
-  }
   if (!email || !email.includes("@")) {
     if (errorEl) { errorEl.textContent = "Please enter a valid email address."; errorEl.hidden = false; }
     emailInput?.focus();
@@ -138,19 +131,20 @@ document.getElementById("onboarding-start")?.addEventListener("click", async () 
   if (errorEl) errorEl.hidden = true;
 
   const localUserId = await getUserId();
-  const canonicalUserId = await registerWithBackend(localUserId, email, name);
+  const canonicalUserId = await registerWithBackend(localUserId, email, "");
 
   await chrome.storage.local.set({
     onboardingDone: true,
-    upgradeName: name,
     upgradeEmail: email,
     userId: canonicalUserId,
   });
 
-  updateHeaderName(name);
   const overlay = document.getElementById("onboarding");
   if (overlay) overlay.hidden = true;
-  if (btn) { btn.disabled = false; btn.textContent = "Get Started"; }
+  if (btn) { btn.disabled = false; btn.textContent = "Get Started Free →"; }
+
+  // Capture LinkedIn ID in the background after onboarding
+  captureAndStoreLinkedInId(canonicalUserId);
 });
 
 // ── Account status ─────────────────────────────────────────────────────────
@@ -618,7 +612,31 @@ async function startUpgrade(triggerBtn = null) {
 
 document.getElementById("upgrade-btn")?.addEventListener("click", (e) => startUpgrade(e.currentTarget));
 document.getElementById("upgrade-prompt-btn")?.addEventListener("click", (e) => startUpgrade(e.currentTarget));
-document.getElementById("upgrade-prompt-back")?.addEventListener("click", () => showView("view-home"));
+// upgrade-prompt-back removed — no skip option when limit is reached
+
+// ── LinkedIn ID capture (anti-bypass) ─────────────────────────────────────
+
+async function captureAndStoreLinkedInId(userId) {
+  try {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tab = tabs.find(t => t.url?.includes("linkedin.com"));
+    if (!tab) return;
+    const response = await chrome.tabs.sendMessage(tab.id, { type: "GET_MY_LINKEDIN_ID" });
+    if (!response?.linkedinId) return;
+    const res = await fetch(`${API_BASE}/api/auth/link-linkedin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, linkedinId: response.linkedinId }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      // If this LinkedIn ID already belonged to another account, adopt it
+      if (data.canonicalUserId && data.canonicalUserId !== userId) {
+        await chrome.storage.local.set({ userId: data.canonicalUserId });
+      }
+    }
+  } catch { /* non-fatal */ }
+}
 
 // ── Profile helpers ────────────────────────────────────────────────────────
 
@@ -765,11 +783,14 @@ async function callApi(body) {
     } catch { /* ignore */ }
     const titleEl = document.getElementById("upgrade-prompt-title");
     const descEl = document.getElementById("upgrade-prompt-desc");
-    if (titleEl) titleEl.textContent = "You've reached your free limit";
+    const resetEl = document.getElementById("upgrade-prompt-reset");
+    if (titleEl) titleEl.textContent = "Free limit reached!";
     if (descEl) {
-      descEl.innerHTML = limitMsg
-        ? `${escapeHtml(limitMsg)}<br><br>Upgrade to Pro for <strong>unlimited AI generations</strong> — just ₹862/month.`
-        : `Upgrade to Pro for <strong>unlimited AI generations</strong> every month — just ₹862/month.`;
+      descEl.textContent = limitMsg || "You've used all free uses for this feature this month.";
+    }
+    if (resetEl && accountStatus?.resets_on) {
+      resetEl.textContent = `Resets: ${formatResetDate(accountStatus.resets_on)}`;
+      resetEl.hidden = false;
     }
     showView("view-upgrade-prompt");
     throw new Error("__LIMIT_REACHED__");
@@ -2340,8 +2361,9 @@ window.addEventListener("focus", () => {
 
 (async function init() {
   await checkOnboarding();
-  const name = await getUserName();
-  updateHeaderName(name);
   await refreshAccountStatus();
   renderSavedLeads();
+  // Background: link LinkedIn ID to account for anti-bypass detection
+  const userId = await getUserId();
+  captureAndStoreLinkedInId(userId);
 })();
