@@ -11,6 +11,7 @@ import waitlistRouter from "./routes/waitlist.js";
 
 const app = express();
 
+app.set("trust proxy", 1); // Required on Vercel to read real IPs for rate limiting
 app.use(corsMiddleware);
 
 // Rate limiting — keyed by IP
