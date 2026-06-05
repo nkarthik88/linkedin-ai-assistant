@@ -77,14 +77,25 @@ async function getUserName() {
   return upgradeName || "";
 }
 
+// Returns the canonical userId from the backend (may differ from local UUID on reinstall).
 async function registerWithBackend(userId, email, name) {
   try {
-    await fetch(`${API_BASE}/api/auth/register-extension`, {
+    const res = await fetch(`${API_BASE}/api/auth/register-extension`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, email: email || undefined, name: name || undefined }),
+      body: JSON.stringify({ userId, email, name: name || undefined }),
     });
-  } catch { /* non-fatal — fire and forget */ }
+    if (res.ok) {
+      const data = await res.json();
+      // If backend returns a different userId (reinstall — existing account found),
+      // overwrite local storage so this device uses the canonical account.
+      if (data.userId && data.userId !== userId) {
+        await chrome.storage.local.set({ userId: data.userId });
+      }
+      return data.userId || userId;
+    }
+  } catch { /* non-fatal */ }
+  return userId;
 }
 
 function updateHeaderName(name) {
@@ -107,6 +118,7 @@ document.getElementById("onboarding-start")?.addEventListener("click", async () 
   const nameInput = document.getElementById("onboarding-name");
   const emailInput = document.getElementById("onboarding-email");
   const errorEl = document.getElementById("onboarding-error");
+  const btn = document.getElementById("onboarding-start");
 
   const name = nameInput?.value.trim() || "";
   const email = emailInput?.value.trim() || "";
@@ -116,18 +128,29 @@ document.getElementById("onboarding-start")?.addEventListener("click", async () 
     nameInput?.focus();
     return;
   }
+  if (!email || !email.includes("@")) {
+    if (errorEl) { errorEl.textContent = "Please enter a valid email address."; errorEl.hidden = false; }
+    emailInput?.focus();
+    return;
+  }
 
-  const save = { onboardingDone: true, upgradeName: name };
-  if (email && email.includes("@")) save.upgradeEmail = email;
-  await chrome.storage.local.set(save);
+  if (btn) { btn.disabled = true; btn.textContent = "Setting up…"; }
+  if (errorEl) errorEl.hidden = true;
+
+  const localUserId = await getUserId();
+  const canonicalUserId = await registerWithBackend(localUserId, email, name);
+
+  await chrome.storage.local.set({
+    onboardingDone: true,
+    upgradeName: name,
+    upgradeEmail: email,
+    userId: canonicalUserId,
+  });
 
   updateHeaderName(name);
   const overlay = document.getElementById("onboarding");
   if (overlay) overlay.hidden = true;
-
-  // Register with backend so email is in DB from day 1
-  const userId = await getUserId();
-  registerWithBackend(userId, email, name);
+  if (btn) { btn.disabled = false; btn.textContent = "Get Started"; }
 });
 
 // ── Account status ─────────────────────────────────────────────────────────
@@ -1152,6 +1175,16 @@ async function runGeneration(feature, buildBody) {
 
 document.querySelectorAll(".feature-btn").forEach((btn) => {
   btn.addEventListener("click", async () => {
+    // Gate: email must be registered before any feature is accessible
+    const { onboardingDone } = await chrome.storage.local.get("onboardingDone");
+    if (!onboardingDone) {
+      const overlay = document.getElementById("onboarding");
+      if (overlay) overlay.hidden = false;
+      const emailInput = document.getElementById("onboarding-email");
+      emailInput?.focus();
+      return;
+    }
+
     const feature = btn.dataset.feature;
     clearError(`form-${feature}`);
 

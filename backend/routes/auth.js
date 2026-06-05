@@ -84,40 +84,66 @@ router.post(
 );
 
 // Extension-only registration: store userId + email in extension_accounts.
-// Called after onboarding so emails are in DB from day 1 (no password required).
+// If the email already exists (reinstall scenario), returns the canonical userId
+// for that email so the reinstalled extension inherits the same account + usage.
 router.post(
   "/register-extension",
   asyncHandler(async (req, res) => {
     const userId = String(req.body?.userId || "").trim();
-    const email  = String(req.body?.email  || "").trim();
+    const email  = String(req.body?.email  || "").trim().toLowerCase();
     const name   = String(req.body?.name   || "").trim();
 
     const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!userId || !uuidRe.test(userId)) {
       return res.status(400).json({ error: "Invalid userId" });
     }
+    if (!email || !email.includes("@")) {
+      return res.status(400).json({ error: "Email is required" });
+    }
 
-    const fields = { id: userId };
-    if (email && email.includes("@")) fields.email = email;
-    if (name) fields.name = name;
+    // Check if this email already exists in extension_accounts (reinstall case)
+    const { data: existing } = await supabaseAdmin
+      .from("extension_accounts")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
 
+    if (existing) {
+      // Return the canonical userId — extension will overwrite its local UUID
+      return res.json({ ok: true, userId: existing.id });
+    }
+
+    // Also check users table (paid/auth users who reinstalled)
+    const { data: authUser } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (authUser) {
+      return res.json({ ok: true, userId: authUser.id });
+    }
+
+    // New user — create account
+    const fields = { id: userId, email };
     const { error } = await supabaseAdmin
       .from("extension_accounts")
       .upsert(fields, { onConflict: "id", ignoreDuplicates: false });
 
     if (error) {
-      // Column 'name' may not exist — retry without it
-      if (name && error.message?.includes("name")) {
-        const { error: e2 } = await supabaseAdmin
-          .from("extension_accounts")
-          .upsert({ id: userId, ...(email && email.includes("@") ? { email } : {}) }, { onConflict: "id" });
-        if (e2) return res.status(500).json({ error: e2.message });
-      } else {
-        return res.status(500).json({ error: error.message });
-      }
+      return res.status(500).json({ error: error.message });
     }
 
-    res.json({ ok: true });
+    // Best-effort: save name if column exists
+    if (name) {
+      await supabaseAdmin
+        .from("extension_accounts")
+        .update({ name })
+        .eq("id", userId)
+        .then(() => {}).catch(() => {});
+    }
+
+    res.json({ ok: true, userId });
   })
 );
 
