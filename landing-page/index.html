@@ -348,13 +348,13 @@
     /* ── Video Section ─────────────────────────────────────── */
     .video-section {
       background:#080b14;
-      padding:120px 0 140px;
+      padding:100px 0;
       overflow:hidden;
     }
     .video-split {
       display:grid;
-      grid-template-columns:420px 1fr;
-      gap:80px;
+      grid-template-columns:400px 1fr;
+      gap:72px;
       align-items:center;
       max-width:1200px;
       margin:0 auto;
@@ -411,15 +411,26 @@
       position:relative;
       perspective:1000px;
     }
+    /* Outer diffuse glow halo — sits behind the card */
     .video-glow {
-      position:absolute; inset:-3px;
-      border-radius:20px;
+      position:absolute; inset:-20px;
+      border-radius:32px;
       background:linear-gradient(135deg,#6366f1,#8b5cf6,#3b82f6,#6366f1);
       background-size:300% 300%;
-      animation:glowPulse 3s ease-in-out infinite, floatCard 3s ease-in-out infinite;
+      animation:glowPulse 3s ease-in-out infinite;
       z-index:0;
-      filter:blur(2px);
-      box-shadow:0 0 40px rgba(99,102,241,.5), 0 0 80px rgba(139,92,246,.25);
+      filter:blur(28px);
+      opacity:.65;
+    }
+    /* Crisp border ring — sits directly around the card */
+    .video-card-wrap::before {
+      content:'';
+      position:absolute; inset:-2px;
+      border-radius:18px;
+      background:linear-gradient(135deg,#6366f1,#a78bfa,#3b82f6);
+      background-size:200% 200%;
+      animation:glowPulse 3s ease-in-out infinite;
+      z-index:0;
     }
     .video-card {
       position:relative; z-index:1;
@@ -428,11 +439,11 @@
       transform:perspective(1000px) rotateY(-5deg);
       transition:transform .45s cubic-bezier(.25,.46,.45,.94), box-shadow .45s ease;
       animation:floatCard 3s ease-in-out infinite;
-      box-shadow:0 32px 80px rgba(0,0,0,.6), 0 8px 24px rgba(99,102,241,.2);
+      box-shadow:0 24px 60px rgba(0,0,0,.7), 0 8px 24px rgba(99,102,241,.15);
     }
     .video-card:hover {
       transform:perspective(1000px) rotateY(0deg);
-      box-shadow:0 48px 100px rgba(0,0,0,.7), 0 16px 40px rgba(99,102,241,.35);
+      box-shadow:0 40px 80px rgba(0,0,0,.8), 0 16px 40px rgba(99,102,241,.3);
     }
     .video-card iframe {
       display:block; width:100%; aspect-ratio:16/9; border:none;
