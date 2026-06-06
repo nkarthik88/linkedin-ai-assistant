@@ -360,21 +360,24 @@
       100%  { transform:translate(60px, 100px); opacity:1; }
     }
 
-    /* ProPostly popup */
+    /* ProPostly popup — absolute overlay from ext icon */
     .mockup-card {
+      position:absolute;
+      top:28px; right:-8px;
+      width:200px;
       background:#ffffff;
       border:1px solid #e2e8f0;
       border-radius:10px; padding:14px 16px;
-      box-shadow:0 8px 32px rgba(15,23,42,.15), 0 2px 8px rgba(15,23,42,.08);
+      box-shadow:0 12px 40px rgba(15,23,42,.2), 0 2px 8px rgba(15,23,42,.08);
       text-align:left;
-      /* Hidden until cursor clicks */
+      z-index:10;
       animation:popupReveal 8s ease-in-out infinite;
       transform-origin:top right;
     }
     @keyframes popupReveal {
-      0%, 55%  { opacity:0; transform:scale(.92) translateY(-6px); pointer-events:none; }
-      62%, 88% { opacity:1; transform:scale(1) translateY(0); }
-      95%,100% { opacity:0; transform:scale(.92) translateY(-6px); }
+      0%, 55%  { opacity:0; transform:scale(.9) translateY(-8px); pointer-events:none; }
+      63%, 88% { opacity:1; transform:scale(1) translateY(0); }
+      95%,100% { opacity:0; transform:scale(.9) translateY(-8px); }
     }
     .mockup-header { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
     .mockup-logo { width:24px; height:24px; border-radius:6px; background:var(--black); display:flex; align-items:center; justify-content:center; color:var(--white); font-size:10px; font-weight:800; flex-shrink:0; }
@@ -1032,23 +1035,21 @@
 
       <!-- Browser + LinkedIn + cursor + popup demo -->
       <div class="hero-mockup">
-        <div class="browser-shell">
 
+        <!-- Browser window -->
+        <div class="browser-shell">
           <!-- Browser toolbar -->
           <div class="browser-bar">
             <div class="browser-dots"><span></span><span></span><span></span></div>
             <div class="browser-url">linkedin.com/feed</div>
             <div class="browser-ext">in</div>
           </div>
-
           <!-- LinkedIn page body -->
           <div class="browser-body">
-            <!-- Mini LinkedIn nav -->
             <div class="li-nav">
               <div class="li-logo">in</div>
               <div class="li-search"></div>
             </div>
-            <!-- Fake feed -->
             <div class="li-feed">
               <div class="li-post">
                 <div class="li-post-header"><div class="li-avatar"></div><div class="li-name"></div></div>
@@ -1059,7 +1060,6 @@
                 <div class="li-line"></div><div class="li-line short"></div>
               </div>
             </div>
-
             <!-- Animated cursor -->
             <div class="demo-cursor">
               <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1067,26 +1067,26 @@
               </svg>
             </div>
           </div>
+        </div>
 
-          <!-- ProPostly popup — appears after cursor clicks ext icon -->
-          <div class="mockup-card">
-            <div class="mockup-header">
-              <div class="mockup-logo">in</div>
-              <div>
-                <div class="mockup-title">ProPostly</div>
-                <div class="mockup-sub">Choose a tool</div>
-              </div>
-            </div>
-            <div class="mockup-tools">
-              <div class="mockup-tool active"><span>✍️</span> Generate Post</div>
-              <div class="mockup-tool"><span>💬</span> Personalized DM</div>
-              <div class="mockup-tool"><span>↩️</span> Reply to Comment</div>
-              <div class="mockup-tool"><span>🎯</span> Improve Headline</div>
-              <div class="mockup-tool"><span>🔎</span> Deep Lead Search <span class="mockup-hot">🔥 3 Hot!</span></div>
+        <!-- ProPostly popup — floats over browser from ext icon -->
+        <div class="mockup-card">
+          <div class="mockup-header">
+            <div class="mockup-logo">in</div>
+            <div>
+              <div class="mockup-title">ProPostly</div>
+              <div class="mockup-sub">Choose a tool</div>
             </div>
           </div>
-
+          <div class="mockup-tools">
+            <div class="mockup-tool active"><span>✍️</span> Generate Post</div>
+            <div class="mockup-tool"><span>💬</span> Personalized DM</div>
+            <div class="mockup-tool"><span>↩️</span> Reply to Comment</div>
+            <div class="mockup-tool"><span>🎯</span> Improve Headline</div>
+            <div class="mockup-tool"><span>🔎</span> Deep Lead Search <span class="mockup-hot">🔥 3 Hot!</span></div>
+          </div>
         </div>
+
       </div>
 
       <div class="hero-cta">
