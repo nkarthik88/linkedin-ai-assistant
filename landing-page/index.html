@@ -299,35 +299,71 @@
     /* LinkedIn page body */
     .browser-body {
       background:#f3f2ef;
-      height:200px;
+      height:220px;
       position:relative;
       overflow:hidden;
     }
     /* Minimal LinkedIn nav bar */
     .li-nav {
       background:#fff; border-bottom:1px solid #e0ddd8;
-      padding:6px 12px; display:flex; align-items:center; gap:8px;
+      padding:5px 10px; display:flex; align-items:center; gap:6px;
     }
     .li-logo {
-      width:24px; height:24px; border-radius:4px;
+      width:20px; height:20px; border-radius:3px;
       background:#0077b5; color:#fff;
-      font-size:10px; font-weight:900;
-      display:flex; align-items:center; justify-content:center;
+      font-size:9px; font-weight:900;
+      display:flex; align-items:center; justify-content:center; flex-shrink:0;
     }
     .li-search {
-      flex:1; height:20px; background:#eef3f8;
-      border-radius:4px; border:1px solid #c5cdd6;
+      flex:1; height:16px; background:#eef3f8;
+      border-radius:3px; border:1px solid #c5cdd6;
     }
-    /* Fake LinkedIn feed lines */
-    .li-feed { padding:10px 12px; display:flex; flex-direction:column; gap:6px; }
-    .li-post {
-      background:#fff; border-radius:6px; border:1px solid #e0ddd8; padding:8px 10px;
+    /* Profile cover + avatar */
+    .li-cover {
+      height:40px; background:linear-gradient(135deg,#0077b5,#00a0dc);
+      position:relative;
     }
-    .li-post-header { display:flex; align-items:center; gap:6px; margin-bottom:5px; }
-    .li-avatar { width:20px; height:20px; border-radius:50%; background:#cbd5e1; flex-shrink:0; }
-    .li-name { height:8px; width:80px; background:#e2e8f0; border-radius:4px; }
-    .li-line { height:6px; background:#f1f5f9; border-radius:4px; margin-bottom:3px; }
-    .li-line.short { width:60%; }
+    .li-profile-avatar {
+      position:absolute; bottom:-14px; left:12px;
+      width:32px; height:32px; border-radius:50%;
+      background:#94a3b8; border:2px solid #fff;
+      display:flex; align-items:center; justify-content:center;
+      font-size:13px; color:#fff; font-weight:700;
+    }
+    /* Profile info */
+    .li-profile-info {
+      background:#fff; padding:18px 12px 10px;
+      border-bottom:1px solid #e0ddd8;
+    }
+    .li-profile-name {
+      font-size:11px; font-weight:700; color:#0f172a;
+      margin-bottom:2px;
+    }
+    .li-profile-headline {
+      font-size:9px; color:#475569; margin-bottom:6px; line-height:1.3;
+    }
+    .li-profile-btns {
+      display:flex; gap:5px;
+    }
+    .li-btn {
+      padding:3px 8px; border-radius:12px;
+      font-size:9px; font-weight:600;
+      border:1px solid #0077b5; color:#0077b5;
+      background:#fff;
+    }
+    .li-btn.primary {
+      background:#0077b5; color:#fff; border-color:#0077b5;
+    }
+    /* Post below profile */
+    .li-post-mini {
+      background:#fff; margin:6px 10px 0;
+      border-radius:5px; border:1px solid #e0ddd8; padding:7px 8px;
+    }
+    .li-post-hdr { display:flex; align-items:center; gap:5px; margin-bottom:4px; }
+    .li-mini-avatar { width:14px; height:14px; border-radius:50%; background:#cbd5e1; flex-shrink:0; }
+    .li-mini-name { height:7px; width:60px; background:#e2e8f0; border-radius:3px; }
+    .li-line { height:5px; background:#f1f5f9; border-radius:3px; margin-bottom:3px; }
+    .li-line.short { width:55%; }
 
     /* Animated cursor */
     .demo-cursor {
@@ -1061,21 +1097,30 @@
             <div class="browser-url">linkedin.com/feed</div>
             <div class="browser-ext">in</div>
           </div>
-          <!-- LinkedIn page body -->
+          <!-- LinkedIn profile page body -->
           <div class="browser-body">
+            <!-- Nav -->
             <div class="li-nav">
               <div class="li-logo">in</div>
               <div class="li-search"></div>
             </div>
-            <div class="li-feed">
-              <div class="li-post">
-                <div class="li-post-header"><div class="li-avatar"></div><div class="li-name"></div></div>
-                <div class="li-line"></div><div class="li-line short"></div>
+            <!-- Profile cover + avatar -->
+            <div class="li-cover">
+              <div class="li-profile-avatar">AJ</div>
+            </div>
+            <!-- Profile info -->
+            <div class="li-profile-info">
+              <div class="li-profile-name">Alex Johnson</div>
+              <div class="li-profile-headline">Marketing Manager · SaaS · Open to connect</div>
+              <div class="li-profile-btns">
+                <div class="li-btn primary">Message</div>
+                <div class="li-btn">Connect</div>
               </div>
-              <div class="li-post">
-                <div class="li-post-header"><div class="li-avatar"></div><div class="li-name"></div></div>
-                <div class="li-line"></div><div class="li-line short"></div>
-              </div>
+            </div>
+            <!-- One post below -->
+            <div class="li-post-mini">
+              <div class="li-post-hdr"><div class="li-mini-avatar"></div><div class="li-mini-name"></div></div>
+              <div class="li-line"></div><div class="li-line short"></div>
             </div>
             <!-- Animated cursor -->
             <div class="demo-cursor">
