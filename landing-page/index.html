@@ -217,77 +217,184 @@
     }
 
     /* Floating extension mockup */
+    /* ── Hero Browser Mockup ───────────────────────────────── */
     .hero-mockup {
       display:inline-block; margin:0 auto 40px;
       animation:fadeUp .7s ease .25s both;
       position:relative;
-      perspective:1000px;
+      perspective:1200px;
     }
-    /* Ambient glow behind card */
+    /* Ambient glow */
     .hero-mockup::before {
       content:'';
-      position:absolute; inset:-24px;
+      position:absolute; inset:-32px;
       border-radius:50%;
-      background:radial-gradient(ellipse at center,
-        rgba(99,102,241,.25) 0%,
-        rgba(139,92,246,.12) 45%,
-        transparent 70%
-      );
+      background:radial-gradient(ellipse at center,rgba(37,99,235,.2) 0%,rgba(59,130,246,.08) 50%,transparent 70%);
       z-index:0;
       animation:glowPulseHero 3s ease-in-out infinite;
       pointer-events:none;
     }
     @keyframes glowPulseHero {
-      0%,100% { opacity:.7; transform:scale(1); }
-      50% { opacity:1; transform:scale(1.05); }
+      0%,100% { opacity:.6; transform:scale(1); }
+      50% { opacity:1; transform:scale(1.06); }
     }
-    .mockup-card {
-      background:#ffffff;
-      border:1px solid rgba(99,102,241,0.18);
-      border-radius:var(--radius-lg); padding:20px 24px;
-      box-shadow:
-        0 1px 0 rgba(255,255,255,.9) inset,
-        0 40px 80px rgba(99,102,241,.18),
-        0 16px 32px rgba(0,0,0,.1),
-        0 0 0 1px rgba(99,102,241,.08);
-      display:inline-block; text-align:left; min-width:280px;
-      transform:perspective(1000px) rotateY(-8deg) rotateX(3deg);
-      transition:transform .5s cubic-bezier(.25,.46,.45,.94), box-shadow .5s ease;
+
+    /* Browser window shell */
+    .browser-shell {
+      width:380px;
+      border-radius:12px;
+      overflow:hidden;
+      box-shadow:0 40px 80px rgba(15,23,42,.22), 0 8px 24px rgba(15,23,42,.12), 0 0 0 1px rgba(15,23,42,.08);
+      transform:perspective(1200px) rotateY(-8deg) rotateX(4deg);
+      transition:transform .5s cubic-bezier(.25,.46,.45,.94), box-shadow .5s;
       animation:floatMockup 3.5s ease-in-out infinite;
       position:relative; z-index:1;
+      background:#fff;
     }
-    .mockup-card:hover {
-      transform:perspective(1000px) rotateY(0deg) rotateX(0deg);
-      box-shadow:
-        0 1px 0 rgba(255,255,255,.9) inset,
-        0 48px 96px rgba(99,102,241,.22),
-        0 20px 40px rgba(0,0,0,.12),
-        0 0 0 1px rgba(99,102,241,.12);
+    .browser-shell:hover {
+      transform:perspective(1200px) rotateY(0deg) rotateX(0deg);
+      box-shadow:0 48px 96px rgba(15,23,42,.28), 0 8px 24px rgba(15,23,42,.12), 0 0 0 1px rgba(15,23,42,.08);
       animation:none;
     }
     @keyframes floatMockup {
-      0%,100% { transform:perspective(1000px) rotateY(-8deg) rotateX(3deg) translateY(0); }
-      50% { transform:perspective(1000px) rotateY(-8deg) rotateX(3deg) translateY(-10px); }
+      0%,100% { transform:perspective(1200px) rotateY(-8deg) rotateX(4deg) translateY(0); }
+      50% { transform:perspective(1200px) rotateY(-8deg) rotateX(4deg) translateY(-10px); }
     }
-    .mockup-header { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
-    .mockup-logo { width:28px; height:28px; border-radius:7px; background:var(--black); display:flex; align-items:center; justify-content:center; color:var(--white); font-size:12px; font-weight:800; flex-shrink:0; }
-    .mockup-title { font-size:14px; font-weight:700; color:var(--black); }
-    .mockup-sub { font-size:11px; color:var(--gray-400); }
-    .mockup-tools { display:flex; flex-direction:column; gap:8px; }
+
+    /* Browser toolbar */
+    .browser-bar {
+      background:#f1f5f9;
+      border-bottom:1px solid #e2e8f0;
+      padding:8px 12px;
+      display:flex; align-items:center; gap:8px;
+    }
+    .browser-dots { display:flex; gap:5px; }
+    .browser-dots span {
+      width:10px; height:10px; border-radius:50%;
+    }
+    .browser-dots span:nth-child(1) { background:#ff5f57; }
+    .browser-dots span:nth-child(2) { background:#febc2e; }
+    .browser-dots span:nth-child(3) { background:#28c840; }
+    .browser-url {
+      flex:1; background:#fff; border:1px solid #e2e8f0;
+      border-radius:6px; padding:3px 10px;
+      font-size:11px; color:#64748b; font-family:monospace;
+    }
+    /* Extension icon in toolbar */
+    .browser-ext {
+      width:24px; height:24px; border-radius:5px;
+      background:#0f172a;
+      display:flex; align-items:center; justify-content:center;
+      color:#fff; font-size:9px; font-weight:800;
+      cursor:pointer; flex-shrink:0;
+      position:relative;
+      animation:extPulse 8s ease-in-out infinite;
+    }
+    @keyframes extPulse {
+      /* clicked effect at ~55% of the 8s cycle */
+      52%, 56% { transform:scale(.82); background:#2563eb; }
+      57%, 100% { transform:scale(1); background:#0f172a; }
+    }
+
+    /* LinkedIn page body */
+    .browser-body {
+      background:#f3f2ef;
+      height:200px;
+      position:relative;
+      overflow:hidden;
+    }
+    /* Minimal LinkedIn nav bar */
+    .li-nav {
+      background:#fff; border-bottom:1px solid #e0ddd8;
+      padding:6px 12px; display:flex; align-items:center; gap:8px;
+    }
+    .li-logo {
+      width:24px; height:24px; border-radius:4px;
+      background:#0077b5; color:#fff;
+      font-size:10px; font-weight:900;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .li-search {
+      flex:1; height:20px; background:#eef3f8;
+      border-radius:4px; border:1px solid #c5cdd6;
+    }
+    /* Fake LinkedIn feed lines */
+    .li-feed { padding:10px 12px; display:flex; flex-direction:column; gap:6px; }
+    .li-post {
+      background:#fff; border-radius:6px; border:1px solid #e0ddd8; padding:8px 10px;
+    }
+    .li-post-header { display:flex; align-items:center; gap:6px; margin-bottom:5px; }
+    .li-avatar { width:20px; height:20px; border-radius:50%; background:#cbd5e1; flex-shrink:0; }
+    .li-name { height:8px; width:80px; background:#e2e8f0; border-radius:4px; }
+    .li-line { height:6px; background:#f1f5f9; border-radius:4px; margin-bottom:3px; }
+    .li-line.short { width:60%; }
+
+    /* Animated cursor */
+    .demo-cursor {
+      position:absolute;
+      width:16px; height:16px;
+      pointer-events:none;
+      z-index:10;
+      /* Start: middle of LinkedIn feed */
+      animation:cursorJourney 8s ease-in-out infinite;
+    }
+    .demo-cursor svg { width:16px; height:16px; filter:drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
+    @keyframes cursorJourney {
+      /* On LinkedIn page */
+      0%    { transform:translate(60px, 100px); opacity:1; }
+      10%   { transform:translate(80px, 120px); opacity:1; }
+      20%   { transform:translate(55px, 90px); opacity:1; }
+      /* Start moving toward ext icon (top-right of browser) */
+      30%   { transform:translate(55px, 90px); opacity:1; }
+      50%   { transform:translate(330px, -155px); opacity:1; }
+      /* Hover on ext icon */
+      52%   { transform:translate(330px, -155px) scale(1.1); opacity:1; }
+      /* Click — cursor presses down */
+      54%   { transform:translate(330px, -155px) scale(.9); opacity:1; }
+      57%   { transform:translate(330px, -155px) scale(1); opacity:1; }
+      /* Stay near icon while popup shows */
+      75%   { transform:translate(330px, -155px); opacity:1; }
+      /* Fade out, reset */
+      85%   { transform:translate(330px, -155px); opacity:0; }
+      99%   { transform:translate(60px, 100px); opacity:0; }
+      100%  { transform:translate(60px, 100px); opacity:1; }
+    }
+
+    /* ProPostly popup */
+    .mockup-card {
+      background:#ffffff;
+      border:1px solid #e2e8f0;
+      border-radius:10px; padding:14px 16px;
+      box-shadow:0 8px 32px rgba(15,23,42,.15), 0 2px 8px rgba(15,23,42,.08);
+      text-align:left;
+      /* Hidden until cursor clicks */
+      animation:popupReveal 8s ease-in-out infinite;
+      transform-origin:top right;
+    }
+    @keyframes popupReveal {
+      0%, 55%  { opacity:0; transform:scale(.92) translateY(-6px); pointer-events:none; }
+      62%, 88% { opacity:1; transform:scale(1) translateY(0); }
+      95%,100% { opacity:0; transform:scale(.92) translateY(-6px); }
+    }
+    .mockup-header { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+    .mockup-logo { width:24px; height:24px; border-radius:6px; background:var(--black); display:flex; align-items:center; justify-content:center; color:var(--white); font-size:10px; font-weight:800; flex-shrink:0; }
+    .mockup-title { font-size:13px; font-weight:700; color:var(--black); }
+    .mockup-sub { font-size:10px; color:var(--gray-400); }
+    .mockup-tools { display:flex; flex-direction:column; gap:6px; }
     .mockup-tool {
-      display:flex; align-items:center; gap:10px; padding:9px 12px;
-      border-radius:8px; font-size:13px; font-weight:500; color:var(--gray-700);
+      display:flex; align-items:center; gap:8px; padding:7px 10px;
+      border-radius:7px; font-size:12px; font-weight:500; color:var(--gray-700);
       background:var(--gray-50); border:1px solid var(--gray-200);
-      transition:background .3s ease, color .3s ease, border-color .3s ease, transform .2s ease, box-shadow .3s ease;
+      transition:background .3s, color .3s, border-color .3s, transform .2s, box-shadow .3s;
     }
     .mockup-tool.active {
       background:linear-gradient(135deg,#2563eb,#3b82f6);
-      color:var(--white); border-color:transparent;
-      transform:translateX(4px);
-      box-shadow:0 4px 16px rgba(99,102,241,.35);
+      color:#fff; border-color:transparent;
+      transform:translateX(3px);
+      box-shadow:0 3px 12px rgba(37,99,235,.3);
     }
-    .mockup-tool span { font-size:15px; flex-shrink:0; }
-    .mockup-hot { font-size:11px; font-weight:700; color:#ef4444; margin-left:auto; }
+    .mockup-tool span { font-size:13px; flex-shrink:0; }
+    .mockup-hot { font-size:10px; font-weight:700; color:#ef4444; margin-left:auto; }
 
     .hero-cta {
       display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
@@ -923,23 +1030,62 @@
       <h1>Stop Staring at a<br>Blank Page. <em>Write<br>LinkedIn Content</em><br>in Seconds.</h1>
       <p>5 AI tools built into your browser — generate posts, personalized DMs, comment replies, headline rewrites, and lead finding. No copy-paste. Just results.</p>
 
-      <!-- Floating extension mockup -->
+      <!-- Browser + LinkedIn + cursor + popup demo -->
       <div class="hero-mockup">
-        <div class="mockup-card">
-          <div class="mockup-header">
-            <div class="mockup-logo">in</div>
-            <div>
-              <div class="mockup-title">ProPostly</div>
-              <div class="mockup-sub">Choose a tool</div>
+        <div class="browser-shell">
+
+          <!-- Browser toolbar -->
+          <div class="browser-bar">
+            <div class="browser-dots"><span></span><span></span><span></span></div>
+            <div class="browser-url">linkedin.com/feed</div>
+            <div class="browser-ext">in</div>
+          </div>
+
+          <!-- LinkedIn page body -->
+          <div class="browser-body">
+            <!-- Mini LinkedIn nav -->
+            <div class="li-nav">
+              <div class="li-logo">in</div>
+              <div class="li-search"></div>
+            </div>
+            <!-- Fake feed -->
+            <div class="li-feed">
+              <div class="li-post">
+                <div class="li-post-header"><div class="li-avatar"></div><div class="li-name"></div></div>
+                <div class="li-line"></div><div class="li-line short"></div>
+              </div>
+              <div class="li-post">
+                <div class="li-post-header"><div class="li-avatar"></div><div class="li-name"></div></div>
+                <div class="li-line"></div><div class="li-line short"></div>
+              </div>
+            </div>
+
+            <!-- Animated cursor -->
+            <div class="demo-cursor">
+              <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 1L14 8.5L8.5 9.5L6 14L2 1Z" fill="white" stroke="#0f172a" stroke-width="1.2" stroke-linejoin="round"/>
+              </svg>
             </div>
           </div>
-          <div class="mockup-tools">
-            <div class="mockup-tool active"><span>✍️</span> Generate Post</div>
-            <div class="mockup-tool"><span>💬</span> Personalized DM</div>
-            <div class="mockup-tool"><span>↩️</span> Reply to Comment</div>
-            <div class="mockup-tool"><span>🎯</span> Improve Headline</div>
-            <div class="mockup-tool"><span>🔎</span> Deep Lead Search <span class="mockup-hot">🔥 3 Hot!</span></div>
+
+          <!-- ProPostly popup — appears after cursor clicks ext icon -->
+          <div class="mockup-card">
+            <div class="mockup-header">
+              <div class="mockup-logo">in</div>
+              <div>
+                <div class="mockup-title">ProPostly</div>
+                <div class="mockup-sub">Choose a tool</div>
+              </div>
+            </div>
+            <div class="mockup-tools">
+              <div class="mockup-tool active"><span>✍️</span> Generate Post</div>
+              <div class="mockup-tool"><span>💬</span> Personalized DM</div>
+              <div class="mockup-tool"><span>↩️</span> Reply to Comment</div>
+              <div class="mockup-tool"><span>🎯</span> Improve Headline</div>
+              <div class="mockup-tool"><span>🔎</span> Deep Lead Search <span class="mockup-hot">🔥 3 Hot!</span></div>
+            </div>
           </div>
+
         </div>
       </div>
 
