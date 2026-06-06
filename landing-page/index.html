@@ -222,198 +222,154 @@
       display:inline-block; margin:0 auto 40px;
       animation:fadeUp .7s ease .25s both;
       position:relative;
-      perspective:1200px;
     }
     /* Ambient glow */
     .hero-mockup::before {
       content:'';
-      position:absolute; inset:-32px;
+      position:absolute; inset:-40px;
       border-radius:50%;
-      background:radial-gradient(ellipse at center,rgba(37,99,235,.2) 0%,rgba(59,130,246,.08) 50%,transparent 70%);
+      background:radial-gradient(ellipse at center,rgba(37,99,235,.18) 0%,rgba(59,130,246,.06) 55%,transparent 72%);
       z-index:0;
       animation:glowPulseHero 3s ease-in-out infinite;
       pointer-events:none;
     }
     @keyframes glowPulseHero {
       0%,100% { opacity:.6; transform:scale(1); }
-      50% { opacity:1; transform:scale(1.06); }
+      50% { opacity:1; transform:scale(1.05); }
     }
 
-    /* Browser window shell */
-    .browser-shell {
-      width:380px;
-      border-radius:12px;
-      overflow:hidden;
-      box-shadow:0 40px 80px rgba(15,23,42,.22), 0 8px 24px rgba(15,23,42,.12), 0 0 0 1px rgba(15,23,42,.08);
+    /* Outer wrapper that holds BOTH browser + popup, gets the 3D tilt */
+    .mockup-3d-wrap {
+      position:relative;
+      display:inline-block;
       transform:perspective(1200px) rotateY(-8deg) rotateX(4deg);
-      transition:transform .5s cubic-bezier(.25,.46,.45,.94), box-shadow .5s;
+      transition:transform .5s cubic-bezier(.25,.46,.45,.94);
       animation:floatMockup 3.5s ease-in-out infinite;
-      position:relative; z-index:1;
-      background:#fff;
+      z-index:1;
     }
-    .browser-shell:hover {
+    .mockup-3d-wrap:hover {
       transform:perspective(1200px) rotateY(0deg) rotateX(0deg);
-      box-shadow:0 48px 96px rgba(15,23,42,.28), 0 8px 24px rgba(15,23,42,.12), 0 0 0 1px rgba(15,23,42,.08);
       animation:none;
     }
     @keyframes floatMockup {
       0%,100% { transform:perspective(1200px) rotateY(-8deg) rotateX(4deg) translateY(0); }
-      50% { transform:perspective(1200px) rotateY(-8deg) rotateX(4deg) translateY(-10px); }
+      50%     { transform:perspective(1200px) rotateY(-8deg) rotateX(4deg) translateY(-10px); }
+    }
+
+    /* Browser window shell */
+    .browser-shell {
+      width:340px;
+      border-radius:12px;
+      overflow:hidden;
+      box-shadow:0 32px 64px rgba(15,23,42,.22), 0 6px 20px rgba(15,23,42,.1), 0 0 0 1px rgba(15,23,42,.08);
+      background:#fff;
+      position:relative; z-index:1;
     }
 
     /* Browser toolbar */
     .browser-bar {
-      background:#f1f5f9;
-      border-bottom:1px solid #e2e8f0;
-      padding:8px 12px;
-      display:flex; align-items:center; gap:8px;
+      background:#f1f5f9; border-bottom:1px solid #e2e8f0;
+      padding:7px 10px; display:flex; align-items:center; gap:7px;
     }
-    .browser-dots { display:flex; gap:5px; }
-    .browser-dots span {
-      width:10px; height:10px; border-radius:50%;
-    }
+    .browser-dots { display:flex; gap:4px; }
+    .browser-dots span { width:9px; height:9px; border-radius:50%; }
     .browser-dots span:nth-child(1) { background:#ff5f57; }
     .browser-dots span:nth-child(2) { background:#febc2e; }
     .browser-dots span:nth-child(3) { background:#28c840; }
     .browser-url {
       flex:1; background:#fff; border:1px solid #e2e8f0;
-      border-radius:6px; padding:3px 10px;
-      font-size:11px; color:#64748b; font-family:monospace;
+      border-radius:5px; padding:2px 8px;
+      font-size:10px; color:#64748b; font-family:monospace;
     }
-    /* Extension icon in toolbar */
+    /* Extension icon */
     .browser-ext {
-      width:24px; height:24px; border-radius:5px;
-      background:#0f172a;
-      display:flex; align-items:center; justify-content:center;
-      color:#fff; font-size:9px; font-weight:800;
-      cursor:pointer; flex-shrink:0;
-      position:relative;
-      animation:extPulse 8s ease-in-out infinite;
+      width:22px; height:22px; border-radius:4px;
+      background:#0f172a; display:flex; align-items:center; justify-content:center;
+      color:#fff; font-size:8px; font-weight:800; flex-shrink:0;
+      animation:extClick 10s ease-in-out infinite;
     }
-    @keyframes extPulse {
-      /* clicked effect at ~55% of the 8s cycle */
-      52%, 56% { transform:scale(.82); background:#2563eb; }
-      57%, 100% { transform:scale(1); background:#0f172a; }
+    @keyframes extClick {
+      44%,46% { transform:scale(.78); background:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.3); }
+      48%,100%,0% { transform:scale(1); background:#0f172a; box-shadow:none; }
     }
 
-    /* LinkedIn page body */
-    .browser-body {
-      background:#f3f2ef;
-      height:220px;
-      position:relative;
-      overflow:hidden;
-    }
-    /* Minimal LinkedIn nav bar */
+    /* LinkedIn profile body */
+    .browser-body { background:#f3f2ef; position:relative; overflow:hidden; }
     .li-nav {
       background:#fff; border-bottom:1px solid #e0ddd8;
       padding:5px 10px; display:flex; align-items:center; gap:6px;
     }
     .li-logo {
-      width:20px; height:20px; border-radius:3px;
-      background:#0077b5; color:#fff;
-      font-size:9px; font-weight:900;
+      width:18px; height:18px; border-radius:3px; background:#0077b5;
+      color:#fff; font-size:8px; font-weight:900;
       display:flex; align-items:center; justify-content:center; flex-shrink:0;
     }
-    .li-search {
-      flex:1; height:16px; background:#eef3f8;
-      border-radius:3px; border:1px solid #c5cdd6;
-    }
-    /* Profile cover + avatar */
-    .li-cover {
-      height:40px; background:linear-gradient(135deg,#0077b5,#00a0dc);
-      position:relative;
-    }
+    .li-search { flex:1; height:14px; background:#eef3f8; border-radius:3px; border:1px solid #c5cdd6; }
+    .li-cover { height:36px; background:linear-gradient(135deg,#0077b5,#00a0dc); position:relative; }
     .li-profile-avatar {
-      position:absolute; bottom:-14px; left:12px;
-      width:32px; height:32px; border-radius:50%;
-      background:#94a3b8; border:2px solid #fff;
+      position:absolute; bottom:-13px; left:10px;
+      width:30px; height:30px; border-radius:50%;
+      background:linear-gradient(135deg,#6366f1,#2563eb);
+      border:2px solid #fff;
       display:flex; align-items:center; justify-content:center;
-      font-size:13px; color:#fff; font-weight:700;
+      font-size:11px; color:#fff; font-weight:800;
     }
-    /* Profile info */
-    .li-profile-info {
-      background:#fff; padding:18px 12px 10px;
-      border-bottom:1px solid #e0ddd8;
-    }
-    .li-profile-name {
-      font-size:11px; font-weight:700; color:#0f172a;
-      margin-bottom:2px;
-    }
-    .li-profile-headline {
-      font-size:9px; color:#475569; margin-bottom:6px; line-height:1.3;
-    }
-    .li-profile-btns {
-      display:flex; gap:5px;
-    }
+    .li-profile-info { background:#fff; padding:17px 10px 8px; border-bottom:1px solid #e0ddd8; }
+    .li-profile-name { font-size:10px; font-weight:700; color:#0f172a; margin-bottom:1px; }
+    .li-profile-headline { font-size:8px; color:#475569; margin-bottom:5px; line-height:1.4; }
+    .li-profile-btns { display:flex; gap:4px; }
     .li-btn {
-      padding:3px 8px; border-radius:12px;
-      font-size:9px; font-weight:600;
-      border:1px solid #0077b5; color:#0077b5;
-      background:#fff;
+      padding:3px 7px; border-radius:10px; font-size:8px; font-weight:600;
+      border:1px solid #0077b5; color:#0077b5; background:#fff;
     }
-    .li-btn.primary {
-      background:#0077b5; color:#fff; border-color:#0077b5;
-    }
-    /* Post below profile */
-    .li-post-mini {
-      background:#fff; margin:6px 10px 0;
-      border-radius:5px; border:1px solid #e0ddd8; padding:7px 8px;
-    }
-    .li-post-hdr { display:flex; align-items:center; gap:5px; margin-bottom:4px; }
-    .li-mini-avatar { width:14px; height:14px; border-radius:50%; background:#cbd5e1; flex-shrink:0; }
-    .li-mini-name { height:7px; width:60px; background:#e2e8f0; border-radius:3px; }
+    .li-btn.primary { background:#0077b5; color:#fff; }
+    /* Post snippet */
+    .li-post-mini { background:#fff; margin:5px 8px; border-radius:5px; border:1px solid #e0ddd8; padding:6px 7px; }
+    .li-post-hdr { display:flex; align-items:center; gap:4px; margin-bottom:3px; }
+    .li-mini-av { width:13px; height:13px; border-radius:50%; background:#cbd5e1; flex-shrink:0; }
+    .li-mini-nm { height:6px; width:55px; background:#e2e8f0; border-radius:3px; }
     .li-line { height:5px; background:#f1f5f9; border-radius:3px; margin-bottom:3px; }
     .li-line.short { width:55%; }
 
-    /* Animated cursor */
+    /* Cursor */
     .demo-cursor {
-      position:absolute;
-      width:16px; height:16px;
-      pointer-events:none;
-      z-index:10;
-      /* Start: middle of LinkedIn feed */
-      animation:cursorJourney 8s ease-in-out infinite;
+      position:absolute; width:14px; height:14px;
+      pointer-events:none; z-index:10;
+      animation:cursorJourney 10s ease-in-out infinite;
     }
-    .demo-cursor svg { width:16px; height:16px; filter:drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
+    .demo-cursor svg { width:14px; height:14px; filter:drop-shadow(0 1px 2px rgba(0,0,0,.5)); }
     @keyframes cursorJourney {
-      /* On LinkedIn page */
-      0%    { transform:translate(60px, 100px); opacity:1; }
-      10%   { transform:translate(80px, 120px); opacity:1; }
-      20%   { transform:translate(55px, 90px); opacity:1; }
-      /* Start moving toward ext icon (top-right of browser) */
-      30%   { transform:translate(55px, 90px); opacity:1; }
-      50%   { transform:translate(330px, -155px); opacity:1; }
-      /* Hover on ext icon */
-      52%   { transform:translate(330px, -155px) scale(1.1); opacity:1; }
-      /* Click — cursor presses down */
-      54%   { transform:translate(330px, -155px) scale(.9); opacity:1; }
-      57%   { transform:translate(330px, -155px) scale(1); opacity:1; }
-      /* Stay near icon while popup shows */
-      75%   { transform:translate(330px, -155px); opacity:1; }
-      /* Fade out, reset */
-      85%   { transform:translate(330px, -155px); opacity:0; }
-      99%   { transform:translate(60px, 100px); opacity:0; }
-      100%  { transform:translate(60px, 100px); opacity:1; }
+      0%    { transform:translate(50px,90px); opacity:1; }
+      8%    { transform:translate(70px,110px); opacity:1; }
+      18%   { transform:translate(40px,75px); opacity:1; }
+      25%   { transform:translate(40px,75px); opacity:1; }
+      /* move up to ext icon */
+      43%   { transform:translate(295px,-110px); opacity:1; }
+      44%   { transform:translate(295px,-110px) scale(.85); opacity:1; }
+      46%   { transform:translate(295px,-110px) scale(1); opacity:1; }
+      /* hang near icon */
+      70%   { transform:translate(295px,-110px); opacity:1; }
+      80%   { transform:translate(295px,-110px); opacity:0; }
+      99%   { transform:translate(50px,90px); opacity:0; }
+      100%  { transform:translate(50px,90px); opacity:1; }
     }
 
-    /* ProPostly popup — absolute overlay from ext icon */
+    /* ProPostly popup — ALWAYS visible, positioned top-right of browser */
     .mockup-card {
       position:absolute;
-      top:28px; right:-12px;
-      width:224px;
-      background:#ffffff;
+      top:26px; right:-10px;
+      width:210px;
+      background:#fff;
       border:1px solid #e2e8f0;
-      border-radius:10px; padding:14px 16px;
-      box-shadow:0 12px 40px rgba(15,23,42,.2), 0 2px 8px rgba(15,23,42,.08);
-      text-align:left;
-      z-index:10;
-      animation:popupReveal 8s ease-in-out infinite;
-      transform-origin:top right;
+      border-radius:10px; padding:12px 14px;
+      box-shadow:0 16px 48px rgba(15,23,42,.18), 0 2px 8px rgba(15,23,42,.07), 0 0 0 1px rgba(15,23,42,.05);
+      text-align:left; z-index:20;
+      /* Slide in once on load, then stay */
+      animation:popupSlideIn .5s cubic-bezier(.34,1.56,.64,1) .8s both;
     }
-    @keyframes popupReveal {
-      0%, 55%  { opacity:0; transform:scale(.9) translateY(-8px); pointer-events:none; }
-      63%, 88% { opacity:1; transform:scale(1) translateY(0); }
-      95%,100% { opacity:0; transform:scale(.9) translateY(-8px); }
+    @keyframes popupSlideIn {
+      from { opacity:0; transform:scale(.88) translateY(-10px); }
+      to   { opacity:1; transform:scale(1) translateY(0); }
     }
     .mockup-header { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
     .mockup-logo { width:24px; height:24px; border-radius:6px; background:var(--black); display:flex; align-items:center; justify-content:center; color:var(--white); font-size:10px; font-weight:800; flex-shrink:0; }
@@ -1088,6 +1044,7 @@
 
       <!-- Browser + LinkedIn + cursor + popup demo -->
       <div class="hero-mockup">
+        <div class="mockup-3d-wrap">
 
         <!-- Browser window -->
         <div class="browser-shell">
@@ -1164,6 +1121,7 @@
           </div>
         </div>
 
+        </div><!-- /.mockup-3d-wrap -->
       </div>
 
       <div class="hero-cta">
