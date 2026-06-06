@@ -1001,20 +1001,20 @@
       content:'';
       position:absolute; inset:0;
       background:
-        radial-gradient(ellipse 60% 40% at 50% 0%, rgba(37,99,235,.13) 0%, transparent 70%),
-        radial-gradient(ellipse 40% 30% at 80% 80%, rgba(14,165,233,.08) 0%, transparent 60%);
+        radial-gradient(ellipse 70% 50% at 50% 0%, rgba(37,99,235,.15) 0%, transparent 65%),
+        radial-gradient(ellipse 40% 30% at 80% 90%, rgba(14,165,233,.08) 0%, transparent 60%);
       pointer-events:none;
     }
     /* Dot grid */
     .showcase-section::after {
       content:'';
       position:absolute; inset:0;
-      background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px);
+      background-image:radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
       background-size:28px 28px;
       pointer-events:none;
     }
     .showcase-inner {
-      max-width:860px; margin:0 auto; position:relative; z-index:1;
+      max-width:1000px; margin:0 auto; position:relative; z-index:1;
     }
     .showcase-label {
       text-align:center; font-size:12px; font-weight:700; letter-spacing:2px;
@@ -1031,7 +1031,7 @@
     /* Tab row */
     .showcase-tabs {
       display:flex; gap:10px; justify-content:center; flex-wrap:wrap;
-      margin-bottom:40px;
+      margin-bottom:48px;
     }
     .sc-tab {
       padding:9px 18px; border-radius:50px; font-size:13px; font-weight:600;
@@ -1046,160 +1046,234 @@
       box-shadow:0 0 0 3px rgba(37,99,235,.3), 0 6px 20px rgba(37,99,235,.4);
     }
 
-    /* 3D card stage */
+    /* 3D mockup stage — browser + popup side by side */
     .showcase-stage {
-      perspective:1200px;
+      perspective:1400px;
       display:flex; justify-content:center;
     }
-    .showcase-card-wrap {
-      position:relative;
-      transform:rotateX(5deg);
-      transform-style:preserve-3d;
-      transition:transform .35s ease;
-      animation:scFloat 3.5s ease-in-out infinite;
+    .sc-3d-wrap {
+      position:relative; display:inline-flex; align-items:flex-start; gap:0;
+      transform:perspective(1400px) rotateY(-6deg) rotateX(3deg);
+      animation:sc3dFloat 4s ease-in-out infinite;
+      transition:transform .5s ease;
     }
-    .showcase-card-wrap:hover { transform:rotateX(0deg); animation:none; }
-    @keyframes scFloat {
-      0%,100% { transform:rotateX(5deg) translateY(0); }
-      50%      { transform:rotateX(5deg) translateY(-10px); }
+    .sc-3d-wrap:hover {
+      transform:perspective(1400px) rotateY(0deg) rotateX(0deg);
+      animation:none;
     }
-
-    /* Animated gradient border */
-    .showcase-card-border {
-      padding:2px; border-radius:18px;
-      background:linear-gradient(135deg,#2563eb,#38bdf8,#6366f1,#2563eb);
-      background-size:300% 300%;
-      animation:borderShift 3s linear infinite;
-      box-shadow:0 0 40px rgba(37,99,235,.3), 0 30px 60px rgba(0,0,0,.5);
-    }
-    @keyframes borderShift {
-      0%   { background-position:0% 50%; }
-      50%  { background-position:100% 50%; }
-      100% { background-position:0% 50%; }
+    @keyframes sc3dFloat {
+      0%,100% { transform:perspective(1400px) rotateY(-6deg) rotateX(3deg) translateY(0); }
+      50%      { transform:perspective(1400px) rotateY(-6deg) rotateX(3deg) translateY(-12px); }
     }
 
-    .showcase-card {
-      width:480px; max-width:calc(100vw - 48px);
-      background:#0f1c2e; border-radius:16px;
-      padding:28px 28px 24px;
-      position:relative; overflow:hidden;
+    /* Browser mockup */
+    .sc-browser {
+      width:420px; border-radius:12px; overflow:hidden;
+      box-shadow:0 40px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.08);
+      flex-shrink:0;
     }
-    .showcase-card::before {
-      content:''; position:absolute; top:0; left:0; right:0; height:1px;
-      background:linear-gradient(90deg,transparent,rgba(99,179,237,.4),transparent);
+    .sc-browser-bar {
+      background:#1e293b; border-bottom:1px solid rgba(255,255,255,.08);
+      padding:8px 12px; display:flex; align-items:center; gap:8px;
+    }
+    .sc-browser-dots { display:flex; gap:5px; }
+    .sc-browser-dots span { width:10px; height:10px; border-radius:50%; }
+    .sc-browser-dots span:nth-child(1) { background:#ff5f57; }
+    .sc-browser-dots span:nth-child(2) { background:#febc2e; }
+    .sc-browser-dots span:nth-child(3) { background:#28c840; }
+    .sc-browser-url {
+      flex:1; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+      border-radius:5px; padding:3px 10px; font-size:11px; color:rgba(255,255,255,.4); font-family:monospace;
+    }
+    .sc-browser-ext {
+      width:22px; height:22px; border-radius:4px; background:#2563eb;
+      display:flex; align-items:center; justify-content:center;
+      color:#fff; font-size:8px; font-weight:800; flex-shrink:0;
+      box-shadow:0 0 0 2px rgba(37,99,235,.4);
     }
 
-    /* Panel — one panel per tool, only active shown */
-    .sc-panel { display:none; }
-    .sc-panel.active { display:block; animation:panelIn .38s cubic-bezier(.25,.46,.45,.94) both; }
+    /* LinkedIn profile inside browser */
+    .sc-browser-body { background:#f3f2ef; }
+    .sc-li-nav {
+      background:#fff; border-bottom:1px solid #e0ddd8;
+      padding:6px 12px; display:flex; align-items:center; gap:8px;
+    }
+    .sc-li-logo {
+      width:20px; height:20px; border-radius:3px; background:#0077b5;
+      color:#fff; font-size:9px; font-weight:900;
+      display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    }
+    .sc-li-search { flex:1; height:16px; background:#eef3f8; border-radius:3px; border:1px solid #c5cdd6; }
+    .sc-li-cover { height:56px; background:linear-gradient(135deg,#0077b5,#00a0dc); position:relative; }
+    .sc-li-avatar {
+      position:absolute; bottom:-18px; left:14px;
+      width:44px; height:44px; border-radius:50%;
+      background:linear-gradient(135deg,#2563eb,#38bdf8);
+      border:3px solid #fff;
+      display:flex; align-items:center; justify-content:center;
+      font-size:15px; color:#fff; font-weight:800;
+    }
+    .sc-li-info { background:#fff; padding:24px 14px 10px; border-bottom:1px solid #e0ddd8; }
+    .sc-li-name { font-size:14px; font-weight:700; color:#0f172a; margin-bottom:2px; }
+    .sc-li-headline {
+      font-size:11px; color:#475569; margin-bottom:6px; line-height:1.4;
+      padding:4px 6px; border-radius:4px; display:inline-block;
+      transition:background .3s, color .3s;
+    }
+    .sc-li-headline.highlight { background:#fef9c3; color:#92400e; }
+    .sc-li-btns { display:flex; gap:6px; margin-top:4px; }
+    .sc-li-btn {
+      padding:4px 10px; border-radius:12px; font-size:10px; font-weight:600;
+      border:1px solid #0077b5; color:#0077b5; background:#fff;
+    }
+    .sc-li-btn.primary { background:#0077b5; color:#fff; }
+    .sc-li-about {
+      background:#fff; margin:6px 0 0; padding:10px 14px;
+      border-top:1px solid #e0ddd8;
+    }
+    .sc-li-about-title { font-size:11px; font-weight:700; color:#0f172a; margin-bottom:4px; }
+    .sc-li-about-line { height:6px; background:#e2e8f0; border-radius:3px; margin-bottom:4px; }
+    .sc-li-about-line.short { width:60%; }
+    .sc-li-post {
+      background:#fff; margin:6px 0 0; padding:10px 14px;
+      border-top:1px solid #e0ddd8; border-bottom:1px solid #e0ddd8;
+    }
+    .sc-li-post-hdr { display:flex; align-items:center; gap:6px; margin-bottom:6px; }
+    .sc-li-mini-av { width:16px; height:16px; border-radius:50%; background:#cbd5e1; flex-shrink:0; }
+    .sc-li-mini-nm { height:7px; width:70px; background:#e2e8f0; border-radius:3px; }
+    .sc-li-post-line { height:6px; background:#f1f5f9; border-radius:3px; margin-bottom:4px; }
+    .sc-li-post-line.short { width:55%; }
+    /* Comment highlight for Reply tab */
+    .sc-li-comment {
+      background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px;
+      padding:6px 8px; margin-top:6px;
+      font-size:10px; color:#475569; font-style:italic; line-height:1.4;
+      display:none;
+    }
+    .sc-li-comment.show { display:block; }
+
+    /* ProPostly popup — right side of browser */
+    .sc-popup {
+      width:230px; flex-shrink:0;
+      background:#fff;
+      border:1px solid #e2e8f0;
+      border-radius:12px; padding:0;
+      box-shadow:0 20px 60px rgba(0,0,0,.3), 0 0 0 1px rgba(0,0,0,.05);
+      margin-left:-4px; margin-top:10px;
+      overflow:hidden;
+      animation:popupAppear .4s cubic-bezier(.34,1.56,.64,1) .3s both;
+    }
+    @keyframes popupAppear {
+      from { opacity:0; transform:scale(.9) translateY(-8px); }
+      to   { opacity:1; transform:scale(1) translateY(0); }
+    }
+    .sc-popup-hdr {
+      background:#0f172a; padding:10px 12px;
+      display:flex; align-items:center; gap:8px;
+    }
+    .sc-popup-logo {
+      width:20px; height:20px; border-radius:5px; background:#2563eb;
+      display:flex; align-items:center; justify-content:center;
+      color:#fff; font-size:9px; font-weight:800; flex-shrink:0;
+    }
+    .sc-popup-title { font-size:12px; font-weight:700; color:#fff; }
+    .sc-popup-sub { font-size:9px; color:rgba(255,255,255,.45); }
+
+    /* Popup panels */
+    .sc-panel { display:none; padding:10px 12px 12px; }
+    .sc-panel.active { display:block; animation:panelIn .35s ease both; }
     @keyframes panelIn {
-      from { opacity:0; transform:translateX(22px) rotateY(8deg); }
-      to   { opacity:1; transform:translateX(0) rotateY(0deg); }
+      from { opacity:0; transform:translateY(8px); }
+      to   { opacity:1; transform:translateY(0); }
     }
-
-    .sc-panel-title {
-      font-size:16px; font-weight:700; color:#fff; margin-bottom:4px; display:flex; align-items:center; gap:8px;
-    }
-    .sc-topic {
-      font-size:12px; color:rgba(255,255,255,.4); margin-bottom:18px;
-      padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,.07);
-    }
-    .sc-generating {
-      font-size:12px; color:#38bdf8; margin-bottom:16px; display:flex; align-items:center; gap:6px;
-    }
-    .sc-generating::before { content:'⟳'; display:inline-block; animation:spin .8s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
-
-    .sc-option { margin-bottom:16px; }
-    .sc-option-label {
-      font-size:11px; font-weight:700; color:rgba(255,255,255,.4);
-      text-transform:uppercase; letter-spacing:1px; margin-bottom:7px;
-    }
-    .sc-bubble {
-      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
-      border-radius:10px; padding:12px 14px;
-    }
-    .sc-text {
-      font-size:13px; color:rgba(255,255,255,.85); line-height:1.6;
-      font-style:italic; margin-bottom:10px;
-      min-height:2.4em;
-      overflow:hidden; white-space:pre-wrap;
-    }
-    /* typing cursor */
-    .sc-text.typing::after { content:'|'; animation:blink .7s step-end infinite; margin-left:1px; color:#38bdf8; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
-    .sc-btns { display:flex; gap:7px; flex-wrap:wrap; }
+    .sc-generating {
+      font-size:10px; color:#2563eb; margin-bottom:8px;
+      display:flex; align-items:center; gap:5px;
+    }
+    .sc-spin { display:inline-block; animation:spin .8s linear infinite; }
+    .sc-option { margin-bottom:10px; }
+    .sc-option-label {
+      font-size:9px; font-weight:700; color:#94a3b8;
+      text-transform:uppercase; letter-spacing:.8px; margin-bottom:4px;
+    }
+    .sc-bubble {
+      background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 10px;
+    }
+    .sc-text {
+      font-size:10px; color:#334155; line-height:1.5; font-style:italic;
+      margin-bottom:6px; min-height:2em; white-space:pre-wrap;
+    }
+    .sc-text.typing::after { content:'|'; animation:blink .7s step-end infinite; color:#2563eb; }
+    .sc-btns { display:flex; gap:5px; flex-wrap:wrap; }
     .sc-btn {
-      padding:5px 13px; border-radius:6px; font-size:11px; font-weight:600;
-      background:rgba(37,99,235,.25); color:#93c5fd; border:1px solid rgba(37,99,235,.4);
-      cursor:pointer; transition:all .2s;
+      padding:4px 9px; border-radius:5px; font-size:9px; font-weight:600;
+      background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; cursor:pointer; transition:all .2s;
     }
-    .sc-btn:hover { background:rgba(37,99,235,.4); color:#fff; }
-    .sc-btn.primary { background:linear-gradient(135deg,#1d4ed8,#2563eb); color:#fff; border-color:transparent; }
+    .sc-btn:hover { background:#2563eb; color:#fff; }
+    .sc-btn.primary { background:#2563eb; color:#fff; border-color:transparent; }
 
-    /* Lead search specific */
-    .sc-leads-meta {
-      display:flex; gap:16px; margin-bottom:16px; flex-wrap:wrap;
+    /* Profile chip inside popup */
+    .sc-pop-profile {
+      display:flex; align-items:center; gap:7px;
+      padding:7px 8px; border-radius:7px;
+      background:#f0f9ff; border:1px solid #bae6fd; margin-bottom:8px;
     }
-    .sc-meta-chip {
-      padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700;
-      background:rgba(239,68,68,.15); color:#fca5a5; border:1px solid rgba(239,68,68,.2);
-    }
-    .sc-meta-chip.warm { background:rgba(251,191,36,.12); color:#fde68a; border-color:rgba(251,191,36,.2); }
-    .sc-meta-chip.speed { background:rgba(34,197,94,.12); color:#86efac; border-color:rgba(34,197,94,.2); }
-    .sc-lead {
-      display:flex; align-items:flex-start; gap:10px;
-      padding:10px 12px; border-radius:9px;
-      background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08);
-      margin-bottom:10px;
-    }
-    .sc-lead-icon { font-size:16px; flex-shrink:0; margin-top:1px; }
-    .sc-lead-name { font-size:13px; font-weight:700; color:#fff; }
-    .sc-lead-role { font-size:11px; color:rgba(255,255,255,.45); margin-bottom:3px; }
-    .sc-lead-loc { font-size:10px; color:rgba(255,255,255,.3); margin-bottom:4px; }
-    .sc-lead-dm {
-      font-size:11px; color:#93c5fd; font-style:italic;
-      background:rgba(37,99,235,.12); border-radius:5px; padding:4px 7px;
-    }
-
-    /* Profile chip (DM tab) */
-    .sc-profile {
-      display:flex; align-items:center; gap:10px;
-      padding:10px 12px; border-radius:9px;
-      background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08);
-      margin-bottom:16px;
-    }
-    .sc-avatar {
-      width:32px; height:32px; border-radius:50%;
+    .sc-pop-av {
+      width:26px; height:26px; border-radius:50%;
       background:linear-gradient(135deg,#2563eb,#38bdf8);
       display:flex; align-items:center; justify-content:center;
-      font-size:12px; font-weight:800; color:#fff; flex-shrink:0;
+      font-size:10px; font-weight:800; color:#fff; flex-shrink:0;
     }
-    .sc-profile-name { font-size:13px; font-weight:700; color:#fff; }
-    .sc-profile-role { font-size:11px; color:rgba(255,255,255,.45); }
+    .sc-pop-name { font-size:10px; font-weight:700; color:#0f172a; line-height:1.2; }
+    .sc-pop-role { font-size:9px; color:#64748b; }
 
-    /* Original comment chip */
+    /* Lead chips inside popup */
+    .sc-leads-meta { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:8px; }
+    .sc-meta-chip {
+      padding:3px 7px; border-radius:12px; font-size:9px; font-weight:700;
+      background:#fef2f2; color:#dc2626; border:1px solid #fecaca;
+    }
+    .sc-meta-chip.warm { background:#fffbeb; color:#d97706; border-color:#fde68a; }
+    .sc-meta-chip.speed { background:#f0fdf4; color:#16a34a; border-color:#bbf7d0; }
+    .sc-lead {
+      padding:7px 8px; border-radius:7px;
+      background:#f8fafc; border:1px solid #e2e8f0; margin-bottom:6px;
+    }
+    .sc-lead-name { font-size:10px; font-weight:700; color:#0f172a; }
+    .sc-lead-role { font-size:9px; color:#64748b; margin-bottom:3px; }
+    .sc-lead-dm { font-size:9px; color:#2563eb; font-style:italic; background:#eff6ff; border-radius:4px; padding:3px 5px; }
+
+    /* Comment chip */
     .sc-comment-chip {
-      padding:10px 12px; border-radius:9px;
-      background:rgba(255,255,255,.05); border-left:3px solid #2563eb;
-      margin-bottom:16px; font-size:12px; color:rgba(255,255,255,.6);
-      font-style:italic; line-height:1.5;
+      padding:7px 8px; border-radius:7px; border-left:3px solid #2563eb;
+      background:#f8fafc; margin-bottom:8px;
+      font-size:10px; color:#475569; font-style:italic; line-height:1.4;
     }
-
-    /* Current headline chip */
+    /* Headline chip */
     .sc-current-chip {
-      padding:8px 12px; border-radius:8px; margin-bottom:16px;
-      background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08);
-      font-size:12px; color:rgba(255,255,255,.5);
+      padding:6px 8px; border-radius:6px; margin-bottom:8px;
+      background:#f8fafc; border:1px solid #e2e8f0;
+      font-size:10px; color:#64748b;
     }
-    .sc-current-chip strong { color:rgba(255,255,255,.7); }
+    .sc-current-chip strong { color:#0f172a; }
 
+    @media(max-width:900px) {
+      .sc-browser { width:320px; }
+      .sc-popup { width:190px; }
+    }
     @media(max-width:640px) {
       .showcase-section { padding:72px 16px 88px; }
       .showcase-tabs { gap:8px; }
       .sc-tab { padding:8px 14px; font-size:12px; }
-      .showcase-card { padding:20px 18px; }
+      .sc-3d-wrap {
+        transform:none; animation:none;
+        flex-direction:column; align-items:center;
+      }
+      .sc-browser { width:100%; max-width:360px; }
+      .sc-popup { width:100%; max-width:360px; margin-left:0; margin-top:12px; }
     }
   </style>
 </head>
@@ -1410,7 +1484,7 @@
       <div class="showcase-inner">
         <p class="showcase-label">Interactive Demo</p>
         <h2 class="showcase-title">See All 5 Tools in Action ✨</h2>
-        <p class="showcase-sub">Click any tool to see how it works</p>
+        <p class="showcase-sub">Click any tool — see exactly how it works on a real LinkedIn profile</p>
 
         <!-- Tabs -->
         <div class="showcase-tabs">
@@ -1421,148 +1495,182 @@
           <button class="sc-tab" data-tab="4">🎯 Improve Headline</button>
         </div>
 
-        <!-- 3D Card Stage -->
+        <!-- 3D Browser + Popup mockup -->
         <div class="showcase-stage">
-          <div class="showcase-card-wrap">
-            <div class="showcase-card-border">
-              <div class="showcase-card">
+          <div class="sc-3d-wrap">
 
-                <!-- TAB 0: Generate Post -->
-                <div class="sc-panel active" data-panel="0">
-                  <div class="sc-panel-title">✍️ Generate Post</div>
-                  <div class="sc-topic">Topic: "startup journey"</div>
-                  <div class="sc-generating">Generating 2 options...</div>
-                  <div class="sc-option">
-                    <div class="sc-option-label">💼 Option 1 — Professional</div>
-                    <div class="sc-bubble">
-                      <div class="sc-text" data-full="After 2 years building in public, here's what I learned about shipping fast without burning out..."></div>
-                      <div class="sc-btns">
-                        <button class="sc-btn">Copy</button>
-                        <button class="sc-btn primary">Make Viral ✨</button>
-                      </div>
-                    </div>
+            <!-- Browser window with LinkedIn profile -->
+            <div class="sc-browser">
+              <div class="sc-browser-bar">
+                <div class="sc-browser-dots"><span></span><span></span><span></span></div>
+                <div class="sc-browser-url" id="sc-url">linkedin.com/in/alexjohnson</div>
+                <div class="sc-browser-ext">in</div>
+              </div>
+              <div class="sc-browser-body">
+                <div class="sc-li-nav">
+                  <div class="sc-li-logo">in</div>
+                  <div class="sc-li-search"></div>
+                </div>
+                <div class="sc-li-cover">
+                  <div class="sc-li-avatar">AJ</div>
+                </div>
+                <div class="sc-li-info">
+                  <div class="sc-li-name">Alex Johnson</div>
+                  <div class="sc-li-headline" id="sc-headline">Marketing Manager · SaaS Growth · Open to connect</div>
+                  <div class="sc-li-btns">
+                    <div class="sc-li-btn primary">Message</div>
+                    <div class="sc-li-btn">Connect</div>
                   </div>
-                  <div class="sc-option">
-                    <div class="sc-option-label">🔥 Option 2 — Viral</div>
-                    <div class="sc-bubble">
-                      <div class="sc-text" data-full="Nobody told me building a startup would feel like therapy. You fix the product. Then you fix yourself..."></div>
-                      <div class="sc-btns">
-                        <button class="sc-btn">Copy</button>
-                      </div>
+                </div>
+                <div class="sc-li-about">
+                  <div class="sc-li-about-title">About</div>
+                  <div class="sc-li-about-line"></div>
+                  <div class="sc-li-about-line short"></div>
+                </div>
+                <div class="sc-li-post">
+                  <div class="sc-li-post-hdr">
+                    <div class="sc-li-mini-av"></div>
+                    <div class="sc-li-mini-nm"></div>
+                  </div>
+                  <div class="sc-li-post-line"></div>
+                  <div class="sc-li-post-line short"></div>
+                  <!-- Comment shown for Reply tab -->
+                  <div class="sc-li-comment" id="sc-comment">"AI is transforming how we work. Thoughts?"</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ProPostly popup -->
+            <div class="sc-popup">
+              <div class="sc-popup-hdr">
+                <div class="sc-popup-logo">in</div>
+                <div>
+                  <div class="sc-popup-title">ProPostly</div>
+                  <div class="sc-popup-sub">AI tools for LinkedIn</div>
+                </div>
+              </div>
+
+              <!-- Panel 0: Generate Post -->
+              <div class="sc-panel active" data-panel="0">
+                <div class="sc-generating"><span class="sc-spin">⟳</span> Generating post...</div>
+                <div class="sc-option">
+                  <div class="sc-option-label">💼 Professional</div>
+                  <div class="sc-bubble">
+                    <div class="sc-text" data-full="After 2 years building in public, here's what I learned about shipping fast..."></div>
+                    <div class="sc-btns">
+                      <button class="sc-btn">Copy</button>
+                      <button class="sc-btn primary">Make Viral ✨</button>
                     </div>
                   </div>
                 </div>
+                <div class="sc-option">
+                  <div class="sc-option-label">🔥 Viral</div>
+                  <div class="sc-bubble">
+                    <div class="sc-text" data-full="Nobody told me startup life would feel like therapy. You fix the product. Then yourself..."></div>
+                    <div class="sc-btns"><button class="sc-btn">Copy</button></div>
+                  </div>
+                </div>
+              </div>
 
-                <!-- TAB 1: Personalized DM -->
-                <div class="sc-panel" data-panel="1">
-                  <div class="sc-panel-title">💬 Personalized DM</div>
-                  <div class="sc-topic">Reading profile... ✅</div>
-                  <div class="sc-profile">
-                    <div class="sc-avatar">SK</div>
-                    <div>
-                      <div class="sc-profile-name">Sarah K. — Head of Product</div>
-                      <div class="sc-profile-role">at Google · San Francisco</div>
-                    </div>
+              <!-- Panel 1: Personalized DM -->
+              <div class="sc-panel" data-panel="1">
+                <div class="sc-generating"><span class="sc-spin">⟳</span> Reading profile...</div>
+                <div class="sc-pop-profile">
+                  <div class="sc-pop-av">AJ</div>
+                  <div>
+                    <div class="sc-pop-name">Alex Johnson</div>
+                    <div class="sc-pop-role">Marketing Manager · SaaS</div>
                   </div>
-                  <div class="sc-option">
-                    <div class="sc-option-label">👔 Option 1 — Professional</div>
-                    <div class="sc-bubble">
-                      <div class="sc-text" data-full="Hi Sarah! Your work on AI product strategy at Google caught my eye. Would love to connect and learn from your experience..."></div>
-                      <div class="sc-btns"><button class="sc-btn">Copy DM</button></div>
-                    </div>
+                </div>
+                <div class="sc-option">
+                  <div class="sc-option-label">👔 Professional</div>
+                  <div class="sc-bubble">
+                    <div class="sc-text" data-full="Hi Alex! Your SaaS growth work caught my eye. Would love to connect!"></div>
+                    <div class="sc-btns"><button class="sc-btn primary">Copy DM</button></div>
                   </div>
-                  <div class="sc-option">
-                    <div class="sc-option-label">🤝 Option 2 — Friendly</div>
-                    <div class="sc-bubble">
-                      <div class="sc-text" data-full="Hey Sarah! Love what you're building at Google. Your post on AI-first teams was spot on — would love to chat!"></div>
-                      <div class="sc-btns"><button class="sc-btn">Copy DM</button></div>
+                </div>
+                <div class="sc-option">
+                  <div class="sc-option-label">🤝 Friendly</div>
+                  <div class="sc-bubble">
+                    <div class="sc-text" data-full="Hey Alex! Love your content on LinkedIn growth. Your post on consistency was spot on!"></div>
+                    <div class="sc-btns"><button class="sc-btn">Copy DM</button></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Panel 2: Deep Lead Search -->
+              <div class="sc-panel" data-panel="2">
+                <div class="sc-generating"><span class="sc-spin">⟳</span> Scanning leads...</div>
+                <div class="sc-leads-meta">
+                  <span class="sc-meta-chip">🔥 9 Hot</span>
+                  <span class="sc-meta-chip warm">⚡ Warm</span>
+                  <span class="sc-meta-chip speed">✓ 10s</span>
+                </div>
+                <div class="sc-lead">
+                  <div class="sc-lead-name">🔥 Sarah K.</div>
+                  <div class="sc-lead-role">PM at Google · Hyderabad</div>
+                  <div class="sc-lead-dm">"Hi Sarah! Your PM role at Google caught my eye..."</div>
+                </div>
+                <div class="sc-lead">
+                  <div class="sc-lead-name">🔥 Rahul M.</div>
+                  <div class="sc-lead-role">Senior PM at Microsoft · Bangalore</div>
+                  <div class="sc-lead-dm">"Hi Rahul! Your work on Teams product strategy..."</div>
+                </div>
+                <div class="sc-btns" style="margin-top:6px;">
+                  <button class="sc-btn primary">Copy All DMs</button>
+                  <button class="sc-btn">Export CSV</button>
+                </div>
+              </div>
+
+              <!-- Panel 3: Reply to Comment -->
+              <div class="sc-panel" data-panel="3">
+                <div class="sc-generating"><span class="sc-spin">⟳</span> Writing reply...</div>
+                <div class="sc-comment-chip">"AI is transforming how we work. Thoughts?"</div>
+                <div class="sc-option">
+                  <div class="sc-option-label">Reply 1</div>
+                  <div class="sc-bubble">
+                    <div class="sc-text" data-full="Absolutely! The shift from AI tools to AI workflows is the real game changer..."></div>
+                    <div class="sc-btns">
+                      <button class="sc-btn">Copy</button>
+                      <button class="sc-btn primary">Post Reply</button>
                     </div>
                   </div>
                 </div>
-
-                <!-- TAB 2: Deep Lead Search -->
-                <div class="sc-panel" data-panel="2">
-                  <div class="sc-panel-title">🔎 Deep Lead Search</div>
-                  <div class="sc-topic">Searching: "Product Manager"</div>
-                  <div class="sc-leads-meta">
-                    <span class="sc-meta-chip">🔥 9 Hot leads</span>
-                    <span class="sc-meta-chip warm">⚡ 1 Warm</span>
-                    <span class="sc-meta-chip speed">⚡ Found in 10s</span>
-                  </div>
-                  <div class="sc-lead">
-                    <div class="sc-lead-icon">🔥</div>
-                    <div>
-                      <div class="sc-lead-name">Sarah K.</div>
-                      <div class="sc-lead-role">Product Manager at Google</div>
-                      <div class="sc-lead-loc">📍 Hyderabad, India</div>
-                      <div class="sc-lead-dm">"Hi Sarah! Your PM role at Google caught my eye..."</div>
-                    </div>
-                  </div>
-                  <div class="sc-lead">
-                    <div class="sc-lead-icon">🔥</div>
-                    <div>
-                      <div class="sc-lead-name">Rahul M.</div>
-                      <div class="sc-lead-role">Senior PM at Microsoft</div>
-                      <div class="sc-lead-loc">📍 Bangalore, India</div>
-                      <div class="sc-lead-dm">"Hi Rahul! Your work on Teams product strategy..."</div>
-                    </div>
-                  </div>
-                  <div class="sc-btns" style="margin-top:4px;">
-                    <button class="sc-btn primary">Copy All DMs</button>
-                    <button class="sc-btn">Export CSV</button>
-                  </div>
-                </div>
-
-                <!-- TAB 3: Reply to Comment -->
-                <div class="sc-panel" data-panel="3">
-                  <div class="sc-panel-title">↩️ Reply to Comment</div>
-                  <div class="sc-topic">Original comment:</div>
-                  <div class="sc-comment-chip">"AI is transforming how we work. What are your thoughts on where this is heading?"</div>
-                  <div class="sc-option">
-                    <div class="sc-option-label">Reply Option 1</div>
-                    <div class="sc-bubble">
-                      <div class="sc-text" data-full="Absolutely! The shift from AI tools to AI workflows is the real game changer. We're still in inning 2..."></div>
-                      <div class="sc-btns">
-                        <button class="sc-btn">Copy</button>
-                        <button class="sc-btn primary">Post Reply</button>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="sc-option">
-                    <div class="sc-option-label">Reply Option 2</div>
-                    <div class="sc-bubble">
-                      <div class="sc-text" data-full="Great point! I've seen firsthand how AI has changed content creation — what used to take hours now takes seconds..."></div>
-                      <div class="sc-btns">
-                        <button class="sc-btn">Copy</button>
-                        <button class="sc-btn primary">Post Reply</button>
-                      </div>
+                <div class="sc-option">
+                  <div class="sc-option-label">Reply 2</div>
+                  <div class="sc-bubble">
+                    <div class="sc-text" data-full="Great point! I've seen AI change content creation — what took hours now takes seconds..."></div>
+                    <div class="sc-btns">
+                      <button class="sc-btn">Copy</button>
+                      <button class="sc-btn primary">Post Reply</button>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <!-- TAB 4: Improve Headline -->
-                <div class="sc-panel" data-panel="4">
-                  <div class="sc-panel-title">🎯 Improve Headline</div>
-                  <div class="sc-current-chip">Current: <strong>"Marketing Manager"</strong></div>
-                  <div class="sc-option">
-                    <div class="sc-option-label">✨ Option 1 — Recommended</div>
-                    <div class="sc-bubble">
-                      <div class="sc-text" data-full="B2B Marketing Manager │ Growth Strategy │ LinkedIn &amp; Content Expert"></div>
-                      <div class="sc-btns"><button class="sc-btn">Copy</button></div>
-                    </div>
-                  </div>
-                  <div class="sc-option">
-                    <div class="sc-option-label">✨ Option 2</div>
-                    <div class="sc-bubble">
-                      <div class="sc-text" data-full="Senior Marketing Manager │ Demand Generation │ SaaS &amp; Tech Growth"></div>
-                      <div class="sc-btns"><button class="sc-btn">Copy</button></div>
-                    </div>
+              <!-- Panel 4: Improve Headline -->
+              <div class="sc-panel" data-panel="4">
+                <div class="sc-generating"><span class="sc-spin">⟳</span> Rewriting headline...</div>
+                <div class="sc-current-chip">Current: <strong>"Marketing Manager"</strong></div>
+                <div class="sc-option">
+                  <div class="sc-option-label">✨ Option 1 — Best</div>
+                  <div class="sc-bubble">
+                    <div class="sc-text" data-full="B2B Marketing Manager │ SaaS Growth │ LinkedIn Expert"></div>
+                    <div class="sc-btns"><button class="sc-btn primary">Copy</button></div>
                   </div>
                 </div>
+                <div class="sc-option">
+                  <div class="sc-option-label">✨ Option 2</div>
+                  <div class="sc-bubble">
+                    <div class="sc-text" data-full="Senior Marketing Manager │ Demand Gen │ SaaS &amp; Tech"></div>
+                    <div class="sc-btns"><button class="sc-btn">Copy</button></div>
+                  </div>
+                </div>
+              </div>
 
-              </div><!-- /.showcase-card -->
-            </div><!-- /.showcase-card-border -->
-          </div><!-- /.showcase-card-wrap -->
+            </div><!-- /.sc-popup -->
+
+          </div><!-- /.sc-3d-wrap -->
         </div><!-- /.showcase-stage -->
 
       </div><!-- /.showcase-inner -->
@@ -2046,18 +2154,30 @@
       document.querySelector('header').style.boxShadow = window.scrollY > 20 ? '0 1px 24px rgba(0,0,0,.08)' : 'none';
     }, { passive: true });
 
-    // ── 5-Tool Showcase: tab switching + typing animation ───────
+    // ── 5-Tool Showcase: tab switching + typing + browser context ─
     (function() {
       var tabs    = document.querySelectorAll('.sc-tab');
       var panels  = document.querySelectorAll('.sc-panel');
       if (!tabs.length) return;
+
+      var urlEl       = document.getElementById('sc-url');
+      var headlineEl  = document.getElementById('sc-headline');
+      var commentEl   = document.getElementById('sc-comment');
+
+      var contexts = [
+        { url:'linkedin.com/in/alexjohnson', headline:'Marketing Manager · SaaS Growth · Open to connect', comment:false },
+        { url:'linkedin.com/in/alexjohnson', headline:'Marketing Manager · SaaS Growth · Open to connect', comment:false },
+        { url:'linkedin.com/search/results/', headline:'Marketing Manager · SaaS Growth · Open to connect', comment:false },
+        { url:'linkedin.com/feed', headline:'Marketing Manager · SaaS Growth · Open to connect', comment:true },
+        { url:'linkedin.com/in/alexjohnson', headline:'Marketing Manager', comment:false, highlightHeadline:true },
+      ];
 
       function typeText(el) {
         var full = el.getAttribute('data-full') || '';
         el.textContent = '';
         el.classList.add('typing');
         var i = 0;
-        var delay = Math.max(18, Math.floor(900 / full.length));
+        var delay = Math.max(16, Math.floor(800 / full.length));
         var t = setInterval(function() {
           if (i >= full.length) { clearInterval(t); el.classList.remove('typing'); return; }
           el.textContent += full[i++];
@@ -2070,6 +2190,15 @@
         if (!panel) return;
         panel.classList.add('active');
         panel.querySelectorAll('.sc-text[data-full]').forEach(function(el) { typeText(el); });
+
+        // update browser context
+        var ctx = contexts[idx];
+        if (urlEl) urlEl.textContent = ctx.url;
+        if (headlineEl) {
+          headlineEl.textContent = ctx.headline;
+          headlineEl.classList.toggle('highlight', !!ctx.highlightHeadline);
+        }
+        if (commentEl) commentEl.classList.toggle('show', !!ctx.comment);
       }
 
       tabs.forEach(function(tab) {
@@ -2080,7 +2209,6 @@
         });
       });
 
-      // type on load for panel 0
       activatePanel(0);
     })();
 
