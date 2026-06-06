@@ -410,27 +410,39 @@
     .video-card-wrap {
       position:relative;
       perspective:1000px;
+      /* Extra space so the ambient glow isn't clipped */
+      padding:40px;
+      margin:-40px;
     }
-    /* Outer diffuse glow halo — sits behind the card */
+    /* Far ambient glow — very large, very soft, dim */
     .video-glow {
-      position:absolute; inset:-20px;
-      border-radius:32px;
-      background:linear-gradient(135deg,#6366f1,#8b5cf6,#3b82f6,#6366f1);
-      background-size:300% 300%;
+      position:absolute;
+      top:50%; left:50%;
+      transform:translate(-50%,-50%);
+      width:110%; height:110%;
+      border-radius:50%;
+      background:radial-gradient(ellipse at center,
+        rgba(99,102,241,.35) 0%,
+        rgba(139,92,246,.18) 40%,
+        transparent 70%
+      );
       animation:glowPulse 3s ease-in-out infinite;
       z-index:0;
-      filter:blur(28px);
-      opacity:.65;
+      pointer-events:none;
     }
-    /* Crisp border ring — sits directly around the card */
+    /* Crisp 1px gradient border ring */
     .video-card-wrap::before {
       content:'';
-      position:absolute; inset:-2px;
+      position:absolute; inset:40px;
       border-radius:18px;
-      background:linear-gradient(135deg,#6366f1,#a78bfa,#3b82f6);
-      background-size:200% 200%;
+      background:linear-gradient(135deg,rgba(99,102,241,.7),rgba(167,139,250,.4),rgba(59,130,246,.7));
+      padding:1px;
+      -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite:xor;
+      mask-composite:exclude;
       animation:glowPulse 3s ease-in-out infinite;
-      z-index:0;
+      z-index:2;
+      pointer-events:none;
     }
     .video-card {
       position:relative; z-index:1;
@@ -439,21 +451,30 @@
       transform:perspective(1000px) rotateY(-5deg);
       transition:transform .45s cubic-bezier(.25,.46,.45,.94), box-shadow .45s ease;
       animation:floatCard 3s ease-in-out infinite;
-      box-shadow:0 24px 60px rgba(0,0,0,.7), 0 8px 24px rgba(99,102,241,.15);
+      box-shadow:
+        0 2px 0 rgba(255,255,255,.06) inset,
+        0 32px 64px rgba(0,0,0,.8),
+        0 8px 32px rgba(0,0,0,.5),
+        0 0 0 1px rgba(99,102,241,.25);
     }
     .video-card:hover {
       transform:perspective(1000px) rotateY(0deg);
-      box-shadow:0 40px 80px rgba(0,0,0,.8), 0 16px 40px rgba(99,102,241,.3);
+      box-shadow:
+        0 2px 0 rgba(255,255,255,.08) inset,
+        0 40px 80px rgba(0,0,0,.85),
+        0 8px 32px rgba(0,0,0,.5),
+        0 0 0 1px rgba(99,102,241,.45);
     }
     .video-card iframe {
       display:block; width:100%; aspect-ratio:16/9; border:none;
     }
     .video-shadow {
-      position:absolute; bottom:-32px; left:5%; right:5%; height:60px;
-      background:radial-gradient(ellipse at center,rgba(99,102,241,.55) 0%,transparent 70%);
+      position:absolute; bottom:-16px; left:10%; right:10%; height:48px;
+      background:radial-gradient(ellipse at center,rgba(99,102,241,.3) 0%,transparent 70%);
       border-radius:50%;
       animation:floatCard 3s ease-in-out infinite;
       z-index:0;
+      pointer-events:none;
     }
 
     @keyframes floatCard {
