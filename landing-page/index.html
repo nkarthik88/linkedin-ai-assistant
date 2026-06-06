@@ -345,39 +345,129 @@
       font-size:12px; font-weight:600; color:rgba(255,255,255,.5);
     }
 
-    /* ── Video Placeholder ─────────────────────────────────── */
-    .video-section { background:var(--gray-50); }
-    .video-placeholder {
-      margin-top:48px; border-radius:var(--radius-xl);
-      position:relative; overflow:hidden;
-      aspect-ratio:16/9; display:flex; align-items:center; justify-content:center;
+    /* ── Video Section ─────────────────────────────────────── */
+    .video-section {
+      background:#080b14;
+      padding:100px 0;
+      overflow:hidden;
     }
-    .video-spin-bg {
-      position:absolute; inset:0;
-      background:#0f0f0f; border-radius:var(--radius-xl);
-      z-index:0;
+    .video-split {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:72px;
+      align-items:center;
+      max-width:1100px;
+      margin:0 auto;
+      padding:0 24px;
     }
-    .video-border-ring {
-      position:absolute; inset:-3px;
-      border-radius:calc(var(--radius-xl) + 3px);
-      background:conic-gradient(from 0deg,#3b82f6,#6366f1,#8b5cf6,#ec4899,#f59e0b,#3b82f6);
-      animation:spinBorder 4s linear infinite;
-      z-index:-1;
+    /* Left column */
+    .video-left { opacity:0; transform:translateX(-32px); transition:opacity .7s ease, transform .7s ease; }
+    .video-left.visible { opacity:1; transform:translateX(0); }
+    .video-label {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:5px 14px; border-radius:100px;
+      background:rgba(99,102,241,.12); border:1px solid rgba(99,102,241,.25);
+      font-size:12px; font-weight:600; color:#818cf8; margin-bottom:20px;
+      letter-spacing:.5px; text-transform:uppercase;
     }
-    .video-inner {
-      position:relative; z-index:1; text-align:center; padding:40px 24px;
+    .video-headline {
+      font-size:clamp(32px,4vw,48px); font-weight:800; color:#fff;
+      letter-spacing:-1px; line-height:1.15; margin-bottom:16px;
     }
-    .video-icon { font-size:56px; margin-bottom:20px; }
-    .video-title { font-size:24px; font-weight:800; color:#fff; margin-bottom:12px; letter-spacing:-0.5px; }
-    .video-desc { font-size:15px; color:rgba(255,255,255,.5); margin-bottom:28px; line-height:1.6; max-width:400px; margin-left:auto; margin-right:auto; }
+    .video-headline span { background:linear-gradient(135deg,#6366f1,#a78bfa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .video-sub {
+      font-size:16px; color:rgba(255,255,255,.5); line-height:1.7; margin-bottom:36px;
+    }
+    .video-features { list-style:none; padding:0; margin:0 0 40px; display:flex; flex-direction:column; gap:14px; }
+    .video-features li {
+      display:flex; align-items:center; gap:12px;
+      font-size:15px; font-weight:500; color:rgba(255,255,255,.8);
+      animation:floatText 4s ease-in-out infinite;
+    }
+    .video-features li:nth-child(2) { animation-delay:.4s; }
+    .video-features li:nth-child(3) { animation-delay:.8s; }
+    .video-features li .check {
+      width:22px; height:22px; border-radius:6px; flex-shrink:0;
+      background:linear-gradient(135deg,#6366f1,#8b5cf6);
+      display:flex; align-items:center; justify-content:center;
+      font-size:12px;
+    }
     .btn-video {
       display:inline-flex; align-items:center; gap:8px;
       padding:14px 28px; font-size:15px; font-weight:700;
       background:linear-gradient(135deg,#6366f1,#8b5cf6);
       color:#fff; border-radius:100px; text-decoration:none;
       transition:transform .2s, box-shadow .2s;
+      box-shadow:0 4px 24px rgba(99,102,241,.35);
     }
-    .btn-video:hover { transform:translateY(-2px); box-shadow:0 8px 32px rgba(99,102,241,.4); }
+    .btn-video:hover { transform:translateY(-2px); box-shadow:0 10px 40px rgba(99,102,241,.55); }
+
+    /* Right column – video card */
+    .video-right {
+      opacity:0; transform:translateX(32px); transition:opacity .7s .2s ease, transform .7s .2s ease;
+    }
+    .video-right.visible { opacity:1; transform:translateX(0); }
+    .video-card-wrap {
+      position:relative;
+      perspective:1000px;
+    }
+    .video-glow {
+      position:absolute; inset:-2px;
+      border-radius:20px;
+      background:linear-gradient(135deg,#6366f1,#8b5cf6,#3b82f6,#6366f1);
+      background-size:300% 300%;
+      animation:glowPulse 3s ease-in-out infinite, floatCard 3s ease-in-out infinite;
+      z-index:0;
+      filter:blur(1px);
+    }
+    .video-card {
+      position:relative; z-index:1;
+      border-radius:16px; overflow:hidden;
+      background:#0d1117;
+      transform:perspective(1000px) rotateY(-5deg);
+      transition:transform .45s cubic-bezier(.25,.46,.45,.94), box-shadow .45s ease;
+      animation:floatCard 3s ease-in-out infinite;
+      box-shadow:0 32px 80px rgba(0,0,0,.6), 0 8px 24px rgba(99,102,241,.2);
+    }
+    .video-card:hover {
+      transform:perspective(1000px) rotateY(0deg);
+      box-shadow:0 48px 100px rgba(0,0,0,.7), 0 16px 40px rgba(99,102,241,.35);
+    }
+    .video-card iframe {
+      display:block; width:100%; aspect-ratio:16/9; border:none;
+    }
+    .video-shadow {
+      position:absolute; bottom:-24px; left:10%; right:10%; height:40px;
+      background:radial-gradient(ellipse at center,rgba(99,102,241,.4) 0%,transparent 70%);
+      border-radius:50%;
+      animation:floatCard 3s ease-in-out infinite;
+      z-index:0;
+    }
+
+    @keyframes floatCard {
+      0%,100% { transform:perspective(1000px) rotateY(-5deg) translateY(0); }
+      50% { transform:perspective(1000px) rotateY(-5deg) translateY(-8px); }
+    }
+    .video-card:hover { animation:none; }
+    @keyframes glowPulse {
+      0%,100% { background-position:0% 50%; opacity:.9; }
+      50% { background-position:100% 50%; opacity:1; }
+    }
+    @keyframes floatText {
+      0%,100% { transform:translateY(0); }
+      50% { transform:translateY(-3px); }
+    }
+
+    /* Mobile stack */
+    @media(max-width:768px) {
+      .video-split { grid-template-columns:1fr; gap:48px; }
+      .video-right { order:-1; }
+      .video-card { transform:perspective(1000px) rotateY(0deg); animation:floatCardMobile 3s ease-in-out infinite; }
+      @keyframes floatCardMobile {
+        0%,100% { transform:translateY(0); }
+        50% { transform:translateY(-8px); }
+      }
+    }
 
     /* ── Features ──────────────────────────────────────────── */
     .features { background:var(--white); }
@@ -886,27 +976,40 @@
       </div>
     </section>
 
-    <!-- ── Video Placeholder ───────────────────────────────────── -->
+    <!-- ── Video Section ─────────────────────────────────────────── -->
     <section class="video-section">
-      <div class="container-sm">
-        <div class="aos" style="text-align:center;">
-          <p class="section-label">See it in action</p>
-          <h2 class="section-title">See ProPostly in Action 🎬</h2>
-          <p class="section-sub">Watch how to generate LinkedIn content in under 10 seconds</p>
+      <div class="video-split">
+
+        <!-- Left: copy -->
+        <div class="video-left aos">
+          <div class="video-label">🎬 See it in action</div>
+          <h2 class="video-headline">See ProPostly<br>in <span>Action</span></h2>
+          <p class="video-sub">Watch how AI generates LinkedIn content in seconds</p>
+          <ul class="video-features">
+            <li><span class="check">✓</span> Generate posts in 10 seconds</li>
+            <li><span class="check">✓</span> Find qualified leads instantly</li>
+            <li><span class="check">✓</span> Personalized DMs automatically</li>
+          </ul>
+          <a href="https://chrome.google.com/webstore/detail/propostly/hggehcjcbnfpdglbildpaiidhigfcnbb" target="_blank" rel="noopener" class="btn-video">
+            Install Free on Chrome →
+          </a>
         </div>
-        <div class="video-placeholder aos d1">
-          <div class="video-border-ring"></div>
-          <div class="video-spin-bg"></div>
-          <!-- REPLACE WITH LOOM URL HERE -->
-          <div class="video-inner">
-            <div class="video-icon">🎬</div>
-            <div class="video-title">Demo Video Coming Soon</div>
-            <div class="video-desc">We're recording a full walkthrough of all 5 features. In the meantime, try it free!</div>
-            <a href="https://chrome.google.com/webstore/detail/propostly/hggehcjcbnfpdglbildpaiidhigfcnbb" target="_blank" rel="noopener" class="btn-video">
-              Try it Free Instead →
-            </a>
+
+        <!-- Right: video -->
+        <div class="video-right aos">
+          <div class="video-card-wrap">
+            <div class="video-glow"></div>
+            <div class="video-card">
+              <iframe
+                src="https://www.loom.com/embed/66c84013e4b24c4c9d93c2d7f79bbb97"
+                allowfullscreen
+                allow="autoplay; fullscreen"
+              ></iframe>
+            </div>
+            <div class="video-shadow"></div>
           </div>
         </div>
+
       </div>
     </section>
 
