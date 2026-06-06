@@ -390,7 +390,6 @@
     .video-section {
       background:#ffffff;
       padding:100px 0 120px;
-      overflow:hidden;
       border-top:1px solid #f1f5f9;
       border-bottom:1px solid #f1f5f9;
     }
@@ -452,8 +451,7 @@
     .video-right.visible { opacity:1; transform:translateX(0); }
     .video-card-wrap {
       position:relative;
-      padding:32px 32px 48px;
-      margin:-32px -32px -48px;
+      padding:4px;
     }
     /* Soft drop shadow underneath — the "floating" illusion */
     .video-glow {
@@ -468,7 +466,7 @@
     /* Animated gradient border ring */
     .video-card-wrap::before {
       content:'';
-      position:absolute; inset:32px;
+      position:absolute; inset:4px;
       border-radius:20px;
       background:linear-gradient(135deg,#2563eb,#60a5fa,#38bdf8,#2563eb);
       background-size:300% 300%;
@@ -539,11 +537,9 @@
 
     /* Mobile stack */
     @media(max-width:768px) {
-      .video-section { padding:64px 0 72px; }
-      .video-split { grid-template-columns:1fr; gap:36px; padding:0 20px; }
+      .video-section { padding:56px 0 64px; }
+      .video-split { grid-template-columns:1fr; gap:32px; padding:0 20px; }
       .video-right { order:-1; }
-      .video-card-wrap { padding:16px 16px 28px; margin:-16px -16px -28px; }
-      .video-card-wrap::before { inset:16px; border-radius:14px; }
       .video-card {
         transform:none;
         animation:floatCardMobile 3s ease-in-out infinite;
@@ -554,7 +550,7 @@
         0%,100% { transform:translateY(0); }
         50% { transform:translateY(-6px); }
       }
-      .video-glow { height:40px; bottom:-4px; }
+      .video-glow { height:32px; }
     }
 
     /* ── Features ──────────────────────────────────────────── */
