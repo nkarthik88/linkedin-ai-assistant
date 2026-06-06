@@ -220,16 +220,54 @@
     .hero-mockup {
       display:inline-block; margin:0 auto 40px;
       animation:fadeUp .7s ease .25s both;
+      position:relative;
+      perspective:1000px;
+    }
+    /* Ambient glow behind card */
+    .hero-mockup::before {
+      content:'';
+      position:absolute; inset:-24px;
+      border-radius:50%;
+      background:radial-gradient(ellipse at center,
+        rgba(99,102,241,.25) 0%,
+        rgba(139,92,246,.12) 45%,
+        transparent 70%
+      );
+      z-index:0;
+      animation:glowPulseHero 3s ease-in-out infinite;
+      pointer-events:none;
+    }
+    @keyframes glowPulseHero {
+      0%,100% { opacity:.7; transform:scale(1); }
+      50% { opacity:1; transform:scale(1.05); }
     }
     .mockup-card {
-      background:rgba(255,255,255,0.92);
-      border:1px solid rgba(99,102,241,0.15);
+      background:#ffffff;
+      border:1px solid rgba(99,102,241,0.18);
       border-radius:var(--radius-lg); padding:20px 24px;
-      box-shadow:0 0 0 1px rgba(99,102,241,0.08), 0 20px 60px rgba(99,102,241,.15), 0 4px 16px rgba(0,0,0,.06);
+      box-shadow:
+        0 1px 0 rgba(255,255,255,.9) inset,
+        0 40px 80px rgba(99,102,241,.18),
+        0 16px 32px rgba(0,0,0,.1),
+        0 0 0 1px rgba(99,102,241,.08);
       display:inline-block; text-align:left; min-width:280px;
-      animation:floatY 4s ease-in-out infinite;
-      backdrop-filter:blur(12px);
-      position:relative;
+      transform:perspective(1000px) rotateY(-8deg) rotateX(3deg);
+      transition:transform .5s cubic-bezier(.25,.46,.45,.94), box-shadow .5s ease;
+      animation:floatMockup 3.5s ease-in-out infinite;
+      position:relative; z-index:1;
+    }
+    .mockup-card:hover {
+      transform:perspective(1000px) rotateY(0deg) rotateX(0deg);
+      box-shadow:
+        0 1px 0 rgba(255,255,255,.9) inset,
+        0 48px 96px rgba(99,102,241,.22),
+        0 20px 40px rgba(0,0,0,.12),
+        0 0 0 1px rgba(99,102,241,.12);
+      animation:none;
+    }
+    @keyframes floatMockup {
+      0%,100% { transform:perspective(1000px) rotateY(-8deg) rotateX(3deg) translateY(0); }
+      50% { transform:perspective(1000px) rotateY(-8deg) rotateX(3deg) translateY(-10px); }
     }
     .mockup-header { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
     .mockup-logo { width:28px; height:28px; border-radius:7px; background:var(--black); display:flex; align-items:center; justify-content:center; color:var(--white); font-size:12px; font-weight:800; flex-shrink:0; }
@@ -240,12 +278,15 @@
       display:flex; align-items:center; gap:10px; padding:9px 12px;
       border-radius:8px; font-size:13px; font-weight:500; color:var(--gray-700);
       background:var(--gray-50); border:1px solid var(--gray-200);
+      transition:background .3s ease, color .3s ease, border-color .3s ease, transform .2s ease, box-shadow .3s ease;
     }
     .mockup-tool.active {
       background:linear-gradient(135deg,#6366f1,#8b5cf6);
       color:var(--white); border-color:transparent;
+      transform:translateX(4px);
+      box-shadow:0 4px 16px rgba(99,102,241,.35);
     }
-    .mockup-tool span { font-size:15px; }
+    .mockup-tool span { font-size:15px; flex-shrink:0; }
     .mockup-hot { font-size:11px; font-weight:700; color:#ef4444; margin-left:auto; }
 
     .hero-cta {
@@ -498,13 +539,22 @@
 
     /* Mobile stack */
     @media(max-width:768px) {
-      .video-split { grid-template-columns:1fr; gap:48px; }
+      .video-section { padding:64px 0 72px; }
+      .video-split { grid-template-columns:1fr; gap:36px; padding:0 20px; }
       .video-right { order:-1; }
-      .video-card { transform:perspective(1000px) rotateY(0deg); animation:floatCardMobile 3s ease-in-out infinite; }
+      .video-card-wrap { padding:16px 16px 28px; margin:-16px -16px -28px; }
+      .video-card-wrap::before { inset:16px; border-radius:14px; }
+      .video-card {
+        transform:none;
+        animation:floatCardMobile 3s ease-in-out infinite;
+        box-shadow:0 20px 48px rgba(15,23,42,.18), 0 8px 16px rgba(15,23,42,.1), 0 0 0 2px rgba(255,255,255,.95);
+      }
+      .video-card:hover { transform:none; }
       @keyframes floatCardMobile {
         0%,100% { transform:translateY(0); }
-        50% { transform:translateY(-8px); }
+        50% { transform:translateY(-6px); }
       }
+      .video-glow { height:40px; bottom:-4px; }
     }
 
     /* ── Features ──────────────────────────────────────────── */
@@ -1444,6 +1494,25 @@
     window.addEventListener('scroll', function() {
       document.querySelector('header').style.boxShadow = window.scrollY > 20 ? '0 1px 24px rgba(0,0,0,.08)' : 'none';
     }, { passive: true });
+
+    // ── Hero mockup: auto-cycle active feature ──────────────────
+    (function() {
+      var tools = document.querySelectorAll('.mockup-tool');
+      if (!tools.length) return;
+      var current = 0;
+      var card = document.querySelector('.mockup-card');
+      var paused = false;
+
+      card.addEventListener('mouseenter', function() { paused = true; });
+      card.addEventListener('mouseleave', function() { paused = false; });
+
+      setInterval(function() {
+        if (paused) return;
+        tools[current].classList.remove('active');
+        current = (current + 1) % tools.length;
+        tools[current].classList.add('active');
+      }, 2000);
+    })();
   </script>
 </body>
 </html>
