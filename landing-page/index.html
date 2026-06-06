@@ -363,8 +363,8 @@
     /* ProPostly popup — absolute overlay from ext icon */
     .mockup-card {
       position:absolute;
-      top:28px; right:-8px;
-      width:200px;
+      top:28px; right:-12px;
+      width:224px;
       background:#ffffff;
       border:1px solid #e2e8f0;
       border-radius:10px; padding:14px 16px;
@@ -385,19 +385,36 @@
     .mockup-sub { font-size:10px; color:var(--gray-400); }
     .mockup-tools { display:flex; flex-direction:column; gap:6px; }
     .mockup-tool {
-      display:flex; align-items:center; gap:8px; padding:7px 10px;
+      display:flex; flex-direction:column; gap:0;
+      padding:7px 10px;
       border-radius:7px; font-size:12px; font-weight:500; color:var(--gray-700);
       background:var(--gray-50); border:1px solid var(--gray-200);
-      transition:background .3s, color .3s, border-color .3s, transform .2s, box-shadow .3s;
+      transition:background .35s, color .35s, border-color .35s, transform .2s, box-shadow .35s;
+      overflow:hidden;
+    }
+    .mockup-tool-row {
+      display:flex; align-items:center; gap:8px;
     }
     .mockup-tool.active {
-      background:linear-gradient(135deg,#2563eb,#3b82f6);
+      background:linear-gradient(135deg,#1d4ed8,#2563eb);
       color:#fff; border-color:transparent;
       transform:translateX(3px);
-      box-shadow:0 3px 12px rgba(37,99,235,.3);
+      box-shadow:0 4px 14px rgba(37,99,235,.35);
+    }
+    /* Preview snippet — hidden by default, shown when active */
+    .tool-preview {
+      max-height:0; opacity:0; overflow:hidden;
+      font-size:10px; font-weight:400; line-height:1.4;
+      color:rgba(255,255,255,.75);
+      margin-top:0;
+      transition:max-height .35s ease, opacity .3s ease .1s, margin-top .3s ease;
+      font-style:italic;
+    }
+    .mockup-tool.active .tool-preview {
+      max-height:40px; opacity:1; margin-top:5px;
     }
     .mockup-tool span { font-size:13px; flex-shrink:0; }
-    .mockup-hot { font-size:10px; font-weight:700; color:#ef4444; margin-left:auto; }
+    .mockup-hot { font-size:10px; font-weight:700; color:#fca5a5; margin-left:auto; }
 
     .hero-cta {
       display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
@@ -1079,11 +1096,26 @@
             </div>
           </div>
           <div class="mockup-tools">
-            <div class="mockup-tool active"><span>✍️</span> Generate Post</div>
-            <div class="mockup-tool"><span>💬</span> Personalized DM</div>
-            <div class="mockup-tool"><span>↩️</span> Reply to Comment</div>
-            <div class="mockup-tool"><span>🎯</span> Improve Headline</div>
-            <div class="mockup-tool"><span>🔎</span> Deep Lead Search <span class="mockup-hot">🔥 3 Hot!</span></div>
+            <div class="mockup-tool active">
+              <div class="mockup-tool-row"><span>✍️</span> Generate Post</div>
+              <div class="tool-preview">"Just attended an insightful event on AI trends — here's my key takeaway..."</div>
+            </div>
+            <div class="mockup-tool">
+              <div class="mockup-tool-row"><span>💬</span> Personalized DM</div>
+              <div class="tool-preview">"Hey Sarah, loved your post on leadership — your point on..."</div>
+            </div>
+            <div class="mockup-tool">
+              <div class="mockup-tool-row"><span>↩️</span> Reply to Comment</div>
+              <div class="tool-preview">"Great point! I'd also add that consistency beats perfection every time."</div>
+            </div>
+            <div class="mockup-tool">
+              <div class="mockup-tool-row"><span>🎯</span> Improve Headline</div>
+              <div class="tool-preview">"Engineer → Helping 500+ devs land senior roles | Tech Lead"</div>
+            </div>
+            <div class="mockup-tool">
+              <div class="mockup-tool-row"><span>🔎</span> Deep Lead Search <span class="mockup-hot">🔥 3 Hot!</span></div>
+              <div class="tool-preview">"Found 3 warm leads matching your ICP — all active this week"</div>
+            </div>
           </div>
         </div>
 
