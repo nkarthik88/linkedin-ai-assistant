@@ -127,16 +127,24 @@ export async function sendPaymentReceiptEmail(email, { userId, amount = "$9.00",
   });
 }
 
-export async function sendUsageWarningEmail(email, { remaining = 2, limit = 10 } = {}) {
+export async function sendUsageWarningEmail(email, { remaining = 2, limit = 10, feature = "" } = {}) {
   const client = getResend();
   if (!client || !email) return;
 
+  const featureNames = {
+    generate_post: "Generate Post",
+    personalized_dm: "Personalized DM",
+    reply_comment: "Reply to Comment",
+    improve_headline: "Improve Headline",
+  };
+  const featureName = featureNames[feature] || "this feature";
+
   const body = `
-    <h2>You're almost at your monthly limit</h2>
+    <h2>Only ${remaining} use${remaining === 1 ? "" : "s"} left for ${featureName}</h2>
     <div class="warning">
-      <p>⚠️ You have <strong>${remaining} free use${remaining === 1 ? "" : "s"} remaining</strong> this month across your features (free plan: ${limit}/feature/month).</p>
+      <p>⚠️ You have <strong>${remaining} free use${remaining === 1 ? "" : "s"} remaining</strong> for <strong>${featureName}</strong> this month (free plan: ${limit} uses/feature/month). Your other features are unaffected.</p>
     </div>
-    <p>Don't let momentum slow you down. Upgrade to Pro and never worry about limits again — unlimited uses every month, for just $9.</p>
+    <p>Don't lose your momentum. Upgrade to Pro for unlimited uses on every feature, every month — just $9.</p>
     <ul class="feature-list">
       <li>Unlimited posts, DMs, replies, headlines &amp; rewrites</li>
       <li>50 lead searches per month</li>
@@ -150,7 +158,7 @@ export async function sendUsageWarningEmail(email, { remaining = 2, limit = 10 }
   await client.emails.send({
     from: FROM,
     to: email,
-    subject: `Only ${remaining} free use${remaining === 1 ? "" : "s"} left this month — upgrade to keep going`,
+    subject: `${remaining} free use${remaining === 1 ? "" : "s"} left for ${featureName} — upgrade for unlimited`,
     html: baseTemplate("Almost at your limit", body),
   });
 }

@@ -49,8 +49,8 @@ router.post(
       const featureUsed = (account.featureUsage?.[feature] ?? 0);
       if (featureUsed === 1 && account.usedThisMonth === 0) {
         sendWelcomeEmail(email).catch(() => {});
-      } else if (account.featureRemaining === 2) {
-        sendUsageWarningEmail(email, { remaining: 2, limit: account.limit }).catch(() => {});
+      } else if (account.plan === "free" && account.featureRemaining === 2) {
+        sendUsageWarningEmail(email, { remaining: 2, limit: account.featureLimit ?? 10, feature }).catch(() => {});
       }
     }
 
