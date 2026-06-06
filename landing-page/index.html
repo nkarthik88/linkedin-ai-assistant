@@ -992,40 +992,33 @@
 
     /* ── 5-Tool Interactive Showcase ───────────────────────────── */
     .showcase-section {
-      background:#060d1a;
+      background:#ffffff;
       padding:100px 24px 120px;
       position:relative;
       overflow:hidden;
+      border-top:1px solid #f1f5f9;
+      border-bottom:1px solid #f1f5f9;
     }
     .showcase-section::before {
       content:'';
       position:absolute; inset:0;
-      background:
-        radial-gradient(ellipse 70% 50% at 50% 0%, rgba(37,99,235,.15) 0%, transparent 65%),
-        radial-gradient(ellipse 40% 30% at 80% 90%, rgba(14,165,233,.08) 0%, transparent 60%);
+      background:radial-gradient(ellipse 60% 40% at 50% 0%, rgba(37,99,235,.05) 0%, transparent 70%);
       pointer-events:none;
     }
-    /* Dot grid */
-    .showcase-section::after {
-      content:'';
-      position:absolute; inset:0;
-      background-image:radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
-      background-size:28px 28px;
-      pointer-events:none;
-    }
+    .showcase-section::after { display:none; }
     .showcase-inner {
       max-width:1000px; margin:0 auto; position:relative; z-index:1;
     }
     .showcase-label {
       text-align:center; font-size:12px; font-weight:700; letter-spacing:2px;
-      text-transform:uppercase; color:rgba(99,179,237,.7); margin-bottom:14px;
+      text-transform:uppercase; color:#2563eb; margin-bottom:14px;
     }
     .showcase-title {
       text-align:center; font-size:clamp(26px,4vw,42px); font-weight:800;
-      letter-spacing:-1.5px; color:#fff; margin-bottom:8px; line-height:1.1;
+      letter-spacing:-1.5px; color:#0f172a; margin-bottom:8px; line-height:1.1;
     }
     .showcase-sub {
-      text-align:center; font-size:16px; color:rgba(255,255,255,.45); margin-bottom:48px;
+      text-align:center; font-size:16px; color:#64748b; margin-bottom:48px;
     }
 
     /* Tab row */
@@ -1035,15 +1028,15 @@
     }
     .sc-tab {
       padding:9px 18px; border-radius:50px; font-size:13px; font-weight:600;
-      border:1px solid rgba(255,255,255,.12); color:rgba(255,255,255,.45);
-      background:rgba(255,255,255,.04); cursor:pointer;
+      border:1px solid #e2e8f0; color:#64748b;
+      background:#f8fafc; cursor:pointer;
       transition:all .25s ease; white-space:nowrap; user-select:none;
     }
-    .sc-tab:hover { color:rgba(255,255,255,.75); border-color:rgba(255,255,255,.22); background:rgba(255,255,255,.07); }
+    .sc-tab:hover { color:#1d4ed8; border-color:#bfdbfe; background:#eff6ff; }
     .sc-tab.active {
       background:linear-gradient(135deg,#1d4ed8,#2563eb);
       color:#fff; border-color:transparent;
-      box-shadow:0 0 0 3px rgba(37,99,235,.3), 0 6px 20px rgba(37,99,235,.4);
+      box-shadow:0 0 0 3px rgba(37,99,235,.2), 0 6px 20px rgba(37,99,235,.3);
     }
 
     /* 3D mockup stage — browser + popup side by side */
@@ -1069,11 +1062,11 @@
     /* Browser mockup */
     .sc-browser {
       width:420px; border-radius:12px; overflow:hidden;
-      box-shadow:0 40px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.08);
+      box-shadow:0 24px 64px rgba(15,23,42,.14), 0 0 0 1px rgba(15,23,42,.08);
       flex-shrink:0;
     }
     .sc-browser-bar {
-      background:#1e293b; border-bottom:1px solid rgba(255,255,255,.08);
+      background:#f1f5f9; border-bottom:1px solid #e2e8f0;
       padding:8px 12px; display:flex; align-items:center; gap:8px;
     }
     .sc-browser-dots { display:flex; gap:5px; }
@@ -1082,8 +1075,8 @@
     .sc-browser-dots span:nth-child(2) { background:#febc2e; }
     .sc-browser-dots span:nth-child(3) { background:#28c840; }
     .sc-browser-url {
-      flex:1; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
-      border-radius:5px; padding:3px 10px; font-size:11px; color:rgba(255,255,255,.4); font-family:monospace;
+      flex:1; background:#fff; border:1px solid #e2e8f0;
+      border-radius:5px; padding:3px 10px; font-size:11px; color:#64748b; font-family:monospace;
     }
     .sc-browser-ext {
       width:22px; height:22px; border-radius:4px; background:#2563eb;
@@ -1158,7 +1151,7 @@
       background:#fff;
       border:1px solid #e2e8f0;
       border-radius:12px; padding:0;
-      box-shadow:0 20px 60px rgba(0,0,0,.3), 0 0 0 1px rgba(0,0,0,.05);
+      box-shadow:0 20px 50px rgba(15,23,42,.15), 0 0 0 1px rgba(15,23,42,.07);
       margin-left:-4px; margin-top:10px;
       overflow:hidden;
       animation:popupAppear .4s cubic-bezier(.34,1.56,.64,1) .3s both;
