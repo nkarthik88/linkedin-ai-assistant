@@ -1024,7 +1024,21 @@
     /* Tab row */
     .showcase-tabs {
       display:flex; gap:10px; justify-content:center; flex-wrap:wrap;
-      margin-bottom:48px;
+      margin-bottom:16px;
+    }
+    /* Progress bar under tabs */
+    .sc-progress-bar {
+      width:160px; height:2px; background:#e2e8f0; border-radius:2px;
+      margin:0 auto 32px; overflow:hidden;
+    }
+    .sc-progress-fill {
+      height:100%; width:0%; background:linear-gradient(90deg,#2563eb,#38bdf8);
+      border-radius:2px;
+      transition:width 0s linear;
+    }
+    .sc-progress-fill.running {
+      width:100%;
+      transition:width 3.5s linear;
     }
     .sc-tab {
       padding:9px 18px; border-radius:50px; font-size:13px; font-weight:600;
@@ -1487,6 +1501,9 @@
           <button class="sc-tab" data-tab="3">↩️ Reply to Comment</button>
           <button class="sc-tab" data-tab="4">🎯 Improve Headline</button>
         </div>
+
+        <!-- Progress indicator -->
+        <div class="sc-progress-bar"><div class="sc-progress-fill" id="sc-progress"></div></div>
 
         <!-- 3D Browser + Popup mockup -->
         <div class="showcase-stage">
@@ -2147,30 +2164,46 @@
       document.querySelector('header').style.boxShadow = window.scrollY > 20 ? '0 1px 24px rgba(0,0,0,.08)' : 'none';
     }, { passive: true });
 
-    // ── 5-Tool Showcase: tab switching + typing + browser context ─
+    // ── 5-Tool Showcase: tabs + typing + browser context + auto-cycle + parallax ─
     (function() {
-      var tabs    = document.querySelectorAll('.sc-tab');
-      var panels  = document.querySelectorAll('.sc-panel');
+      var tabs       = document.querySelectorAll('.sc-tab');
+      var panels     = document.querySelectorAll('.sc-panel');
+      var wrap3d     = document.querySelector('.sc-3d-wrap');
+      var section    = document.querySelector('.showcase-section');
       if (!tabs.length) return;
 
-      var urlEl       = document.getElementById('sc-url');
-      var headlineEl  = document.getElementById('sc-headline');
-      var commentEl   = document.getElementById('sc-comment');
+      var urlEl      = document.getElementById('sc-url');
+      var headlineEl = document.getElementById('sc-headline');
+      var commentEl  = document.getElementById('sc-comment');
 
       var contexts = [
         { url:'linkedin.com/in/alexjohnson', headline:'Marketing Manager · SaaS Growth · Open to connect', comment:false },
         { url:'linkedin.com/in/alexjohnson', headline:'Marketing Manager · SaaS Growth · Open to connect', comment:false },
         { url:'linkedin.com/search/results/', headline:'Marketing Manager · SaaS Growth · Open to connect', comment:false },
-        { url:'linkedin.com/feed', headline:'Marketing Manager · SaaS Growth · Open to connect', comment:true },
-        { url:'linkedin.com/in/alexjohnson', headline:'Marketing Manager', comment:false, highlightHeadline:true },
+        { url:'linkedin.com/feed',            headline:'Marketing Manager · SaaS Growth · Open to connect', comment:true  },
+        { url:'linkedin.com/in/alexjohnson',  headline:'Marketing Manager', comment:false, highlightHeadline:true },
       ];
+
+      var current   = 0;
+      var paused    = false;
+      var autoTimer = null;
+      var progressEl = document.getElementById('sc-progress');
+
+      function resetProgress() {
+        if (!progressEl) return;
+        progressEl.classList.remove('running');
+        progressEl.style.width = '0%';
+        // force reflow then animate
+        void progressEl.offsetWidth;
+        progressEl.classList.add('running');
+      }
 
       function typeText(el) {
         var full = el.getAttribute('data-full') || '';
         el.textContent = '';
         el.classList.add('typing');
         var i = 0;
-        var delay = Math.max(16, Math.floor(800 / full.length));
+        var delay = Math.max(14, Math.floor(750 / full.length));
         var t = setInterval(function() {
           if (i >= full.length) { clearInterval(t); el.classList.remove('typing'); return; }
           el.textContent += full[i++];
@@ -2178,13 +2211,14 @@
       }
 
       function activatePanel(idx) {
+        current = idx;
+        tabs.forEach(function(t) { t.classList.remove('active'); });
+        tabs[idx].classList.add('active');
         panels.forEach(function(p) { p.classList.remove('active'); });
         var panel = document.querySelector('.sc-panel[data-panel="'+idx+'"]');
         if (!panel) return;
         panel.classList.add('active');
         panel.querySelectorAll('.sc-text[data-full]').forEach(function(el) { typeText(el); });
-
-        // update browser context
         var ctx = contexts[idx];
         if (urlEl) urlEl.textContent = ctx.url;
         if (headlineEl) {
@@ -2194,15 +2228,83 @@
         if (commentEl) commentEl.classList.toggle('show', !!ctx.comment);
       }
 
+      // manual click
       tabs.forEach(function(tab) {
         tab.addEventListener('click', function() {
-          tabs.forEach(function(t) { t.classList.remove('active'); });
-          tab.classList.add('active');
+          paused = true;
+          clearInterval(autoTimer);
           activatePanel(parseInt(tab.getAttribute('data-tab'), 10));
+          // resume auto after 8s of no interaction
+          autoTimer = setTimeout(function() { paused = false; startAuto(); }, 8000);
         });
       });
 
-      activatePanel(0);
+      // auto-cycle every 3.5s
+      function startAuto() {
+        clearInterval(autoTimer);
+        resetProgress();
+        autoTimer = setInterval(function() {
+          if (paused) return;
+          activatePanel((current + 1) % tabs.length);
+          resetProgress();
+        }, 3500);
+      }
+
+      // start when section scrolls into view
+      var startedAuto = false;
+      var cycleObs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting && !startedAuto) {
+            startedAuto = true;
+            activatePanel(0);
+            setTimeout(startAuto, 2000); // wait 2s then start cycling
+          }
+        });
+      }, { threshold: 0.3 });
+      if (section) cycleObs.observe(section);
+      else activatePanel(0);
+
+      // pause auto when hovering the mockup
+      if (wrap3d) {
+        wrap3d.addEventListener('mouseenter', function() { paused = true; });
+        wrap3d.addEventListener('mouseleave', function() { paused = false; });
+      }
+
+      // ── Mouse parallax (desktop only) ────────────────────────
+      if (window.matchMedia('(hover: hover)').matches && wrap3d && section) {
+        section.addEventListener('mousemove', function(e) {
+          if (paused) return;
+          var rect = section.getBoundingClientRect();
+          var cx = (e.clientX - rect.left) / rect.width  - 0.5; // -0.5 to 0.5
+          var cy = (e.clientY - rect.top)  / rect.height - 0.5;
+          var ry = -cx * 12; // rotateY
+          var rx =  cy * 6;  // rotateX
+          wrap3d.style.transform = 'perspective(1400px) rotateY('+ry+'deg) rotateX('+rx+'deg)';
+          wrap3d.style.animation  = 'none';
+        });
+        section.addEventListener('mouseleave', function() {
+          wrap3d.style.transform = '';
+          wrap3d.style.animation  = '';
+        });
+      }
+
+      // ── Scroll entrance: browser slides from left, popup from right ─
+      if (section) {
+        var browser = section.querySelector('.sc-browser');
+        var popup   = section.querySelector('.sc-popup');
+        if (browser) { browser.style.opacity='0'; browser.style.transform='translateX(-40px)'; browser.style.transition='opacity .7s ease, transform .7s ease'; }
+        if (popup)   { popup.style.opacity='0';   popup.style.transform='translateX(40px)';    popup.style.transition='opacity .7s ease .2s, transform .7s ease .2s'; }
+        var entObs = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              if (browser) { browser.style.opacity='1'; browser.style.transform='translateX(0)'; }
+              if (popup)   { popup.style.opacity='1';   popup.style.transform='translateX(0)'; }
+              entObs.disconnect();
+            }
+          });
+        }, { threshold: 0.2 });
+        entObs.observe(section);
+      }
     })();
 
     // ── Hero mockup: auto-cycle active feature ──────────────────
