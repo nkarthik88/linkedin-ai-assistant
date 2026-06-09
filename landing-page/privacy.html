@@ -25,148 +25,246 @@
 
   <main class="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
     <h1 class="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">Privacy Policy</h1>
-    <p class="mt-3 text-slate-600">Last updated: May 26, 2026</p>
+    <p class="mt-3 text-slate-600">Last updated: June 9, 2026</p>
 
-    <div class="mt-10 prose prose-slate max-w-none space-y-10 text-slate-700 leading-relaxed">
+    <div class="mt-6 mb-10 rounded-xl bg-linkedin-light/50 border border-linkedin/10 p-6">
+      <p class="text-sm text-slate-700">
+        <strong>Plain English summary:</strong> ProPostly collects only what is needed to run the service — your email, a LinkedIn profile ID, and usage counts. We do not sell your data, use it for ads, or share it with anyone except the service providers listed below. You can delete your data at any time by contacting us.
+      </p>
+    </div>
+
+    <div class="prose prose-slate max-w-none space-y-10 text-slate-700 leading-relaxed">
 
       <section>
         <p>
-          This Privacy Policy describes how <strong>ProPostly</strong> (“we,” “us,” or “our”) collects, uses, and protects information when you use our Chrome browser extension and related services (collectively, the “Service”).
-        </p>
-        <p class="mt-4">
-          We are committed to protecting your privacy. We collect only the minimum data needed to operate the Service, we do not sell your personal information, and we design our practices to align with applicable privacy laws, including the General Data Protection Regulation (GDPR) where it applies.
+          This Privacy Policy explains how <strong>ProPostly</strong> ("we," "us," or "our") collects, uses, stores, and shares your information when you use our Chrome browser extension and related website at <strong>propostly.com</strong> (collectively, the "Service"). By using the Service, you agree to this policy.
         </p>
       </section>
 
+      <!-- SECTION 1 -->
       <section>
         <h2 class="text-xl font-semibold text-slate-900">1. What Data We Collect</h2>
-        <p class="mt-4">We collect limited information necessary to provide the Service:</p>
-        <ul class="mt-4 list-disc pl-6 space-y-2">
-          <li><strong>User identifiers</strong> — A unique user ID assigned when you use the extension, used to associate your account with usage limits and preferences.</li>
-          <li><strong>Usage counts</strong> — The number of AI generations you use per billing period (for example, monthly quota tracking on the Free plan).</li>
-        </ul>
-        <p class="mt-4 font-medium text-slate-900">What we do not collect:</p>
+        <p class="mt-4">We collect the following information when you use ProPostly:</p>
+
+        <h3 class="mt-6 text-base font-semibold text-slate-900">Information you provide</h3>
         <ul class="mt-3 list-disc pl-6 space-y-2">
-          <li>LinkedIn passwords or login credentials</li>
-          <li>Personal LinkedIn profile data (such as your name, connections, messages, feed content, or browsing history on LinkedIn)</li>
-          <li>Payment card numbers stored by us (if billing is added in the future, payments would be handled by a certified payment processor)</li>
-        </ul>
-        <p class="mt-4">
-          When you request AI-generated content, the text you provide as input (for example, a post topic or comment context) is sent to our servers only to fulfill that request. We do not store your LinkedIn content or profile information in our database.
-        </p>
-      </section>
-
-      <section>
-        <h2 class="text-xl font-semibold text-slate-900">2. Why We Collect It</h2>
-        <p class="mt-4">We use the data described above for the following purposes:</p>
-        <ul class="mt-4 list-disc pl-6 space-y-2">
-          <li><strong>Monthly quotas</strong> — To enforce plan limits (for example, 10 free AI generations per month) and prevent abuse of the Service.</li>
-          <li><strong>Service delivery</strong> — To authenticate your session and provide AI content generation features.</li>
-          <li><strong>Improvement</strong> — To understand aggregate usage patterns and improve reliability, performance, and features of the extension.</li>
-        </ul>
-        <p class="mt-4">
-          We process this data based on our legitimate interest in operating the Service and, where required, your consent when you install and use the extension.
-        </p>
-      </section>
-
-      <section>
-        <h2 class="text-xl font-semibold text-slate-900">3. Where Data Is Stored</h2>
-        <p class="mt-4">
-          Account and usage data (user IDs and usage counts) are stored in a <strong>Supabase</strong> database. Supabase provides industry-standard security measures, including encryption in transit (TLS) and encryption at rest for stored data. Access to production data is restricted to authorized systems required to run the Service.
-        </p>
-        <p class="mt-4">
-          We retain your data only for as long as needed to provide the Service or as required by law. If you request deletion, we will remove your stored data within a reasonable timeframe (see Section 6).
-        </p>
-      </section>
-
-      <section>
-        <h2 class="text-xl font-semibold text-slate-900">4. Third Parties</h2>
-        <p class="mt-4">We share data with third parties only as described below:</p>
-        <ul class="mt-4 list-disc pl-6 space-y-2">
           <li>
-            <strong>OpenRouter API</strong> — When you generate AI content (posts, comments, or profile copy), the text you submit for that request is sent to OpenRouter solely to produce the generated output. OpenRouter acts as our AI processing provider. We do not send your LinkedIn password, profile data, or stored usage records to OpenRouter.
-          </li>
-          <li>
-            <strong>Supabase</strong> — Hosts our database infrastructure as described in Section 3.
+            <strong>Email address</strong> — Collected when you create an account or sign in. Used to identify your account and send important service emails (such as upgrade confirmations or limit warnings).
           </li>
         </ul>
-        <p class="mt-4">
-          We do not sell, rent, or trade your personal information to advertisers or data brokers. We do not use your data for third-party marketing.
-        </p>
+
+        <h3 class="mt-6 text-base font-semibold text-slate-900">Information collected automatically</h3>
+        <ul class="mt-3 list-disc pl-6 space-y-2">
+          <li>
+            <strong>LinkedIn profile ID</strong> — A unique identifier from your LinkedIn profile URL (e.g., the handle in <em>linkedin.com/in/yourname</em>). Collected to prevent account sharing and enforce per-account usage limits.
+          </li>
+          <li>
+            <strong>Usage counts per feature</strong> — How many times you have used each feature (e.g., post generator, comment assistant) within your current billing period. Used to enforce free and pro plan quotas.
+          </li>
+          <li>
+            <strong>Subscription status</strong> — Whether your account is on the Free plan or Pro plan. Used to unlock the correct features for your plan.
+          </li>
+        </ul>
+
+        <h3 class="mt-6 text-base font-semibold text-slate-900">Payment information</h3>
+        <ul class="mt-3 list-disc pl-6 space-y-2">
+          <li>
+            <strong>Payments are processed by Dodo Payments.</strong> When you upgrade to Pro, your payment is handled entirely by Dodo Payments. We never see, receive, or store your credit card number, bank details, or any other payment card information. We only receive a confirmation that your payment was successful.
+          </li>
+        </ul>
+
+        <h3 class="mt-6 text-base font-semibold text-slate-900">What we do NOT collect</h3>
+        <ul class="mt-3 list-disc pl-6 space-y-2">
+          <li>Your LinkedIn password or login credentials</li>
+          <li>Your LinkedIn connections, messages, or feed content</li>
+          <li>Your browsing history</li>
+          <li>Any personal data from LinkedIn beyond the profile ID described above</li>
+        </ul>
       </section>
 
+      <!-- SECTION 2 -->
       <section>
-        <h2 class="text-xl font-semibold text-slate-900">5. Chrome Extension Permissions</h2>
-        <p class="mt-4">
-          The extension requests permissions needed to function on LinkedIn.com (for example, access to active tabs on linkedin.com domains). These permissions are used only to inject the assistant UI and communicate with our backend when you choose to generate content. We do not read or collect your LinkedIn feed, messages, or connections beyond what you explicitly type into the extension.
-        </p>
+        <h2 class="text-xl font-semibold text-slate-900">2. How We Handle Your Data</h2>
+        <p class="mt-4">We are committed to handling your data responsibly:</p>
+        <ul class="mt-4 list-disc pl-6 space-y-3">
+          <li>
+            <strong>Used only to provide the Service</strong> — Your data is used solely to operate ProPostly: managing your account, tracking usage limits, and generating AI content when you request it.
+          </li>
+          <li>
+            <strong>Not sold to third parties</strong> — We do not sell, rent, or trade your personal information to anyone, ever.
+          </li>
+          <li>
+            <strong>Not used for advertising</strong> — We do not use your data to show you targeted ads or share it with advertisers.
+          </li>
+          <li>
+            <strong>Processed securely</strong> — All data is transmitted over encrypted connections (HTTPS/TLS) and stored with encryption at rest.
+          </li>
+          <li>
+            <strong>Minimum data principle</strong> — We only collect what is strictly necessary to run the Service. We do not collect data speculatively.
+          </li>
+        </ul>
       </section>
 
+      <!-- SECTION 3 -->
       <section>
-        <h2 class="text-xl font-semibold text-slate-900">6. Your Rights</h2>
-        <p class="mt-4">Depending on your location, you may have the following rights regarding your personal data:</p>
-        <ul class="mt-4 list-disc pl-6 space-y-2">
-          <li><strong>Access</strong> — Request a copy of the data we hold about you.</li>
-          <li><strong>Correction</strong> — Request correction of inaccurate data.</li>
-          <li><strong>Deletion</strong> — Request deletion of your data at any time.</li>
-          <li><strong>Restriction or objection</strong> — Request restriction of processing or object to certain processing, where applicable under GDPR.</li>
-          <li><strong>Portability</strong> — Receive your data in a structured, commonly used format where technically feasible.</li>
-          <li><strong>Withdraw consent</strong> — Where processing is based on consent, you may withdraw it at any time without affecting the lawfulness of prior processing.</li>
+        <h2 class="text-xl font-semibold text-slate-900">3. Where Your Data Is Stored</h2>
+        <p class="mt-4">Your data is stored and processed in the following locations:</p>
+        <ul class="mt-4 list-disc pl-6 space-y-3">
+          <li>
+            <strong>Supabase (database)</strong> — Your account data (email, LinkedIn profile ID, usage counts, subscription status) is stored in a Supabase database. Supabase encrypts data in transit and at rest and follows industry-standard security practices.
+          </li>
+          <li>
+            <strong>Vercel (backend servers)</strong> — Our backend API runs on Vercel. When the extension makes a request (e.g., to generate a post), it is processed on Vercel servers before being returned to you.
+          </li>
+          <li>
+            <strong>Chrome local storage (your device only)</strong> — Some settings and temporary session data (such as your login token) are stored locally in Chrome's storage on your own device. This data never leaves your device except to authenticate with our servers.
+          </li>
+        </ul>
+      </section>
+
+      <!-- SECTION 4 -->
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900">4. Who We Share Your Data With</h2>
+        <p class="mt-4">We share data only with the service providers required to operate ProPostly. We share the minimum necessary data with each provider.</p>
+        <ul class="mt-4 list-disc pl-6 space-y-3">
+          <li>
+            <strong>Supabase</strong> — Receives and stores your account data (email, LinkedIn profile ID, usage counts, subscription status) as our database provider.
+          </li>
+          <li>
+            <strong>Vercel</strong> — Hosts our backend API and processes requests to generate AI content on your behalf.
+          </li>
+          <li>
+            <strong>OpenRouter / Anthropic</strong> — When you use a generation feature (e.g., write a LinkedIn post), the prompt text you submit is sent to OpenRouter or Anthropic's AI models to produce the output. We do not send your email, LinkedIn profile ID, or account data to these providers.
+          </li>
+          <li>
+            <strong>Dodo Payments</strong> — Processes your payment when you upgrade to Pro. We share only what is necessary to complete the transaction. We never receive your full card details.
+          </li>
+        </ul>
+        <p class="mt-4 font-medium text-slate-900">We do not share your data with anyone else. We never sell your data.</p>
+      </section>
+
+      <!-- SECTION 5 -->
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900">5. Your Rights</h2>
+        <p class="mt-4">You have the following rights regarding your data:</p>
+        <ul class="mt-4 list-disc pl-6 space-y-3">
+          <li>
+            <strong>Access your data</strong> — You can request a copy of the data we hold about you at any time. Email us and we will respond within 30 days.
+          </li>
+          <li>
+            <strong>Request data deletion</strong> — You can ask us to permanently delete your account and all associated data. We will complete deletion within 30 days of your request.
+          </li>
+          <li>
+            <strong>Cancel your subscription anytime</strong> — You can cancel your Pro subscription at any time. You will continue to have Pro access until the end of your current billing period.
+          </li>
+          <li>
+            <strong>Uninstall the extension</strong> — Uninstalling the Chrome extension immediately stops all data collection. Your account data remains in our database until you request deletion.
+          </li>
+          <li>
+            <strong>Contact us anytime</strong> — For any privacy question or concern, email us at <a href="mailto:naraharikarthik05@gmail.com" class="text-linkedin font-medium hover:underline">naraharikarthik05@gmail.com</a>.
+          </li>
         </ul>
         <p class="mt-4">
-          To exercise any of these rights, including data deletion, contact us at the email below. We will respond within the timeframes required by applicable law (typically within 30 days for GDPR requests). You may also uninstall the extension at any time to stop further data collection.
-        </p>
-        <p class="mt-4">
-          If you are in the European Economic Area or UK, you have the right to lodge a complaint with your local data protection authority.
+          If you are in the European Economic Area (EEA) or United Kingdom, you also have rights under the GDPR including correction of inaccurate data, restriction of processing, data portability, and the right to lodge a complaint with your local data protection authority.
         </p>
       </section>
 
+      <!-- SECTION 6 -->
       <section>
-        <h2 class="text-xl font-semibold text-slate-900">7. Data Security</h2>
+        <h2 class="text-xl font-semibold text-slate-900">6. Data Retention</h2>
+        <ul class="mt-4 list-disc pl-6 space-y-3">
+          <li>
+            <strong>While your account is active</strong> — We keep your data for as long as you have an account with us and use the Service.
+          </li>
+          <li>
+            <strong>Deletion on request</strong> — If you request deletion of your data, we will permanently delete your account and all associated personal information within <strong>30 days</strong>.
+          </li>
+          <li>
+            <strong>After inactivity</strong> — We may delete accounts that have been inactive for an extended period. We will notify you by email before doing so.
+          </li>
+        </ul>
+      </section>
+
+      <!-- SECTION 7 -->
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900">7. Children's Privacy</h2>
         <p class="mt-4">
-          We implement appropriate technical and organizational measures to protect your information against unauthorized access, alteration, disclosure, or destruction. No method of transmission over the Internet is 100% secure; we cannot guarantee absolute security but we work to maintain safeguards consistent with the nature of the data we process.
+          ProPostly is not directed to children under the age of 13. We do not knowingly collect personal information from anyone under 13. If you are a parent or guardian and believe your child has provided us with personal information, please contact us at <a href="mailto:naraharikarthik05@gmail.com" class="text-linkedin font-medium hover:underline">naraharikarthik05@gmail.com</a> and we will delete that information promptly.
         </p>
       </section>
 
+      <!-- SECTION 8 -->
       <section>
-        <h2 class="text-xl font-semibold text-slate-900">8. Children’s Privacy</h2>
-        <p class="mt-4">
-          The Service is not directed to individuals under 16 years of age. We do not knowingly collect personal information from children. If you believe we have collected data from a child, please contact us and we will delete it promptly.
-        </p>
+        <h2 class="text-xl font-semibold text-slate-900">8. Cookies</h2>
+        <ul class="mt-4 list-disc pl-6 space-y-3">
+          <li>
+            <strong>We do not use cookies.</strong> The ProPostly extension and website do not set or read browser cookies.
+          </li>
+          <li>
+            <strong>Chrome local storage only.</strong> The extension uses Chrome's built-in local storage API to store settings and session tokens on your device. This data stays on your device and is not transmitted unless needed to authenticate with our servers.
+          </li>
+          <li>
+            <strong>No tracking.</strong> We do not use any third-party tracking pixels, analytics cookies, or advertising cookies.
+          </li>
+        </ul>
       </section>
 
+      <!-- SECTION 9 -->
       <section>
-        <h2 class="text-xl font-semibold text-slate-900">9. International Transfers</h2>
-        <p class="mt-4">
-          Your data may be processed in countries other than your own, including where our service providers operate. Where required, we rely on appropriate safeguards (such as standard contractual clauses) for transfers of personal data outside the EEA/UK.
-        </p>
+        <h2 class="text-xl font-semibold text-slate-900">9. Changes to This Policy</h2>
+        <ul class="mt-4 list-disc pl-6 space-y-3">
+          <li>
+            We may update this Privacy Policy from time to time to reflect changes in the Service or applicable law.
+          </li>
+          <li>
+            When we make changes, we will update the "Last updated" date at the top of this page.
+          </li>
+          <li>
+            For significant changes, we may also notify you by email or through the extension.
+          </li>
+          <li>
+            <strong>Continued use of ProPostly after any changes constitutes your acceptance of the updated policy.</strong> If you do not agree with the updated policy, you should stop using the Service.
+          </li>
+        </ul>
       </section>
 
+      <!-- SECTION 10 -->
       <section>
-        <h2 class="text-xl font-semibold text-slate-900">10. Changes to This Policy</h2>
+        <h2 class="text-xl font-semibold text-slate-900">10. Contact Us</h2>
         <p class="mt-4">
-          We may update this Privacy Policy from time to time. We will post the revised policy on this page and update the “Last updated” date. Material changes may be communicated through the extension or our website where appropriate. Continued use of the Service after changes constitutes acceptance of the updated policy.
-        </p>
-      </section>
-
-      <section>
-        <h2 class="text-xl font-semibold text-slate-900">11. Contact Us</h2>
-        <p class="mt-4">
-          If you have questions about this Privacy Policy, wish to exercise your rights, or want to request deletion of your data, contact us:
+          If you have any questions about this Privacy Policy, want to exercise your rights, or need to request data deletion, please reach out:
         </p>
         <ul class="mt-4 space-y-2">
-          <li><strong>Email:</strong> <a href="mailto:support@propostly.com" class="text-linkedin font-medium hover:text-linkedin-dark underline">support@propostly.com</a></li>
+          <li><strong>Email:</strong> <a href="mailto:naraharikarthik05@gmail.com" class="text-linkedin font-medium hover:text-linkedin-dark underline">naraharikarthik05@gmail.com</a></li>
           <li><strong>Twitter/X:</strong> <a href="https://x.com/Karthik23n" class="text-linkedin font-medium hover:text-linkedin-dark underline" target="_blank" rel="noopener noreferrer">@Karthik23n</a></li>
+          <li><strong>Website:</strong> <a href="https://propostly.com" class="text-linkedin font-medium hover:text-linkedin-dark underline" target="_blank" rel="noopener noreferrer">propostly.com</a></li>
+        </ul>
+        <p class="mt-4">We aim to respond to all privacy requests within <strong>30 days</strong>.</p>
+      </section>
+
+      <!-- Chrome Extension Permissions (bonus clarity for Google review) -->
+      <section>
+        <h2 class="text-xl font-semibold text-slate-900">Chrome Extension Permissions</h2>
+        <p class="mt-4">
+          The ProPostly extension requests access to LinkedIn pages in order to display its assistant UI and send generation requests to our backend when you click a button. The extension:
+        </p>
+        <ul class="mt-4 list-disc pl-6 space-y-2">
+          <li>Reads your LinkedIn profile ID from the page URL (the text after <em>linkedin.com/in/</em>) to link usage to your account.</li>
+          <li>Does not read your LinkedIn messages, connections, feed, or any content you have not explicitly pasted into the extension.</li>
+          <li>Does not run on any website other than linkedin.com.</li>
         </ul>
       </section>
 
       <section class="rounded-xl bg-linkedin-light/50 border border-linkedin/10 p-6">
-        <h2 class="text-lg font-semibold text-slate-900">Summary</h2>
+        <h2 class="text-lg font-semibold text-slate-900">Quick Summary</h2>
         <ul class="mt-3 space-y-2 text-sm text-slate-700">
-          <li>We collect user IDs and usage counts only — no passwords, no personal LinkedIn data.</li>
-          <li>Data is stored securely in Supabase; AI requests use OpenRouter for generation only.</li>
-          <li>We do not sell your data. GDPR rights apply, including deletion on request.</li>
-          <li>Contact: <a href="mailto:support@propostly.com" class="text-linkedin hover:underline">support@propostly.com</a> | Twitter: <a href="https://x.com/Karthik23n" class="text-linkedin hover:underline" target="_blank" rel="noopener noreferrer">@Karthik23n</a></li>
+          <li>We collect: email, LinkedIn profile ID, usage counts, subscription status.</li>
+          <li>We do NOT collect: passwords, LinkedIn content, browsing history, payment card details.</li>
+          <li>Data is stored in Supabase (encrypted) and processed on Vercel servers.</li>
+          <li>We share data only with: Supabase, Vercel, OpenRouter/Anthropic, Dodo Payments.</li>
+          <li>We never sell your data or use it for advertising.</li>
+          <li>Delete your data anytime — just email us and we'll do it within 30 days.</li>
+          <li>Contact: <a href="mailto:naraharikarthik05@gmail.com" class="text-linkedin hover:underline">naraharikarthik05@gmail.com</a> | <a href="https://x.com/Karthik23n" class="text-linkedin hover:underline" target="_blank" rel="noopener noreferrer">@Karthik23n</a></li>
         </ul>
       </section>
 
