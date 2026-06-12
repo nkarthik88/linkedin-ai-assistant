@@ -1,4 +1,4 @@
-const API_BASE = "https://linkedin-ai-backend-rho.vercel.app";
+const API_BASE = "https://api.propostly.com";
 const API_URL = `${API_BASE}/api/generate`;
 const API_URL_LEADS = `${API_BASE}/api/generate/leads`;
 
