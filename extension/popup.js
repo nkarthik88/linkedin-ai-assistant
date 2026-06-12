@@ -1492,7 +1492,7 @@ function renderLeadCounter() {
   if (pill) {
     if (s && typeof s.lead_searches_remaining === "number") {
       const used = s.lead_searches_used ?? 0;
-      const limit = s.lead_searches_limit ?? 10;
+      const limit = s.lead_searches_limit ?? 5;
       pill.textContent = `🔎 ${used}/${limit} searches used`;
       pill.style.color = s.lead_searches_remaining === 0 ? "var(--error)" : "";
     } else {
@@ -1512,7 +1512,7 @@ function renderLeadCounter() {
   }
 
   const used = s.lead_searches_used ?? 0;
-  const limit = s.lead_searches_limit ?? 10;
+  const limit = s.lead_searches_limit ?? 5;
   const remaining = s.lead_searches_remaining;
   const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
   const isPro = Boolean(s.isPro);
@@ -2257,7 +2257,7 @@ async function runDeepLeadSearch(filters) {
       let err = container?.querySelector(".error-msg");
       if (!err && container) { err = document.createElement("div"); err.className = "error-msg"; container.prepend(err); }
       if (err) {
-        err.innerHTML = `<strong>No profiles found for this search.</strong><br><br>Try these adjustments:<ol style="margin:6px 0 0 16px;padding:0">${suggestions.map(s => `<li style="margin-bottom:4px">${escapeHtml(s)}</li>`).join("")}</ol>`;
+        err.innerHTML = `<strong>No leads found.</strong> LinkedIn may have updated their layout. Please try again or contact support at <a href="https://x.com/Karthik23n" target="_blank" rel="noopener">@Karthik23n</a>.<br><br>Other things to try:<ol style="margin:6px 0 0 16px;padding:0">${suggestions.map(s => `<li style="margin-bottom:4px">${escapeHtml(s)}</li>`).join("")}</ol>`;
         err.hidden = false;
       }
       return;

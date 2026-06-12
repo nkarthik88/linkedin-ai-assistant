@@ -447,22 +447,71 @@ function looksLikeLocation(text) {
   );
 }
 
+// Try selectors in order — return first element whose textContent is non-empty.
+// Used by the lead-search extractor so that layout-class renames degrade gracefully.
+function trySelectors(container, selectors) {
+  for (const selector of selectors) {
+    try {
+      const el = container.querySelector(selector);
+      if (el && el.textContent && el.textContent.trim()) {
+        return el;
+      }
+    } catch (_) { continue; }
+  }
+  return null;
+}
+
+const LEAD_CONTAINER_SELECTORS = [
+  "li.reusable-search__result-container",
+  "div.entity-result",
+  "li[data-chameleon-result-urn]",
+  "div[data-chameleon-result-urn]",
+  'div[data-view-name="search-entity-result"]',
+  "li.org-people-profile-card__profile-card-spacing",
+  "div.search-results-container ul > li",
+  ".search-results-container li",
+  'ul[role="list"] > li',
+  "li.artdeco-list__item",
+];
+
+const LEAD_NAME_SELECTORS = [
+  '.entity-result__title-text a span[aria-hidden="true"]',
+  ".entity-result__title-text a",
+  'a[data-control-name="search_srp_result"] span[aria-hidden="true"]',
+  'a[data-control-name="search_srp_result"] span',
+  '.app-aware-link span[aria-hidden="true"]',
+  'h3 span[aria-hidden="true"]',
+  'a[href*="/in/"] span[aria-hidden="true"]',
+];
+
+const LEAD_HEADLINE_SELECTORS = [
+  ".entity-result__primary-subtitle",
+  ".entity-result__summary",
+  'div[class*="primary-subtitle"]',
+  ".linked-area .entity-result__simple-insight",
+  "div.t-14.t-black.t-normal",
+];
+
+const LEAD_COMPANY_SELECTORS = [
+  ".entity-result__secondary-subtitle",
+  'div[class*="secondary-subtitle"]',
+  ".entity-result__simple-insight-text",
+  "div.t-14.t-normal.t-black--light",
+];
+
+const LEAD_URL_SELECTORS = [
+  '.entity-result__title-text a[href]',
+  'a.app-aware-link[href*="/in/"]',
+  'a[href*="linkedin.com/in/"]',
+  'a[href*="/in/"]',
+];
+
 function extractSearchProfiles(limit = 25) {
   const seen = new Set();
   const results = [];
 
   let containers = Array.from(
-    document.querySelectorAll(
-      [
-        "li.reusable-search__result-container",
-        "div[data-chameleon-result-urn]",
-        "li.org-people-profile-card__profile-card-spacing",
-        "div.entity-result",
-        "div.search-results-container ul > li",
-        'ul[role="list"] > li',
-        "li.artdeco-list__item",
-      ].join(", ")
-    )
+    document.querySelectorAll(LEAD_CONTAINER_SELECTORS.join(", "))
   );
 
   // Fallback: derive containers from profile links if known classes are absent.
@@ -479,29 +528,21 @@ function extractSearchProfiles(limit = 25) {
   for (const c of containers) {
     if (results.length >= limit) break;
 
-    const link = c.querySelector('a[href*="/in/"]');
-    if (!link) continue;
+    // Profile URL — try resilient selector chain, fall back to any /in/ link
+    const urlEl = trySelectors(c, LEAD_URL_SELECTORS) || c.querySelector('a[href*="/in/"]');
+    if (!urlEl) continue;
 
-    const href = (link.getAttribute("href") || "").split("?")[0];
+    const href = (urlEl.getAttribute("href") || "").split("?")[0];
     if (!href || !/\/in\/[^/]+/.test(href) || seen.has(href)) continue;
 
-    const name = cleanName(
-      getText(link.querySelector('span[aria-hidden="true"]')) ||
-        getText(c.querySelector('.entity-result__title-text span[aria-hidden="true"]')) ||
-        getText(c.querySelector('.entity-result__title-text a')) ||
-        getText(link)
-    );
+    // Name — try resilient selector chain, fall back to the link itself
+    const nameEl = trySelectors(c, LEAD_NAME_SELECTORS);
+    const name = cleanName(getText(nameEl) || getText(urlEl));
     if (!name || name.length < 2 || /^linkedin member$/i.test(name)) continue;
 
-    // 1) Try LinkedIn's named subtitle classes (across DOM versions).
-    let headline =
-      getText(c.querySelector(".entity-result__primary-subtitle")) ||
-      getText(c.querySelector("div.t-14.t-black.t-normal")) ||
-      "";
-    let location =
-      getText(c.querySelector(".entity-result__secondary-subtitle")) ||
-      getText(c.querySelector("div.t-14.t-normal.t-black--light")) ||
-      "";
+    // Headline + company subtitle via resilient chains
+    let headline = getText(trySelectors(c, LEAD_HEADLINE_SELECTORS)) || "";
+    let location = getText(trySelectors(c, LEAD_COMPANY_SELECTORS)) || "";
 
     // 2) Fallback: positional text rows when class names have changed.
     if (!headline || !location) {
