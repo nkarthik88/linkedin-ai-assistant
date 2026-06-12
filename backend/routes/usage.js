@@ -35,7 +35,12 @@ router.get(
         ? "Unlimited uses"
         : `${status.remaining} uses remaining this month`;
       res.json({ ...status, message });
-    } catch {
+    } catch (err) {
+      // notRegistered means onboarding hasn't been completed — return fallback
+      // silently so the popup loads without error. No row is created.
+      if (err.notRegistered) {
+        return res.json({ ...fallbackStatus(), notRegistered: true });
+      }
       res.json(fallbackStatus());
     }
   })

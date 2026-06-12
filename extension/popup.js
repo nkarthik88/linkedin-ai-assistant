@@ -2349,18 +2349,28 @@ document.getElementById("lead-limit-upgrade")?.addEventListener("click", (e) => 
 
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
-    refreshAccountStatus();
+    chrome.storage.local.get("onboardingDone").then(({ onboardingDone }) => {
+      if (onboardingDone) refreshAccountStatus();
+    });
   }
 });
 
 window.addEventListener("focus", () => {
-  refreshAccountStatus();
+  chrome.storage.local.get("onboardingDone").then(({ onboardingDone }) => {
+    if (onboardingDone) refreshAccountStatus();
+  });
 });
 
 // ── Init ───────────────────────────────────────────────────────────────────
 
 (async function init() {
-  await checkOnboarding();
+  const { onboardingDone } = await chrome.storage.local.get("onboardingDone");
+  if (!onboardingDone) {
+    // Show onboarding and stop — do NOT call the backend before email is submitted.
+    const overlay = document.getElementById("onboarding");
+    if (overlay) overlay.hidden = false;
+    return;
+  }
   await refreshAccountStatus();
   renderSavedLeads();
   // Background: link LinkedIn ID to account for anti-bypass detection

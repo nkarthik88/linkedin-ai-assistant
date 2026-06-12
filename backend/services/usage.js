@@ -119,17 +119,6 @@ async function getExtensionAccount(userId) {
   return data;
 }
 
-async function createExtensionAccount(userId) {
-  const { data, error } = await supabaseAdmin
-    .from("extension_accounts")
-    .insert({ id: userId })
-    .select("id, plan, email, usage_this_month, usage_limit, quota_reset_at")
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
 /**
  * Resolve account for generate/usage. Prefers auth `users` row, else extension_accounts.
  */
@@ -163,7 +152,12 @@ export async function resolveAccount(userId) {
 
   let ext = await getExtensionAccount(userId);
   if (!ext) {
-    ext = await createExtensionAccount(userId);
+    // Never auto-create a row without an email — that produces NULL-email rows.
+    // Only /api/auth/register-extension (which requires email) may create rows.
+    const err = new Error("Account not found. Please complete onboarding first.");
+    err.statusCode = 404;
+    err.notRegistered = true;
+    throw err;
   }
   ext = await maybeResetUsage(ext, "extension_accounts");
   const owner = isOwnerEmail(ext.email);
