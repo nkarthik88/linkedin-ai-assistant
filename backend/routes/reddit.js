@@ -243,12 +243,12 @@ router.post(
     const userId = validateUserId(req, res);
     if (!userId) return;
 
-    const { draft } = req.body;
+    const { draft, subreddit } = req.body;
     if (!draft) return res.status(400).json({ error: "draft is required" });
 
     const model = getModelForPlan("free");
 
-    const systemPrompt = `You are a Reddit viral ghostwriter. Transform the draft into ONE viral Reddit post.
+    const systemPrompt = `You are a Reddit viral ghostwriter. Transform the draft into ONE viral Reddit post${subreddit ? ` specifically for ${subreddit}` : ""}.${subreddit ? ` Follow that subreddit's culture and norms.` : ""}
 
 ${HUMAN_REDDIT_RULES}
 
