@@ -677,3 +677,34 @@
 .safety-list li span:first-child {
   flex-shrink: 0;
 }
+
+/* ═══════════════════════════════════════════════
+   Persona Chips (Comment Reply)
+   ═══════════════════════════════════════════════ */
+
+.reddit-persona-chips {
+  display: flex;
+  gap: 6px;
+  margin: 6px 0 14px;
+}
+
+.reddit-persona-chip {
+  flex: 1;
+  padding: 7px 8px;
+  border-radius: 8px;
+  border: 1.5px solid #e0e0e0;
+  background: #fff;
+  color: #555;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.reddit-persona-chip.active,
+.reddit-persona-chip:hover {
+  border-color: #FF4500;
+  background: #fff5f2;
+  color: #FF4500;
+}

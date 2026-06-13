@@ -553,6 +553,12 @@
             <p class="form-hint">Read a comment from the Reddit page or paste it below. Get 3 karma-building replies.</p>
             <button type="button" id="reddit-read-page-btn" class="read-from-page-btn">📋 Read from Reddit</button>
             <p id="reddit-read-status" class="read-from-page-status" hidden></p>
+            <label>Reply persona</label>
+            <div class="reddit-persona-chips">
+              <button type="button" class="reddit-persona-chip active" data-persona="mentor">🎓 Mentor</button>
+              <button type="button" class="reddit-persona-chip" data-persona="witty">😄 Witty</button>
+              <button type="button" class="reddit-persona-chip" data-persona="curious">🤔 Curious</button>
+            </div>
             <form id="reddit-form-comment_reply">
               <label for="reddit-comment-text">Comment to reply to</label>
               <textarea id="reddit-comment-text" name="commentText" placeholder="Paste the Reddit comment here..." required rows="4"></textarea>

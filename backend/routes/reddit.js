@@ -306,22 +306,34 @@ router.post(
     const userId = validateUserId(req, res);
     if (!userId) return;
 
-    const { commentText, postContext } = req.body;
+    const { commentText, postContext, persona = "mentor" } = req.body;
     if (!commentText) return res.status(400).json({ error: "commentText is required" });
 
     const model = getModelForPlan("free");
+
+    const personaInstructions = {
+      mentor: `Reply as a helpful, experienced community member who explains concepts clearly and adds real value. Sound like a knowledgeable peer, not a teacher or marketer. Share what you know from experience. Helpful, warm, genuinely useful.`,
+      witty: `Reply with humor and relatability. Short punchy lines. Make them smile. Sound like the funny-but-smart person everyone loves in Reddit comments. Humor first, never offensive, always leaves a good feeling.`,
+      curious: `Reply with genuine curiosity. Ask deep follow-up questions that make the original poster feel their point is interesting and worth expanding on. Questions that keep the conversation going get the most upvotes. Sound fascinated, not interrogative.`,
+    };
+
+    const personaStyle = personaInstructions[persona] || personaInstructions.mentor;
 
     const systemPrompt = `You are a Reddit reply writer. Generate exactly 3 replies to a Reddit comment.
 
 ${HUMAN_REDDIT_RULES}
 
-Reply types (in order):
-1. Karma-builder: gets upvotes by being funny, relatable, or insightful
-2. Value-add: adds genuine information or a different perspective
-3. Conversational: continues the dialogue naturally, asks or shares briefly
+PERSONA MODE — apply this to all 3 replies:
+${personaStyle}
+
+${HUMAN_WRITING_RULES}
+
+${BANNED_WORDS}
+
+All 3 replies must match the persona style above. No promotional language. No AI writing patterns.
 
 Respond with JSON only:
-{"variations":["karma-builder reply","value-add reply","conversational reply"]}`;
+{"variations":["reply 1","reply 2","reply 3"]}`;
 
     const userPrompt = `${postContext ? `Post context: ${postContext}\n\n` : ""}Comment to reply to: ${commentText}`;
 

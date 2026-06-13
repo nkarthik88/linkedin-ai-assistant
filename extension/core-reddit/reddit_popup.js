@@ -593,11 +593,18 @@ async function handleCommentReply(e) {
 
   const commentText = document.getElementById("reddit-comment-text").value.trim();
   const postContext = document.getElementById("reddit-post-context").value.trim();
-  redditShowLoading("Generating 3 karma-building replies…");
+  const persona     = document.querySelector(".reddit-persona-chip.active")?.dataset.persona || "mentor";
+
+  const loadingText = persona === "witty" ? "Crafting witty replies…"
+    : persona === "curious" ? "Generating curious replies…"
+    : "Generating helpful replies…";
+
+  redditShowLoading(loadingText);
   try {
-    const data = await redditCallApi("reply", { commentText, postContext });
+    const data = await redditCallApi("reply", { commentText, postContext, persona });
     await redditIncrementUsage("comment_reply");
-    renderTextVariations(data.variations || [], "3 Reddit Replies");
+    const personaLabel = persona === "witty" ? "😄 Witty Replies" : persona === "curious" ? "🤔 Curious Replies" : "🎓 Mentor Replies";
+    renderTextVariations(data.variations || [], personaLabel);
   } catch (err) {
     redditShowView("reddit-view-comment_reply");
     alert("Error: " + err.message);
@@ -692,6 +699,17 @@ function initTemplateChips() {
   });
 }
 
+/* ─── Persona chips (Comment Reply) ───────────────────── */
+
+function initPersonaChips() {
+  document.querySelectorAll(".reddit-persona-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      document.querySelectorAll(".reddit-persona-chip").forEach((c) => c.classList.remove("active"));
+      chip.classList.add("active");
+    });
+  });
+}
+
 /* ─── Promo toggle ─────────────────────────────────── */
 
 function initPromoToggle() {
@@ -714,11 +732,17 @@ function initRedditFeatureNav() {
     });
   });
 
+  // All back buttons (feature views + results) → always go to Reddit home grid
   document.querySelectorAll("[data-reddit-back]").forEach((btn) => {
-    btn.addEventListener("click", () => redditShowView("reddit-view-home"));
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      redditShowView("reddit-view-home");
+    });
   });
 
-  document.getElementById("reddit-upgrade-back")?.addEventListener("click", () => {
+  document.getElementById("reddit-upgrade-back")?.addEventListener("click", (e) => {
+    e.preventDefault();
     redditShowView("reddit-view-home");
   });
 
@@ -812,6 +836,7 @@ initPlatformSwitcher();
 initPostGeneratorTabs();
 initTemplateChips();
 initPromoToggle();
+initPersonaChips();
 initRedditFeatureNav();
 initFormListeners();
 redditRenderSubHistory();
