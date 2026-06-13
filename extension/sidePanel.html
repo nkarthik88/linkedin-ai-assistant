@@ -54,12 +54,12 @@
       </header>
 
       <section id="account-bar" class="account-bar" aria-live="polite">
-        <div class="account-bar-top">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span id="tier-label" class="tier-badge">Free Tier</span>
-            <span id="account-bar-email" class="account-bar-email"></span>
+        <div class="ab-row">
+          <div class="ab-left">
+            <span id="account-bar-email" class="ab-email"></span>
+            <span id="usage-label" class="ab-usage">—</span>
           </div>
-          <span id="usage-label" class="usage-label">—</span>
+          <span id="tier-label" class="tier-badge">Free Tier</span>
         </div>
         <button type="button" id="upgrade-btn" class="upgrade-btn" hidden>
           Unlock Unlimited — ₹862/month

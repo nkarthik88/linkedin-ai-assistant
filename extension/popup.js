@@ -235,8 +235,8 @@ function renderAccountStatus(status) {
     const leadExhausted = (status?.lead_searches_remaining ?? 1) === 0;
     const limitHit = anyExhausted || leadExhausted;
     usageEl.textContent = limitHit
-      ? "Some features at limit — upgrade"
-      : "10 uses/feature/month · 5 lead searches";
+      ? "⚠️ Some features at limit"
+      : "10 uses/feature · 5 lead searches/mo";
     usageEl.style.color = limitHit ? "var(--error)" : "";
     // Only show upgrade button when a limit is actually hit
     upgradeBtn.hidden = !limitHit;
@@ -741,7 +741,7 @@ async function getProfileDataFromPage({ refresh = false, requireProfile = true }
 
   if (requireProfile && !/\/in\/[^/?#]+/i.test(tab.url || "")) {
     throw new Error(
-      "Navigate to a LinkedIn profile (linkedin.com/in/username) before generating DMs."
+      "Please open a LinkedIn profile page in your browser first."
     );
   }
 
@@ -765,7 +765,7 @@ async function getProfileDataForDM() {
   try {
     const tab = await getActiveLinkedInTab();
     if (!/\/in\/[^/?#]+/i.test(tab.url || "")) {
-      return { profileData: {}, warning: "Navigate to a LinkedIn profile (linkedin.com/in/username) first." };
+      return { profileData: {}, warning: "Please open a LinkedIn profile page in your browser first." };
     }
     await ensureContentScript(tab.id);
     const response = await chrome.tabs.sendMessage(tab.id, { type: "GET_PROFILE_DATA", refresh: true });
@@ -1276,7 +1276,7 @@ document.querySelectorAll(".feature-btn").forEach((btn) => {
       } else if (warning && previewEl) {
         previewEl.hidden = false;
         previewEl.dataset.profileJson = "";
-        previewEl.innerHTML = `<strong>Note</strong><span>${escapeHtml(warning)}</span>`;
+        previewEl.innerHTML = `<span class="preview-note-label">ℹ️ Note:</span> ${escapeHtml(warning)}`;
       }
       return;
     }
