@@ -10,25 +10,30 @@
   --linkedin-blue: #0a66c2;
   --linkedin-blue-dark: #004182;
   --linkedin-blue-light: #e8f3fc;
-  --text-primary: #191919;
-  --text-secondary: #666666;
-  --border: #e0e0e0;
-  --bg: #f3f6f8;
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
+  --border: #E5E7EB;
+  --border-focus: #0a66c2;
+  --bg: #F9FAFB;
   --white: #ffffff;
-  --error: #d11124;
-  --success: #057642;
-  --radius: 8px;
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --error: #DC2626;
+  --success: #059669;
+  --radius: 10px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 body {
   width: 380px;
   min-height: 200px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
-  font-size: 14px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
   color: var(--text-primary);
   background: var(--bg);
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ── Side Panel layout ── */
@@ -196,7 +201,7 @@ body.side-panel .option-text {
 .header {
   background: var(--linkedin-blue);
   color: var(--white);
-  padding: 14px 16px;
+  padding: 12px 16px;
 }
 
 .header-inner {
@@ -247,7 +252,7 @@ body.side-panel .option-text {
 .account-bar {
   background: var(--white);
   border-bottom: 1px solid var(--border);
-  padding: 10px 14px;
+  padding: 8px 14px;
 }
 
 .account-bar-top {
@@ -443,23 +448,25 @@ body.side-panel .option-text {
 
 .feature-usage-counter {
   font-size: 10px;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   line-height: 1.2;
-  margin-top: 1px;
+  margin-top: 2px;
+  display: block;
 }
 
 .feature-usage-counter.exhausted {
-  color: var(--error, #e63757);
+  color: var(--error);
   font-weight: 600;
 }
 
 .feature-usage-counter.warn {
-  color: #d97706;
+  color: #D97706;
   font-weight: 600;
 }
 
 .feature-usage-counter.unlimited {
-  color: var(--linkedin-blue);
+  color: var(--success);
+  font-weight: 600;
 }
 
 /* Mini progress bar inside feature buttons */
@@ -502,73 +509,84 @@ body.side-panel .option-text {
   gap: 4px;
   background: none;
   border: none;
-  color: var(--linkedin-blue);
-  font-size: 13px;
+  color: var(--text-secondary);
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  padding: 0 0 12px;
+  padding: 14px 16px 10px;
+  letter-spacing: 0.01em;
 }
 
 .back-btn:hover {
-  color: var(--linkedin-blue-dark);
+  color: var(--linkedin-blue);
 }
 
 /* ── Card ── */
 .card {
   background: var(--white);
-  border-radius: var(--radius);
-  padding: 16px;
-  box-shadow: var(--shadow);
-  border: 1px solid var(--border);
+  border-radius: 0;
+  padding: 16px 16px 20px;
+  border: none;
+  box-shadow: none;
 }
 
 .form-title {
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--text-primary);
   margin-bottom: 4px;
+  letter-spacing: -0.01em;
 }
 
 .form-hint {
   font-size: 12px;
-  color: var(--text-secondary);
-  margin-bottom: 14px;
-  line-height: 1.4;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  line-height: 1.5;
 }
 
 label {
   display: block;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-secondary);
-  margin-bottom: 6px;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 textarea,
 input[type="text"],
-input[type="email"] {
+input[type="email"],
+input[type="url"] {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: 13px;
+  color: var(--text-primary);
   resize: vertical;
   min-height: 80px;
-  margin-bottom: 12px;
-  transition: border-color 0.15s;
-  background: var(--white);
+  margin-bottom: 14px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  background: #FAFAFA;
+  line-height: 1.5;
 }
 
 textarea:focus,
 input[type="text"]:focus,
-input[type="email"]:focus {
+input[type="email"]:focus,
+input[type="url"]:focus {
   outline: none;
   border-color: var(--linkedin-blue);
-  box-shadow: 0 0 0 2px var(--linkedin-blue-light);
+  background: var(--white);
+  box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.08);
 }
 
 input[type="text"],
-input[type="email"] {
+input[type="email"],
+input[type="url"] {
   min-height: unset;
   height: 40px;
   resize: none;
@@ -576,19 +594,22 @@ input[type="email"] {
 
 .submit-btn {
   width: 100%;
-  padding: 11px 16px;
+  padding: 12px 16px;
   background: var(--linkedin-blue);
   color: var(--white);
   border: none;
-  border-radius: 24px;
-  font-size: 14px;
-  font-weight: 600;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
+  letter-spacing: 0.01em;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  box-shadow: 0 2px 8px rgba(10, 102, 194, 0.25);
 }
 
 .submit-btn:hover:not(:disabled) {
   background: var(--linkedin-blue-dark);
+  box-shadow: 0 4px 12px rgba(10, 102, 194, 0.35);
 }
 
 .submit-btn:active:not(:disabled) {
@@ -596,8 +617,9 @@ input[type="email"] {
 }
 
 .submit-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* ── Loading ── */
@@ -743,21 +765,22 @@ input[type="email"] {
 .read-from-page-btn {
   display: block;
   width: 100%;
-  margin-bottom: 10px;
-  padding: 9px 14px;
-  background: #e8f4fd;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: var(--white);
   color: var(--linkedin-blue);
-  border: 1.5px solid var(--linkedin-blue);
-  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   text-align: center;
-  transition: background 0.15s;
+  transition: border-color 0.15s, background 0.15s;
 }
 
 .read-from-page-btn:hover {
-  background: #d0e8f9;
+  border-color: var(--linkedin-blue);
+  background: var(--linkedin-blue-light);
 }
 
 .read-from-page-status {

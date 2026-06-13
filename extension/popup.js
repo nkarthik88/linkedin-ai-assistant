@@ -251,17 +251,19 @@ function renderFeatureCounters(status) {
     const btn = document.querySelector(`.feature-btn[data-feature="${feature}"]`);
     if (!btn) return;
 
-    // Counter text
+    // Counter text — inject into .hc-content if new card layout, else button root
+    const contentTarget = btn.querySelector(".hc-content") || btn;
     let counterEl = btn.querySelector(".feature-usage-counter");
     if (!counterEl) {
       counterEl = document.createElement("span");
       counterEl.className = "feature-usage-counter";
-      btn.appendChild(counterEl);
+      contentTarget.appendChild(counterEl);
     }
 
-    // Mini progress bar
+    // Mini progress bar — only for legacy layout (no .hc-content)
+    const isNewLayout = !!btn.querySelector(".hc-content");
     let barWrap = btn.querySelector(".feature-btn-bar-bg");
-    if (!barWrap) {
+    if (!barWrap && !isNewLayout) {
       barWrap = document.createElement("div");
       barWrap.className = "feature-btn-bar-bg";
       const fill = document.createElement("div");
@@ -269,12 +271,12 @@ function renderFeatureCounters(status) {
       barWrap.appendChild(fill);
       btn.appendChild(barWrap);
     }
-    const barFill = barWrap.querySelector(".feature-btn-bar-fill");
+    const barFill = barWrap?.querySelector(".feature-btn-bar-fill");
 
     if (isPro) {
       counterEl.textContent = "Unlimited";
       counterEl.className = "feature-usage-counter unlimited";
-      barWrap.hidden = true;
+      if (barWrap) barWrap.hidden = true;
       btn.disabled = false;
       btn.classList.remove("feature-locked");
     } else {
@@ -298,7 +300,7 @@ function renderFeatureCounters(status) {
       }
 
       // Color the bar
-      barWrap.hidden = false;
+      if (barWrap) barWrap.hidden = false;
       if (barFill) {
         barFill.style.width = `${pct}%`;
         barFill.className = "feature-btn-bar-fill" +
