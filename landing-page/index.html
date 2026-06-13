@@ -2362,6 +2362,7 @@
       var callout = document.getElementById('hbDetected');
 
       var cta = document.getElementById('heroCta');
+      var comingSoon = ['edge','firefox','safari'];
       if (pill && supported.indexOf(detected) !== -1) {
         pill.classList.add('hb-active');
         callout.textContent = '👆 You\'re on ' + labels[detected] + ' — click your browser to install!';
@@ -2376,6 +2377,10 @@
         if (navCta) navCta.textContent = 'Install Free on ' + labels[detected];
         var mobNavCta = document.getElementById('mobNavCta');
         if (mobNavCta) mobNavCta.textContent = 'Install Free on ' + labels[detected] + ' →';
+      } else if (comingSoon.indexOf(detected) !== -1) {
+        callout.textContent = '⏳ ' + labels[detected] + ' support is coming soon — install on Chrome in the meantime!';
+        callout.style.color = '#92400e';
+        callout.style.display = 'block';
       }
     })();
 
