@@ -46,38 +46,39 @@
 /* Platform Switcher */
 .platform-switcher {
   display: flex;
-  background: #f0f0f0;
-  border-bottom: 1px solid #e0e0e0;
+  background: #ffffff;
+  border-bottom: 1px solid #E5E7EB;
   flex-shrink: 0;
+  padding: 0 12px;
+  gap: 4px;
 }
 
 .platform-tab {
   flex: 1;
-  padding: 10px 0;
+  padding: 11px 0 9px;
   border: none;
   background: transparent;
   font-size: 13px;
   font-weight: 600;
-  color: #666;
+  color: #9CA3AF;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-bottom 0.15s;
-  border-bottom: 3px solid transparent;
+  transition: color 0.15s, border-bottom 0.15s;
+  border-bottom: 2px solid transparent;
+  letter-spacing: 0.01em;
 }
 
 .platform-tab.active[data-platform="linkedin"] {
   color: #0A66C2;
   border-bottom-color: #0A66C2;
-  background: #fff;
 }
 
 .platform-tab.active[data-platform="reddit"] {
   color: #FF4500;
   border-bottom-color: #FF4500;
-  background: #fff;
 }
 
 .platform-tab:hover:not(.active) {
-  background: #e8e8e8;
+  color: #374151;
 }
 
 /* Reddit main panel */

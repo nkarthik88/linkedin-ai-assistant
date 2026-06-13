@@ -679,13 +679,11 @@ function initPlatformSwitcher() {
       const header = document.querySelector(".header");
       if (tab.dataset.platform === "reddit") {
         linkedinPanel.hidden = true;
-        if (accountBar) accountBar.hidden = true;
         redditPanel.hidden = false;
         if (subheading) subheading.textContent = "AI-powered content for Reddit";
         if (header) header.classList.add("header-reddit");
       } else {
         linkedinPanel.hidden = false;
-        if (accountBar) accountBar.hidden = false;
         redditPanel.hidden = true;
         if (subheading) subheading.textContent = "AI-powered content for your LinkedIn";
         if (header) header.classList.remove("header-reddit");
@@ -844,8 +842,6 @@ chrome.runtime.onMessage.addListener((msg) => {
     document.querySelector('[data-platform="reddit"]')?.classList.add("active");
     const li = document.querySelector(".main:not(.reddit-main)");
     if (li) li.hidden = true;
-    const ab = document.getElementById("account-bar");
-    if (ab) ab.hidden = true;
     document.getElementById("reddit-panel").hidden = false;
     redditShowView("reddit-view-comment_reply");
     const textarea = document.getElementById("reddit-comment-text");

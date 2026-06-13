@@ -248,11 +248,16 @@ body.side-panel .option-text {
   background: rgba(255,255,255,0.25);
 }
 
-/* ── Account bar ── */
+/* ── Account bar (global profile strip) ── */
 .account-bar {
   background: var(--white);
   border-bottom: 1px solid var(--border);
-  padding: 8px 14px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .account-bar-top {
@@ -260,6 +265,17 @@ body.side-panel .option-text {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  flex: 1;
+}
+
+.account-bar-email {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
 }
 
 .tier-badge {

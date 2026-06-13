@@ -205,6 +205,12 @@ function setUpgradeError(message) {
   }
 }
 
+async function renderAccountBarEmail() {
+  const email = await getUserEmail();
+  const el = document.getElementById("account-bar-email");
+  if (el && email) el.textContent = email;
+}
+
 function renderAccountStatus(status) {
   accountStatus = status;
 
@@ -2418,6 +2424,7 @@ window.addEventListener("focus", () => {
     return;
   }
   await refreshAccountStatus();
+  renderAccountBarEmail();
   renderSavedLeads();
   // Background: link LinkedIn ID to account for anti-bypass detection
   const userId = await getUserId();
