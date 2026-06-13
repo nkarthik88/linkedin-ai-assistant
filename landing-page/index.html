@@ -2352,8 +2352,8 @@
       if (/opr\/|opera\//.test(ua)) detected = 'opera';
       else if (/vivaldi/.test(ua)) detected = 'vivaldi';
       else if (/brave/.test(ua) || (navigator.brave && navigator.brave.isBrave)) detected = 'brave';
-      else if (/edg\//.test(ua)) detected = 'edge';
-      else if (/firefox/.test(ua)) detected = 'firefox';
+      else if (/edg\/|edgios\//.test(ua)) detected = 'edge';
+      else if (/firefox|fxios/.test(ua)) detected = 'firefox';
       else if (/safari/.test(ua) && !/chrome/.test(ua)) detected = 'safari';
 
       var labels = { chrome:'Chrome', brave:'Brave', opera:'Opera', vivaldi:'Vivaldi', edge:'Edge', firefox:'Firefox', safari:'Safari' };
