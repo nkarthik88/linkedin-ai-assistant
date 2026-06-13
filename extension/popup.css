@@ -21,8 +21,8 @@
   --success: #059669;
   --radius: 10px;
   --radius-sm: 8px;
-  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
 }
 
 body {
@@ -201,7 +201,7 @@ body.side-panel .option-text {
 .header {
   background: var(--linkedin-blue);
   color: var(--white);
-  padding: 12px 16px;
+  padding: 14px 18px;
 }
 
 .header-inner {
@@ -252,7 +252,7 @@ body.side-panel .option-text {
 .account-bar {
   background: var(--white);
   border-bottom: 1px solid var(--border);
-  padding: 10px 16px;
+  padding: 10px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -339,7 +339,7 @@ body.side-panel .option-text {
 
 /* ── Main ── */
 .main {
-  padding: 12px 12px 14px;
+  padding: 14px 14px 16px;
   flex: 1;
   background: #f7f7f8;
 }
@@ -347,8 +347,8 @@ body.side-panel .option-text {
 /* Feature/form views get white bg */
 .view:not(#view-home) {
   background: #ffffff;
-  margin: -12px -12px -14px;
-  padding: 12px 12px 14px;
+  margin: -14px -14px -16px;
+  padding: 14px 14px 16px;
 }
 
 .view {
@@ -380,19 +380,19 @@ body.side-panel .option-text {
 .home-card {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   background: #ffffff;
-  border: 1.5px solid #ececec !important;
+  border: 1px solid #E5E7EB !important;
   border-radius: 14px !important;
-  padding: 13px 14px !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  padding: 15px 16px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04) !important;
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s !important;
 }
 
 .home-card:hover {
   border-color: var(--linkedin-blue) !important;
-  box-shadow: 0 4px 14px rgba(10, 102, 194, 0.13) !important;
-  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 16px rgba(10, 102, 194, 0.14) !important;
+  transform: translateY(-2px) !important;
 }
 
 .home-card:active {
@@ -431,14 +431,15 @@ body.side-panel .option-text {
 
 .hc-title {
   font-size: 13px;
-  font-weight: 700;
-  color: #1a1a1b;
+  font-weight: 600;
+  color: var(--text-primary);
   margin-bottom: 2px;
 }
 
 .hc-desc {
   font-size: 11px;
-  color: #999;
+  font-weight: 400;
+  color: var(--text-secondary);
   line-height: 1.4;
 }
 
@@ -541,14 +542,14 @@ body.side-panel .option-text {
 .card {
   background: var(--white);
   border-radius: 0;
-  padding: 16px 16px 20px;
+  padding: 18px 18px 23px;
   border: none;
   box-shadow: none;
 }
 
 .form-title {
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 4px;
   letter-spacing: -0.01em;
@@ -556,7 +557,8 @@ body.side-panel .option-text {
 
 .form-hint {
   font-size: 12px;
-  color: var(--text-muted);
+  font-weight: 400;
+  color: var(--text-secondary);
   margin-bottom: 16px;
   line-height: 1.5;
 }
@@ -616,7 +618,7 @@ input[type="url"] {
   border: none;
   border-radius: 10px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
   letter-spacing: 0.01em;
   transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
@@ -687,11 +689,11 @@ input[type="url"] {
 
 .option-card {
   background: var(--white);
-  border: 1px solid var(--border);
+  border: 1px solid #E5E7EB;
   border-radius: var(--radius);
-  padding: 14px;
-  margin-bottom: 10px;
-  box-shadow: var(--shadow);
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
 }
 
 .option-card .option-num {
@@ -990,7 +992,7 @@ input[type="url"] {
 
 /* ── Account page ── */
 .account-card {
-  padding: 16px;
+  padding: 18px;
 }
 
 .account-header-row {
@@ -1257,10 +1259,10 @@ input[type="url"] {
 .upgrade-prompt-card {
   background: var(--white);
   border-radius: var(--radius);
-  padding: 20px 16px;
+  padding: 23px 18px;
   text-align: center;
-  box-shadow: var(--shadow);
-  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  border: 1px solid #E5E7EB;
 }
 
 .upgrade-prompt-icon {
@@ -1491,11 +1493,11 @@ input[type="url"] {
 
 .lead-card {
   background: var(--white);
-  border: 1px solid var(--border);
+  border: 1px solid #E5E7EB;
   border-radius: var(--radius);
-  padding: 12px;
-  margin-bottom: 10px;
-  box-shadow: var(--shadow);
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
 }
 
 .lead-card-head {
