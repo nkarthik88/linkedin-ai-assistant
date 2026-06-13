@@ -968,8 +968,9 @@
       .browser-icon-wrap { width:48px; height:48px; border-radius:10px; }
       .browser-icon-wrap svg { width:30px; height:30px; }
       .browser-card-name { font-size:13px; }
-      .browser-card-sub { font-size:10px; }
       .browser-card-cta { font-size:11px; }
+      /* Hide sub-text in live cards — too long for 150px columns */
+      .browser-card.live .browser-card-sub { display:none; }
 
       /* Coming soon: switch from 3-col cards to horizontal rows */
       .browser-grid-soon {
