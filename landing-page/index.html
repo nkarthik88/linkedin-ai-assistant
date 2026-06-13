@@ -877,12 +877,34 @@
     }
     .preview-install:hover { transform:translateY(-1px); box-shadow:0 4px 16px rgba(99,102,241,.4); }
 
-    /* ── Hero browsers line ─────────────────────────────────── */
-    .hero-browsers {
+    /* ── Hero browser pills ─────────────────────────────────── */
+    .hero-browsers-row {
       display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap;
-      font-size:13px; color:var(--gray-500); margin:0 0 4px; animation:fadeUp .7s ease .35s both;
+      margin:0 0 6px; animation:fadeUp .7s ease .35s both;
     }
-    .hero-browsers strong { color:var(--gray-700); }
+    .hb-label { font-size:12px; color:var(--gray-400); font-weight:500; }
+    .hb-pill {
+      display:inline-flex; align-items:center; gap:5px;
+      padding:5px 10px 5px 6px; border-radius:99px;
+      border:1.5px solid #e5e7eb; background:#fff;
+      font-size:12px; font-weight:600; color:var(--gray-600);
+      text-decoration:none; cursor:pointer;
+      transition:border-color .2s, box-shadow .2s, transform .15s;
+    }
+    .hb-pill:hover { border-color:#6366f1; color:#4f46e5; transform:translateY(-1px); box-shadow:0 3px 12px rgba(99,102,241,.15); }
+    .hb-pill.hb-active {
+      border-color:#22c55e; background:#f0fdf4; color:#15803d;
+      box-shadow:0 0 0 3px rgba(34,197,94,.15);
+      animation:hbPulse 2s ease infinite;
+    }
+    @keyframes hbPulse {
+      0%,100%{ box-shadow:0 0 0 3px rgba(34,197,94,.15); }
+      50%{ box-shadow:0 0 0 6px rgba(34,197,94,.06); }
+    }
+    .hb-detected {
+      font-size:12px; color:#15803d; font-weight:600;
+      margin:0 0 4px; animation:fadeUp .4s ease both;
+    }
 
     /* ── Browser Support Cards ──────────────────────────────── */
     .browser-grid-live {
@@ -1514,13 +1536,33 @@
         </a>
       </div>
 
-      <p class="hero-browsers">
-        <svg width="16" height="16" viewBox="0 0 28 28" fill="none" style="display:inline-block;vertical-align:middle;margin-right:2px"><circle cx="14" cy="14" r="14" fill="#fff"/><circle cx="14" cy="14" r="6.5" fill="#fff" stroke="#e5e7eb" stroke-width="1"/><path d="M14 7.5h9.5A12.5 12.5 0 0114 1.5z" fill="#EA4335"/><path d="M23.5 7.5A12.5 12.5 0 014.5 20.5L9.5 14z" fill="#FBBC05"/><path d="M4.5 20.5A12.5 12.5 0 0114 1.5v6z" fill="#34A853"/><path d="M14 7.5A6.5 6.5 0 1114 20.5z" fill="#4285F4"/><circle cx="14" cy="14" r="4" fill="#fff"/></svg>
-        <svg width="16" height="16" viewBox="0 0 1024 1024" style="display:inline-block;vertical-align:middle;margin-right:2px"><circle cx="512" cy="512" r="512" fill="#FB542B"/><path d="M512 176c-185.2 0-336 150.8-336 336 0 97.2 41.3 184.8 107.5 247l228.5-228.5-228.5-228.5C349.3 239.3 427.2 208 512 208c165.7 0 304 138.3 304 304 0 165.7-138.3 304-304 304-84.8 0-162.7-31.3-221.5-82.5l-47 47C304.8 839.7 404 880 512 880c185.2 0 336-150.8 336-336S697.2 176 512 176z" fill="#fff" opacity=".9"/></svg>
-        <svg width="16" height="16" viewBox="0 0 24 24" style="display:inline-block;vertical-align:middle;margin-right:2px"><path d="M0 0h24v24H0z" fill="#FF1B2D"/><path d="M16.255 3H24L13.813 13.187 24 21H16.36L12 15.494 7.64 21H0l10.187-7.813L0 3h7.64L12 8.506z" fill="#fff"/></svg>
-        <svg width="16" height="16" viewBox="0 0 32 32" style="display:inline-block;vertical-align:middle;margin-right:6px"><rect width="32" height="32" rx="6" fill="#ef3939"/><path d="M22 10h-5l-1 3h4l-2 6h-3l-1 3h8l1-3h-4l2-6h4z" fill="#fff"/><path d="M8 10l-2 12h5l2-12H8z" fill="#fff"/></svg>
-        Works on <strong>Chrome, Brave, Opera &amp; Vivaldi</strong>
-      </p>
+      <!-- Browser icon pills — JS detects user browser and highlights + links it -->
+      <div class="hero-browsers-row" id="heroBrowsers">
+        <span class="hb-label">Works on</span>
+
+        <a class="hb-pill" data-browser="chrome" href="https://chrome.google.com/webstore/detail/propostly/hggehcjcbnfpdglbildpaiidhigfcnbb" target="_blank" rel="noopener" title="Install on Chrome">
+          <svg width="18" height="18" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="14" r="14" fill="#fff"/><circle cx="14" cy="14" r="6.5" fill="#fff" stroke="#e5e7eb" stroke-width="1"/><path d="M14 7.5h9.5A12.5 12.5 0 0114 1.5z" fill="#EA4335"/><path d="M23.5 7.5A12.5 12.5 0 014.5 20.5L9.5 14z" fill="#FBBC05"/><path d="M4.5 20.5A12.5 12.5 0 0114 1.5v6z" fill="#34A853"/><path d="M14 7.5A6.5 6.5 0 1114 20.5z" fill="#4285F4"/><circle cx="14" cy="14" r="4" fill="#fff"/></svg>
+          <span>Chrome</span>
+        </a>
+
+        <a class="hb-pill" data-browser="brave" href="https://chrome.google.com/webstore/detail/propostly/hggehcjcbnfpdglbildpaiidhigfcnbb" target="_blank" rel="noopener" title="Install on Brave">
+          <svg width="18" height="18" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256" fill="#FB542B"/><path d="M390 160c-10-22-30-36-52-36H174c-22 0-42 14-52 36l-38 96c-6 16-4 34 6 48l120 152c12 16 34 16 46 0l120-152c10-14 12-32 6-48z" fill="#fff" opacity=".9"/><path d="M256 120c-75 0-136 61-136 136s61 136 136 136 136-61 136-136S331 120 256 120zm0 220c-46 0-84-38-84-84s38-84 84-84 84 38 84 84-38 84-84 84z" fill="#FB542B"/></svg>
+          <span>Brave</span>
+        </a>
+
+        <a class="hb-pill" data-browser="opera" href="https://chrome.google.com/webstore/detail/propostly/hggehcjcbnfpdglbildpaiidhigfcnbb" target="_blank" rel="noopener" title="Install on Opera">
+          <svg width="18" height="18" viewBox="0 0 24 24"><rect width="24" height="24" rx="12" fill="#FF1B2D"/><path d="M16.255 3H24L13.813 13.187 24 21H16.36L12 15.494 7.64 21H0l10.187-7.813L0 3h7.64L12 8.506z" fill="#fff"/></svg>
+          <span>Opera</span>
+        </a>
+
+        <a class="hb-pill" data-browser="vivaldi" href="https://chrome.google.com/webstore/detail/propostly/hggehcjcbnfpdglbildpaiidhigfcnbb" target="_blank" rel="noopener" title="Install on Vivaldi">
+          <svg width="18" height="18" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#ef3939"/><path d="M22 10h-5l-1 3h4l-2 6h-3l-1 3h8l1-3h-4l2-6h4z" fill="#fff"/><path d="M8 10l-2 12h5l2-12H8z" fill="#fff"/></svg>
+          <span>Vivaldi</span>
+        </a>
+
+      </div>
+      <!-- Detected browser callout (shown by JS) -->
+      <p class="hb-detected" id="hbDetected" style="display:none;"></p>
       <p class="hero-note">Free plan available · No credit card required · Cancel anytime</p>
       <div class="hero-trust">
         <span class="trust-item">
@@ -2271,6 +2313,33 @@
         if (!isOpen) { item.classList.add('open'); this.setAttribute('aria-expanded','true'); }
       });
     });
+
+    // ── Hero browser detection: highlight user's browser pill ──
+    (function() {
+      var ua = navigator.userAgent.toLowerCase();
+      var detected = 'chrome'; // default
+      if (/opr\/|opera\//.test(ua)) detected = 'opera';
+      else if (/vivaldi/.test(ua)) detected = 'vivaldi';
+      else if (/brave/.test(ua) || (navigator.brave && navigator.brave.isBrave)) detected = 'brave';
+      else if (/edg\//.test(ua)) detected = 'edge';
+      else if (/firefox/.test(ua)) detected = 'firefox';
+      else if (/safari/.test(ua) && !/chrome/.test(ua)) detected = 'safari';
+
+      var labels = { chrome:'Chrome', brave:'Brave', opera:'Opera', vivaldi:'Vivaldi', edge:'Edge', firefox:'Firefox', safari:'Safari' };
+      var supported = ['chrome','brave','opera','vivaldi'];
+      var pill = document.querySelector('.hb-pill[data-browser="' + detected + '"]');
+      var callout = document.getElementById('hbDetected');
+
+      if (pill && supported.indexOf(detected) !== -1) {
+        pill.classList.add('hb-active');
+        callout.textContent = '✅ You\'re on ' + labels[detected] + ' — click to install!';
+        callout.style.display = 'block';
+      } else if (callout && supported.indexOf(detected) === -1) {
+        callout.textContent = labels[detected] + ' support coming soon — install on Chrome for now!';
+        callout.style.color = '#9ca3af';
+        callout.style.display = 'block';
+      }
+    })();
 
     // ── Header shadow on scroll ────────────────────────────────
     window.addEventListener('scroll', function() {
