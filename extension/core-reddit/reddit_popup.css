@@ -2,6 +2,47 @@
    ProPostly — Reddit Panel Styles
    ═══════════════════════════════════════════════ */
 
+/* ═══════════════════════════════════════════════
+   Header — Reddit mode (white, clean)
+   ═══════════════════════════════════════════════ */
+
+.header.header-reddit {
+  background: #ffffff;
+  color: #1a1a1b;
+  border-bottom: 2px solid #FF4500;
+}
+
+.header.header-reddit h1 {
+  color: #1a1a1b;
+}
+
+.header.header-reddit .header-user-name {
+  color: #555;
+  opacity: 1;
+}
+
+.header.header-reddit .account-tab-btn {
+  color: #555;
+  background: #f5f5f5;
+}
+
+.header.header-reddit .account-tab-btn:hover {
+  background: #ffe8df;
+  color: #FF4500;
+}
+
+/* Finder → Post Generator confirmation banner */
+.reddit-finder-msg {
+  background: #e6f9f0;
+  border: 1.5px solid #1a9c5a;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a6b40;
+  margin-bottom: 10px;
+}
+
 /* Platform Switcher */
 .platform-switcher {
   display: flex;

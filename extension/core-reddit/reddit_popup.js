@@ -7,7 +7,8 @@ const REDDIT_API_BASE = "https://api.propostly.com";
 const REDDIT_FREE_LIMIT = 5;
 
 /* ─── In-memory state ──────────────────────────────── */
-let _communityAnalysis = null; // stored after Scan, used by Generate
+let _communityAnalysis   = null; // stored after Scan, used by Generate
+let _fromSubredditFinder = false; // true when Post Generator launched from Finder
 
 /* ─── Helpers ──────────────────────────────────────── */
 
@@ -299,15 +300,30 @@ function renderSubreddits(subs, niche) {
       <div class="sub-click-hint">Click to use in Post Generator →</div>
     `;
     card.addEventListener("click", () => {
-      // Pre-fill Quick tab subreddit
+      // Fill subreddit in Quick tab
       const subInput = document.getElementById("reddit-subreddit");
       if (subInput) subInput.value = sub.name;
+
       // Switch to Quick tab
       document.querySelectorAll(".reddit-pg-tab").forEach((t) => t.classList.remove("active"));
       document.querySelectorAll(".reddit-pg-panel").forEach((p) => p.classList.remove("active"));
       document.querySelector('[data-pg-tab="quick"]')?.classList.add("active");
       document.getElementById("reddit-pg-quick")?.classList.add("active");
+
+      // Show green confirmation banner
+      const msg = document.getElementById("reddit-pg-finder-msg");
+      if (msg) {
+        msg.textContent = `✅ ${sub.name} selected! Just type your topic below.`;
+        msg.hidden = false;
+      }
+
+      // Track that we came from Subreddit Finder
+      _fromSubredditFinder = true;
+
       redditShowView("reddit-view-post_generator");
+
+      // Focus topic field after render
+      setTimeout(() => document.getElementById("reddit-topic")?.focus(), 80);
     });
     container.appendChild(card);
   });
@@ -660,16 +676,19 @@ function initPlatformSwitcher() {
       document.querySelectorAll(".platform-tab").forEach((t) => t.classList.remove("active"));
       tab.classList.add("active");
       const subheading = document.getElementById("header-user-name");
+      const header = document.querySelector(".header");
       if (tab.dataset.platform === "reddit") {
         linkedinPanel.hidden = true;
         if (accountBar) accountBar.hidden = true;
         redditPanel.hidden = false;
         if (subheading) subheading.textContent = "AI-powered content for Reddit";
+        if (header) header.classList.add("header-reddit");
       } else {
         linkedinPanel.hidden = false;
         if (accountBar) accountBar.hidden = false;
         redditPanel.hidden = true;
         if (subheading) subheading.textContent = "AI-powered content for your LinkedIn";
+        if (header) header.classList.remove("header-reddit");
       }
     });
   });
@@ -728,12 +747,35 @@ function initPromoToggle() {
 function initRedditFeatureNav() {
   document.querySelectorAll(".reddit-feature-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
+      // Reset finder flow when entering a feature fresh from home
+      if (btn.dataset.redditFeature === "post_generator") {
+        _fromSubredditFinder = false;
+        const msg = document.getElementById("reddit-pg-finder-msg");
+        if (msg) msg.hidden = true;
+      }
       redditShowView(`reddit-view-${btn.dataset.redditFeature}`);
     });
   });
 
-  // All back buttons (feature views + results) → always go to Reddit home grid
-  document.querySelectorAll("[data-reddit-back]").forEach((btn) => {
+  // Post Generator back button: go to Subreddit Finder if that's where we came from
+  const pgBackBtn = document.getElementById("reddit-pg-back-btn");
+  if (pgBackBtn) {
+    pgBackBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (_fromSubredditFinder) {
+        _fromSubredditFinder = false;
+        const msg = document.getElementById("reddit-pg-finder-msg");
+        if (msg) msg.hidden = true;
+        redditShowView("reddit-view-subreddit_finder");
+      } else {
+        redditShowView("reddit-view-home");
+      }
+    });
+  }
+
+  // All other back buttons → always go to Reddit home grid
+  document.querySelectorAll("[data-reddit-back]:not(#reddit-pg-back-btn)").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();

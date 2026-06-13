@@ -452,7 +452,8 @@
 
         <!-- Feature 1: Post Generator (3 options) -->
         <div id="reddit-view-post_generator" class="reddit-view">
-          <button class="back-btn" data-reddit-back>← Back</button>
+          <button class="back-btn" id="reddit-pg-back-btn" data-reddit-back>← Back</button>
+          <div id="reddit-pg-finder-msg" class="reddit-finder-msg" hidden></div>
           <div class="card">
             <h2 class="form-title">✍️ Reddit Post Generator</h2>
 
@@ -572,7 +573,7 @@
 
         <!-- Reddit Results -->
         <div id="reddit-view-results" class="reddit-view">
-          <button class="back-btn" data-reddit-back>← New request</button>
+          <button class="back-btn" data-reddit-back>← Back</button>
           <p class="results-header" id="reddit-results-title">Your options</p>
           <div id="reddit-results-container"></div>
         </div>
