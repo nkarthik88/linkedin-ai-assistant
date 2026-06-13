@@ -1446,7 +1446,7 @@
         <a href="#pricing">Pricing</a>
         <a href="#faq">FAQ</a>
       </nav>
-      <a href="https://chrome.google.com/webstore/detail/propostly/hggehcjcbnfpdglbildpaiidhigfcnbb" target="_blank" rel="noopener" class="btn-primary header-cta" onclick="gtag('event','install_click',{'event_category':'engagement','event_label':'header_button'})">
+      <a href="https://chrome.google.com/webstore/detail/propostly/hggehcjcbnfpdglbildpaiidhigfcnbb" target="_blank" rel="noopener" class="btn-primary header-cta" id="navCta" onclick="gtag('event','install_click',{'event_category':'engagement','event_label':'header_button'})">
         Install Free on Chrome
       </a>
       <button class="hamburger" id="hamburger" aria-label="Menu">
@@ -1461,7 +1461,7 @@
     <a href="#features">Features</a>
     <a href="#pricing">Pricing</a>
     <a href="#faq">FAQ</a>
-    <a href="https://chrome.google.com/webstore/detail/propostly/hggehcjcbnfpdglbildpaiidhigfcnbb" target="_blank" rel="noopener" class="mob-cta" onclick="gtag('event','install_click',{'event_category':'engagement','event_label':'mobile_nav'})">Install Free on Chrome →</a>
+    <a href="https://chrome.google.com/webstore/detail/propostly/hggehcjcbnfpdglbildpaiidhigfcnbb" target="_blank" rel="noopener" class="mob-cta" id="mobNavCta" onclick="gtag('event','install_click',{'event_category':'engagement','event_label':'mobile_nav'})">Install Free on Chrome →</a>
   </nav>
 
   <main>
@@ -2372,6 +2372,10 @@
           cta.textContent = 'Install Free on ' + labels[detected];
           if (svg) cta.appendChild(svg);
         }
+        var navCta = document.getElementById('navCta');
+        if (navCta) navCta.textContent = 'Install Free on ' + labels[detected];
+        var mobNavCta = document.getElementById('mobNavCta');
+        if (mobNavCta) mobNavCta.textContent = 'Install Free on ' + labels[detected] + ' →';
       }
     })();
 
