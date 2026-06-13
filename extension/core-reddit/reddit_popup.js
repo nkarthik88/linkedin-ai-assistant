@@ -745,7 +745,7 @@ function initPromoToggle() {
 /* ─── Feature nav ──────────────────────────────────── */
 
 function initRedditFeatureNav() {
-  document.querySelectorAll(".reddit-feature-btn").forEach((btn) => {
+  document.querySelectorAll("[data-reddit-feature]").forEach((btn) => {
     btn.addEventListener("click", () => {
       // Reset finder flow when entering a feature fresh from home
       if (btn.dataset.redditFeature === "post_generator") {
