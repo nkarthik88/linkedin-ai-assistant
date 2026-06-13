@@ -14,6 +14,10 @@ async function ensureUserId() {
 
 chrome.runtime.onInstalled.addListener(() => {
   ensureUserId();
-  // Popup (popup.html) is the default UI — side panel available but not auto-opened
-  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false }).catch(() => {});
+  // Side panel opens on toolbar click — stays open while browsing
+  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+});
+
+chrome.action.onClicked.addListener((tab) => {
+  chrome.sidePanel.open({ tabId: tab.id }).catch(() => {});
 });

@@ -3,10 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ProPostly — Side Panel</title>
+    <title>ProPostly</title>
     <link rel="stylesheet" href="popup.css" />
+    <link rel="stylesheet" href="core-reddit/reddit_popup.css" />
   </head>
-  <body class="side-panel">
+  <body>
     <!-- Onboarding overlay (shown first time only, cannot be skipped) -->
     <div id="onboarding" class="onboarding" hidden>
       <div class="onboarding-card">
@@ -31,11 +32,17 @@
     <div id="toast" class="toast" hidden></div>
 
     <div class="app">
+      <!-- Platform Switcher -->
+      <div class="platform-switcher">
+        <button id="platform-linkedin" class="platform-tab active" data-platform="linkedin">💼 LinkedIn</button>
+        <button id="platform-reddit" class="platform-tab" data-platform="reddit">🟠 Reddit</button>
+      </div>
+
       <header class="header">
         <div class="header-inner">
           <div>
             <h1>ProPostly</h1>
-            <p>AI-powered content for your LinkedIn</p>
+            <p id="header-user-name" class="header-user-name">AI-powered content for your LinkedIn</p>
           </div>
           <button id="account-tab-btn" class="account-tab-btn" title="Account" aria-label="Account">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -52,7 +59,7 @@
           <span id="usage-label" class="usage-label">—</span>
         </div>
         <button type="button" id="upgrade-btn" class="upgrade-btn" hidden>
-          Unlock Unlimited — $9/month
+          Unlock Unlimited — ₹862/month
         </button>
         <p id="upgrade-error" class="upgrade-error" hidden></p>
       </section>
@@ -111,7 +118,8 @@
                 </svg>
               </div>
               <div>
-                <div id="account-email" class="account-email">—</div>
+                <div id="account-name" class="account-name">—</div>
+                <div id="account-email" class="account-email-locked"><span id="account-email-text">—</span> <span class="lock-icon" title="Email locked after first setup">🔒</span></div>
                 <span id="account-tier-badge" class="tier-badge">Free Tier</span>
               </div>
             </div>
@@ -125,8 +133,6 @@
                 <div id="account-usage-bar" class="usage-bar-fill" style="width:0%"></div>
               </div>
               <p id="account-usage-note" class="usage-note"></p>
-
-              <!-- Per-feature breakdown (free users only) -->
               <div id="feature-usage-breakdown" class="feature-usage-breakdown" hidden>
                 <div class="feature-usage-row" data-feature="generate_post">
                   <span class="fur-label">✍️ Generate Post</span>
@@ -164,12 +170,12 @@
 
             <div id="account-free-section" class="account-free-section" hidden>
               <button id="account-upgrade-btn" class="upgrade-btn" style="margin-top:8px;">
-                Upgrade to Pro — $9/month
+                Upgrade to Pro — ₹862/month
               </button>
             </div>
 
-            <div class="account-email-edit">
-              <label for="account-email-input" style="margin-top:16px;">Email (for receipts &amp; alerts)</label>
+            <div id="account-email-unset" class="account-email-unset" hidden>
+              <p class="email-unset-hint">Add your email to receive receipts and upgrade alerts.</p>
               <div class="email-edit-row">
                 <input type="email" id="account-email-input" placeholder="your@email.com" />
                 <button id="account-email-save" class="email-save-btn">Save</button>
@@ -353,7 +359,7 @@
             <h2 id="lead-limit-title">Lead search limit reached</h2>
             <p id="lead-limit-msg"></p>
             <p id="lead-limit-reset" class="lead-limit-reset" hidden></p>
-            <button id="lead-limit-upgrade" class="submit-btn upgrade-prompt-btn-main" hidden>Upgrade to Pro — $9/month</button>
+            <button id="lead-limit-upgrade" class="submit-btn upgrade-prompt-btn-main" hidden>Upgrade to Pro — ₹862/month</button>
             <button id="lead-limit-back" class="back-link-btn">← Back to home</button>
             <p id="lead-limit-error" class="upgrade-error" hidden></p>
           </div>
@@ -384,7 +390,7 @@
             <ul class="upgrade-perks">
               <li>✓ Unlimited everything</li>
               <li>✓ 50 lead searches/month</li>
-              <li>✓ Just $9/month</li>
+              <li>✓ Just ₹862/month ($9)</li>
               <li>✓ Cancel anytime</li>
             </ul>
             <button id="upgrade-prompt-btn" class="submit-btn upgrade-prompt-btn-main">Upgrade to Pro Now →</button>
@@ -393,7 +399,128 @@
           </div>
         </div>
       </main>
+
+      <!-- ═══════════════ REDDIT PANEL ═══════════════ -->
+      <main class="main reddit-main" id="reddit-panel" hidden>
+
+        <!-- Reddit Home -->
+        <div id="reddit-view-home" class="reddit-view active">
+          <div class="feature-grid">
+            <button class="feature-btn reddit-feature-btn" data-reddit-feature="post_generator">
+              <span class="icon">✍️</span>
+              <span class="label">Generate Post</span>
+              <span class="desc">3 posts + auto ban check</span>
+            </button>
+            <button class="feature-btn reddit-feature-btn" data-reddit-feature="subreddit_finder">
+              <span class="icon">🔍</span>
+              <span class="label">Find Subreddits</span>
+              <span class="desc">Where to post your content</span>
+            </button>
+            <button class="feature-btn reddit-feature-btn" data-reddit-feature="comment_reply">
+              <span class="icon">↩️</span>
+              <span class="label">Reply to Comment</span>
+              <span class="desc">Karma-building replies</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Reddit Loading -->
+        <div id="reddit-view-loading" class="reddit-view">
+          <div class="loading">
+            <div class="spinner reddit-spinner"></div>
+            <p id="reddit-loading-text">Thinking…</p>
+          </div>
+        </div>
+
+        <!-- Reddit Upgrade Prompt -->
+        <div id="reddit-view-upgrade" class="reddit-view">
+          <div class="upgrade-prompt-card">
+            <div class="upgrade-prompt-icon">🟠</div>
+            <h2>Reddit limit reached!</h2>
+            <p id="reddit-upgrade-desc">You've used all 5 free Reddit uses this month.</p>
+            <ul class="upgrade-perks">
+              <li>✓ Reddit Pro: ₹862/month</li>
+              <li>✓ Bundle (LinkedIn + Reddit): ₹1,400/month</li>
+              <li>✓ Unlimited Reddit features</li>
+              <li>✓ Cancel anytime</li>
+            </ul>
+            <button id="reddit-upgrade-btn" class="submit-btn reddit-upgrade-btn-main">Upgrade Reddit Pro →</button>
+            <button id="reddit-upgrade-back" class="back-link-btn">← Back to home</button>
+            <p id="reddit-upgrade-error" class="upgrade-error" hidden></p>
+          </div>
+        </div>
+
+        <!-- Feature 1: Post Generator -->
+        <div id="reddit-view-post_generator" class="reddit-view">
+          <button class="back-btn" data-reddit-back>← Back</button>
+          <div class="card">
+            <h2 class="form-title">✍️ Reddit Post Generator</h2>
+            <p class="form-hint">Generate 3 Reddit post options with title, body, and auto anti-ban scoring.</p>
+            <form id="reddit-form-post_generator">
+              <label for="reddit-topic">Topic or idea</label>
+              <textarea id="reddit-topic" name="topic" placeholder="e.g. I built a tool that saved my startup 10 hours a week..." required rows="3"></textarea>
+              <label for="reddit-subreddit">Target subreddit</label>
+              <input type="text" id="reddit-subreddit" name="subreddit" placeholder="e.g. r/entrepreneur, r/startups" />
+              <label>Tone</label>
+              <div class="reddit-tone-chips" id="reddit-tone-chips">
+                <button type="button" class="reddit-tone-chip active" data-tone="Story">📖 Story</button>
+                <button type="button" class="reddit-tone-chip" data-tone="Question">❓ Question</button>
+                <button type="button" class="reddit-tone-chip" data-tone="Advice">💡 Advice</button>
+                <button type="button" class="reddit-tone-chip" data-tone="Controversial">🔥 Controversial</button>
+                <button type="button" class="reddit-tone-chip" data-tone="Humble">🙏 Humble</button>
+              </div>
+              <button type="submit" class="submit-btn reddit-submit-btn">⚡ Generate 3 Posts</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Feature 2: Subreddit Finder -->
+        <div id="reddit-view-subreddit_finder" class="reddit-view">
+          <button class="back-btn" data-reddit-back>← Back</button>
+          <div class="card">
+            <h2 class="form-title">🔍 Subreddit Finder</h2>
+            <p class="form-hint">Describe your niche — AI suggests 10–15 subreddits with promo rules and best post times.</p>
+            <form id="reddit-form-subreddit_finder">
+              <label for="reddit-niche">Your niche or product</label>
+              <textarea id="reddit-niche" name="niche" placeholder="e.g. I run a B2B SaaS for freelancers to automate invoicing..." required rows="3"></textarea>
+              <button type="submit" class="submit-btn reddit-submit-btn">🔍 Find Subreddits</button>
+            </form>
+            <div id="reddit-sub-history" class="reddit-sub-history" hidden>
+              <div class="lead-section-label">🕐 Recent Searches</div>
+              <div id="reddit-sub-history-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feature 3: Comment Reply -->
+        <div id="reddit-view-comment_reply" class="reddit-view">
+          <button class="back-btn" data-reddit-back>← Back</button>
+          <div class="card">
+            <h2 class="form-title">↩️ Reddit Comment Reply</h2>
+            <p class="form-hint">Read a comment from the Reddit page or paste it below. Get 3 karma-building replies.</p>
+            <button type="button" id="reddit-read-page-btn" class="read-from-page-btn">📋 Read from Reddit</button>
+            <p id="reddit-read-status" class="read-from-page-status" hidden></p>
+            <form id="reddit-form-comment_reply">
+              <label for="reddit-comment-text">Comment to reply to</label>
+              <textarea id="reddit-comment-text" name="commentText" placeholder="Paste the Reddit comment here..." required rows="4"></textarea>
+              <label for="reddit-post-context">Post context (optional)</label>
+              <textarea id="reddit-post-context" name="postContext" placeholder="What is the post about?" rows="2"></textarea>
+              <button type="submit" class="submit-btn reddit-submit-btn">⚡ Generate 3 Replies</button>
+            </form>
+          </div>
+        </div>
+
+
+        <!-- Reddit Results -->
+        <div id="reddit-view-results" class="reddit-view">
+          <button class="back-btn" data-reddit-back>← New request</button>
+          <p class="results-header" id="reddit-results-title">Your options</p>
+          <div id="reddit-results-container"></div>
+        </div>
+
+      </main>
     </div>
     <script src="popup.js"></script>
+    <script src="core-reddit/reddit_popup.js"></script>
   </body>
 </html>
