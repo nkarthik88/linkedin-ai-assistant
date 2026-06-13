@@ -922,10 +922,10 @@
 
     /* ── Browser Support Cards ──────────────────────────────── */
     .browser-grid-live {
-      display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:880px; margin:0 auto 12px;
+      display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; max-width:880px; margin:0 auto 12px;
     }
     .browser-grid-soon {
-      display:grid; grid-template-columns:repeat(3,1fr); gap:16px; max-width:660px; margin:0 auto 40px;
+      display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; max-width:660px; margin:0 auto 40px;
     }
     .browser-card {
       position:relative; border-radius:16px; padding:24px 16px 20px;
@@ -959,17 +959,18 @@
     .coming-cta { color:#9ca3af; }
     .browser-support-row { display:flex; justify-content:center; margin-top:12px; }
     @media(max-width:768px){
-      .browser-grid-live { grid-template-columns:repeat(2,1fr); max-width:440px; margin:0 auto 12px; }
-      .browser-grid-soon { grid-template-columns:repeat(3,1fr); max-width:440px; }
+      .browser-grid-live { grid-template-columns:repeat(2,minmax(0,1fr)); max-width:440px; margin:0 auto 12px; }
+      .browser-grid-soon { grid-template-columns:repeat(3,minmax(0,1fr)); max-width:440px; }
     }
     @media(max-width:480px){
-      .browser-grid-live { grid-template-columns:repeat(2,1fr); gap:10px; max-width:360px; }
-      .browser-grid-soon { grid-template-columns:repeat(3,1fr); gap:8px; max-width:360px; }
-      .browser-card { padding:18px 10px 14px; }
-      .browser-icon-wrap { width:52px; height:52px; border-radius:12px; }
-      .browser-icon-wrap svg { width:32px; height:32px; }
+      .browser-grid-live { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; max-width:100%; }
+      .browser-grid-soon { grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; max-width:100%; }
+      .browser-card { padding:16px 8px 12px; }
+      .browser-icon-wrap { width:48px; height:48px; border-radius:10px; }
+      .browser-icon-wrap svg { width:30px; height:30px; }
       .browser-card-name { font-size:13px; }
       .browser-card-sub { font-size:10px; }
+      .browser-card-cta { font-size:11px; }
     }
 
     /* ── FAQ ───────────────────────────────────────────────── */
