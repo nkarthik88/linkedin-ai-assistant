@@ -10,6 +10,32 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 
 const HUMAN_REDDIT_RULES = `Write using casual conversational Reddit language. Use short paragraphs. Natural friendly tone. Minor imperfections ok. Variable sentence lengths. NO marketing jargon. NO promotional buzzwords. NO polished sales copy. Add genuine value first.`;
 
+const HUMAN_WRITING_RULES = `
+HUMAN WRITING RULES — apply to every post without exception:
+1. Vary sentence length aggressively. Short punch. Then a longer sentence with real detail and context. Short again.
+2. Use emotional, subjective words: annoying, honestly, weird, refreshing, surprisingly, genuinely, frustrated, relieved, confused
+3. Add natural self-corrections mid-post: "Actually, scratch that — the real issue was..." or "Wait, I should back up here..."
+4. State opinions directly: "Here's the thing, it doesn't work" — NOT "I think it might not work"
+5. Include imperfect anecdotes: "spent 3 hours on this and honestly results were mediocre but here's what I learned anyway"
+6. Use commas, not em-dashes — em-dashes are a known AI writing tell
+7. Keep paragraphs to 1-3 sentences maximum
+8. Peer voice only: sharing experience as an equal, never expert presenting findings to an audience`;
+
+const BANNED_WORDS = `
+BANNED WORDS — never use these, replace with plain natural language:
+game-changer, revolutionary, unleash, leverage, synergy, guaranteed, life-changing, secrets,
+Click here, Act now, Exclusive, groundbreaking, cutting-edge, disruptive, innovative,
+Delve, landscape, pivotal, testament, Moreover, In conclusion, It is important,
+10x, supercharge, streamline, 100% free, best price, Wait until you see`;
+
+const SELF_REVIEW = `
+SELF-REVIEW PASS before finalizing — check every post:
+1. Does it sound promotional? Rewrite completely.
+2. Are there any em-dashes? Replace every one with a comma or period.
+3. Any banned words in the list above? Replace them.
+4. Does it feel like a peer sharing a real experience? If not, rewrite.
+5. Would a real Redditor actually post this? If no, rewrite.`;
+
 async function callOpenRouter(model, systemPrompt, userPrompt, jsonMode = true) {
   const body = {
     model,
@@ -66,26 +92,53 @@ router.post(
     const userId = validateUserId(req, res);
     if (!userId) return;
 
-    const { topic, subreddit, tone } = req.body;
+    const { topic, subreddit, tone, template, isPromoting, analysisContext } = req.body;
     if (!topic) return res.status(400).json({ error: "topic is required" });
 
-    const model = getModelForPlan("free"); // Upgrade path can be added later
+    const model = getModelForPlan("free");
+
+    const TEMPLATE_FORMATS = {
+      Lesson:   'FORMAT — Lesson: Start with "I spent [time] on [topic]." then contrast what you expected vs what actually happened. End with the key takeaway.',
+      Question: 'FORMAT — Question: "I\'ve been working on [topic] and genuinely confused by [specific aspect]. Has anyone found a better way?" Invite real community input.',
+      Counter:  'FORMAT — Counter: "Everyone says [common belief]. I tried the opposite for [duration]. Here\'s what actually happened." Be specific about results, not vague.',
+      Win:      'FORMAT — Win: "I finally solved [specific problem] by doing [one specific thing]. Here\'s exactly what I changed." Ground it in specifics, keep it humble.',
+      Resource: 'FORMAT — Resource: Brief intro sentence, then 3-5 numbered points about [topic] with real context for each. End with honest reflection, not a CTA.',
+    };
+
+    const templateSection = template && TEMPLATE_FORMATS[template]
+      ? `\n${TEMPLATE_FORMATS[template]}\n`
+      : '';
+
+    const promoSection = isPromoting
+      ? `\nPROMOTION FRAMING (utility-first bridge): The author is promoting something. Frame as personal story or lesson first. Mention the product/service LAST and briefly, as one natural sentence in a longer post. The post must deliver genuine value even if the reader ignores the promotion entirely. Structure: problem you faced → what you tried → what worked → (one brief mention of the tool/service as what helped). Never sound like an ad.\n`
+      : '';
+
+    const communitySection = analysisContext
+      ? `\nCOMMUNITY ANALYSIS for ${analysisContext.subreddit || subreddit}:
+What this community likes: ${(analysisContext.likes || []).join(', ')}
+What to avoid: ${(analysisContext.avoid || []).join(', ')}
+Community tone: ${analysisContext.tone || ''}
+Key rules: ${(analysisContext.rules || []).join(' • ')}
+${analysisContext.summary || ''}
+IMPORTANT: Match this community's exact writing style and preferences above all else.\n`
+      : '';
 
     const systemPrompt = `You are a Reddit ghostwriter. Generate 3 distinct Reddit post options.
-
-${HUMAN_REDDIT_RULES}
-
-Each post must have a TITLE and a BODY. After generating, also provide an anti-ban score (0-100) for each:
-- 0-30: Safe (natural, adds value, no promo feel)
-- 31-60: Risky (might get flagged)
-- 61-100: Don't post (too promotional, spammy, or AI-sounding)
-
+${communitySection}
+${HUMAN_WRITING_RULES}
+${BANNED_WORDS}
+${promoSection}${templateSection}
+Each post must have a TITLE and a BODY. Also score anti-ban risk (0-100) for each:
+- 0-30: Safe (human voice, genuine value, no promo feel)
+- 31-60: Risky (borderline promotional or AI-sounding)
+- 61-100: Do not post (promotional, spammy, or AI-generated)
+${SELF_REVIEW}
 Respond with JSON only:
 {"posts":[{"title":"...","body":"...","antiBanScore":15},{"title":"...","body":"...","antiBanScore":22},{"title":"...","body":"...","antiBanScore":35}]}`;
 
     const userPrompt = `Topic: ${topic}
 ${subreddit ? `Target subreddit: ${subreddit}` : ""}
-Tone: ${tone || "Story"}
+${tone && !template ? `Tone: ${tone}` : ""}
 
 Generate 3 Reddit posts.`;
 
@@ -98,6 +151,147 @@ Generate 3 Reddit posts.`;
     const posts = (parsed.posts || []).slice(0, 3).map((p) => ({
       title: String(p.title || "").trim(),
       body: String(p.body || "").trim(),
+      antiBanScore: Math.min(100, Math.max(0, parseInt(p.antiBanScore) || 0)),
+    }));
+
+    res.json({ posts });
+  })
+);
+
+/* ─── POST /api/reddit/analyze-community ─────────────── */
+router.post(
+  "/analyze-community",
+  asyncHandler(async (req, res) => {
+    const userId = validateUserId(req, res);
+    if (!userId) return;
+
+    const { subreddit, topPosts, rules } = req.body;
+    if (!subreddit) return res.status(400).json({ error: "subreddit is required" });
+    if (!Array.isArray(topPosts) || topPosts.length === 0) {
+      return res.status(400).json({ error: "topPosts array is required" });
+    }
+
+    const model = getModelForPlan("free");
+
+    const systemPrompt = `You are a Reddit community analyst. Analyze top posts from a subreddit and identify writing patterns that get upvotes.
+
+Respond with JSON only:
+{
+  "likes": ["3-5 specific content types or styles this community upvotes"],
+  "avoid": ["3-5 specific things that get downvoted or removed here"],
+  "tone": "one sentence describing how members actually write in this community",
+  "rules": ["up to 4 key community rules relevant to content creation"],
+  "summary": "2 sentences: how to write a post that succeeds in this specific community"
+}`;
+
+    const userPrompt = `Subreddit: ${subreddit}
+
+Top posts this month (title | upvotes):
+${topPosts.slice(0, 25).map((p) => `- "${p.title}" (${p.score} upvotes)`).join("\n")}
+
+Sidebar rules:
+${rules || "Not available"}
+
+Analyze the writing patterns, content types, and community preferences.`;
+
+    const content = await callOpenRouter(model, systemPrompt, userPrompt);
+    let parsed;
+    try { parsed = JSON.parse(content); } catch {
+      return res.status(502).json({ error: "Failed to parse AI response" });
+    }
+
+    res.json({
+      likes:   Array.isArray(parsed.likes)  ? parsed.likes.slice(0, 5)  : [],
+      avoid:   Array.isArray(parsed.avoid)  ? parsed.avoid.slice(0, 5)  : [],
+      tone:    String(parsed.tone   || "").trim(),
+      rules:   Array.isArray(parsed.rules)  ? parsed.rules.slice(0, 4)  : [],
+      summary: String(parsed.summary || "").trim(),
+    });
+  })
+);
+
+/* ─── POST /api/reddit/from-url ──────────────────────── */
+router.post(
+  "/from-url",
+  asyncHandler(async (req, res) => {
+    const userId = validateUserId(req, res);
+    if (!userId) return;
+
+    const { url, subreddit } = req.body;
+    if (!url) return res.status(400).json({ error: "url is required" });
+
+    // Validate URL
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+      if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+        return res.status(400).json({ error: "Only HTTP/HTTPS URLs are supported" });
+      }
+    } catch {
+      return res.status(400).json({ error: "Invalid URL" });
+    }
+
+    // Fetch URL content server-side
+    let urlContent = "";
+    try {
+      const response = await fetch(parsedUrl.href, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        },
+        signal: AbortSignal.timeout(10000),
+        redirect: "follow",
+      });
+      if (!response.ok) {
+        return res.status(400).json({ error: `Could not fetch URL (HTTP ${response.status})` });
+      }
+      const html = await response.text();
+      urlContent = html
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<nav[\s\S]*?<\/nav>/gi, "")
+        .replace(/<footer[\s\S]*?<\/footer>/gi, "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .substring(0, 4000);
+    } catch (err) {
+      return res.status(400).json({ error: "Could not fetch URL: " + (err.message || "timeout") });
+    }
+
+    if (!urlContent || urlContent.length < 50) {
+      return res.status(400).json({ error: "Could not extract enough content from that URL" });
+    }
+
+    const model = getModelForPlan("free");
+
+    const systemPrompt = `You are a Reddit ghostwriter. Transform website or product content into 3 authentic Reddit posts that provide genuine value.
+${HUMAN_WRITING_RULES}
+${BANNED_WORDS}
+
+CRITICAL FRAMING RULE — the post must NEVER read like an advertisement. Use exactly one of these frames:
+1. Personal experience: "I was struggling with X, tried Y, here is what happened."
+2. Lesson learned: "Spent N weeks dealing with X. Here are the things I figured out."
+3. Community question: "Working on X and ran into Y. How do others deal with this?"
+
+Structure: Problem the author faced → Journey/struggle → What they discovered → (Product or service mentioned in ONE natural sentence at the end only, as part of "what helped")
+The post must provide real value even if the reader never clicks any link.
+${subreddit ? `\nWriting for ${subreddit}. Match that community's tone and style.` : ""}
+${SELF_REVIEW}
+Respond with JSON only:
+{"posts":[{"title":"...","body":"...","antiBanScore":15},{"title":"...","body":"...","antiBanScore":22},{"title":"...","body":"...","antiBanScore":35}]}`;
+
+    const userPrompt = `Extract the core value from this content and write 3 Reddit posts:\n\n${urlContent}`;
+
+    const content = await callOpenRouter(model, systemPrompt, userPrompt);
+    let parsed;
+    try { parsed = JSON.parse(content); } catch {
+      return res.status(502).json({ error: "Failed to parse AI response" });
+    }
+
+    const posts = (parsed.posts || []).slice(0, 3).map((p) => ({
+      title: String(p.title || "").trim(),
+      body:  String(p.body  || "").trim(),
       antiBanScore: Math.min(100, Math.max(0, parseInt(p.antiBanScore) || 0)),
     }));
 

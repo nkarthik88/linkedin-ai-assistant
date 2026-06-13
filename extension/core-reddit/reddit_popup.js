@@ -1,12 +1,15 @@
 /**
  * ProPostly — Reddit Panel Controller
- * Manages platform switching and all 5 Reddit features.
+ * 3-option Post Generator: Scan Community, From URL, Quick Generate
  */
 
 const REDDIT_API_BASE = "https://api.propostly.com";
 const REDDIT_FREE_LIMIT = 5;
 
-/* ── Helpers ────────────────────────────────────────── */
+/* ─── In-memory state ──────────────────────────────── */
+let _communityAnalysis = null; // stored after Scan, used by Generate
+
+/* ─── Helpers ──────────────────────────────────────── */
 
 async function redditGetUserId() {
   const { userId } = await chrome.storage.local.get("userId");
@@ -24,7 +27,7 @@ async function redditGetEmail() {
 async function redditGetPlan() {
   try {
     const userId = await redditGetUserId();
-    const email = await redditGetEmail();
+    const email  = await redditGetEmail();
     if (!email) return "free";
     const r = await fetch(`${REDDIT_API_BASE}/api/auth/status`, {
       method: "POST",
@@ -34,9 +37,7 @@ async function redditGetPlan() {
     if (!r.ok) return "free";
     const d = await r.json();
     return d.plan || "free";
-  } catch {
-    return "free";
-  }
+  } catch { return "free"; }
 }
 
 function redditShowView(id) {
@@ -55,19 +56,22 @@ function redditCopyText(text, btn) {
     const orig = btn.textContent;
     btn.textContent = "✓ Copied!";
     btn.classList.add("copied");
-    setTimeout(() => {
-      btn.textContent = orig;
-      btn.classList.remove("copied");
-    }, 2000);
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove("copied"); }, 2000);
   });
 }
 
-/* ── Usage tracking ─────────────────────────────────── */
+function getActiveSubreddit() {
+  const activeTab = document.querySelector(".reddit-pg-tab.active")?.dataset.pgTab;
+  if (activeTab === "scan") return document.getElementById("reddit-scan-subreddit")?.value?.trim() || "";
+  if (activeTab === "url")  return document.getElementById("reddit-url-subreddit")?.value?.trim() || "";
+  return document.getElementById("reddit-subreddit")?.value?.trim() || "";
+}
+
+/* ─── Usage tracking ───────────────────────────────── */
 
 async function redditGetUsage() {
   const { redditUsage } = await chrome.storage.local.get("redditUsage");
   if (!redditUsage) return {};
-  // Reset if new month
   const now = new Date();
   const key = `${now.getFullYear()}-${now.getMonth()}`;
   if (redditUsage.monthKey !== key) return {};
@@ -89,8 +93,7 @@ async function redditCheckLimit(feature) {
   if (plan === "pro" || plan === "plus" || plan === "reddit_pro") return true;
   const usage = await redditGetUsage();
   const counts = usage.counts || {};
-  const used = counts[feature] || 0;
-  if (used >= REDDIT_FREE_LIMIT) {
+  if ((counts[feature] || 0) >= REDDIT_FREE_LIMIT) {
     redditShowUpgrade(feature);
     return false;
   }
@@ -99,22 +102,20 @@ async function redditCheckLimit(feature) {
 
 function redditShowUpgrade(feature) {
   const labels = {
-    post_generator: "Post Generator",
-    subreddit_finder: "Subreddit Finder",
-    comment_reply: "Comment Reply",
+    post_generator:  "Post Generator",
+    subreddit_finder:"Subreddit Finder",
+    comment_reply:   "Comment Reply",
   };
   const desc = document.getElementById("reddit-upgrade-desc");
-  if (desc) {
-    desc.textContent = `You've used all ${REDDIT_FREE_LIMIT} free Reddit uses for "${labels[feature] || feature}" this month.`;
-  }
+  if (desc) desc.textContent = `You've used all ${REDDIT_FREE_LIMIT} free Reddit uses for "${labels[feature] || feature}" this month.`;
   redditShowView("reddit-view-upgrade");
 }
 
-/* ── API calls ──────────────────────────────────────── */
+/* ─── API calls ────────────────────────────────────── */
 
 async function redditCallApi(endpoint, payload) {
   const userId = await redditGetUserId();
-  const email = await redditGetEmail();
+  const email  = await redditGetEmail();
   const r = await fetch(`${REDDIT_API_BASE}/api/reddit/${endpoint}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -127,7 +128,26 @@ async function redditCallApi(endpoint, payload) {
   return r.json();
 }
 
-/* ── Results renderers ──────────────────────────────── */
+/* ─── Safety card ──────────────────────────────────── */
+
+function renderSafetyCard(container) {
+  const card = document.createElement("div");
+  card.className = "reddit-safety-card";
+  card.innerHTML = `
+    <div class="safety-card-title">📋 Before you post</div>
+    <ul class="safety-list">
+      <li>✅ Read the full post before copying</li>
+      <li>⏰ Max 2 posts per day in any subreddit</li>
+      <li>💬 Comment on others' posts first to build karma</li>
+      <li>🔗 No links for first 3 months in a new sub</li>
+      <li>📊 Build karma before any self-promotion</li>
+      <li>📋 Always copy and paste manually — never auto-post</li>
+    </ul>
+  `;
+  container.appendChild(card);
+}
+
+/* ─── Results renderers ────────────────────────────── */
 
 function renderRedditPosts(posts) {
   const container = document.getElementById("reddit-results-container");
@@ -140,14 +160,12 @@ function renderRedditPosts(posts) {
     card.className = "reddit-post-card";
 
     const score = post.antiBanScore ?? null;
-    const scoreClass =
-      score === null ? "" : score <= 30 ? "safe" : score <= 60 ? "risky" : "danger";
-    const scoreEmoji =
-      score === null ? "" : score <= 30 ? "✅" : score <= 60 ? "⚠️" : "⛔";
-    const scoreBadge =
-      score !== null
-        ? `<div class="reddit-anti-ban-badge ${scoreClass}">${scoreEmoji} Anti-Ban: ${score}/100${score > 60 ? " — Risky, revise!" : ""}</div>`
-        : "";
+    const scoreClass = score === null ? "" : score <= 30 ? "safe" : score <= 60 ? "risky" : "danger";
+    const scoreEmoji = score === null ? "" : score <= 30 ? "✅" : score <= 60 ? "⚠️" : "⛔";
+    const scoreLabel = score === null ? "" : score <= 30 ? "Safe to post" : score <= 60 ? "Risky" : "Don't post";
+    const scoreBadge = score !== null
+      ? `<div class="reddit-anti-ban-badge ${scoreClass}">${scoreEmoji} ${scoreLabel} (${score}/100)</div>`
+      : "";
 
     card.innerHTML = `
       <div class="reddit-post-card-header">
@@ -161,12 +179,11 @@ function renderRedditPosts(posts) {
       <button class="reddit-post-expand-btn" data-idx="${i}">Show more ▾</button>
       <div class="reddit-post-actions">
         <button class="reddit-copy-btn" data-copy="title" data-idx="${i}">📋 Copy Title</button>
-        <button class="reddit-copy-btn" data-copy="body" data-idx="${i}">📋 Copy Body</button>
+        <button class="reddit-copy-btn" data-copy="body"  data-idx="${i}">📋 Copy Body</button>
         <button class="reddit-viral-btn" data-idx="${i}">🔥 Make it Viral</button>
       </div>
       <div class="reddit-viral-result" id="reddit-viral-result-${i}" hidden></div>
     `;
-
     container.appendChild(card);
   });
 
@@ -182,27 +199,27 @@ function renderRedditPosts(posts) {
   // Copy buttons
   container.querySelectorAll(".reddit-copy-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const idx = parseInt(btn.dataset.idx);
+      const idx  = parseInt(btn.dataset.idx);
       const post = posts[idx];
-      const text = btn.dataset.copy === "title" ? post.title : post.body;
-      redditCopyText(text, btn);
+      redditCopyText(btn.dataset.copy === "title" ? post.title : post.body, btn);
     });
   });
 
   // Viral buttons
   container.querySelectorAll(".reddit-viral-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
-      const idx = parseInt(btn.dataset.idx);
-      const post = posts[idx];
+      const idx       = parseInt(btn.dataset.idx);
+      const post      = posts[idx];
       const resultBox = document.getElementById(`reddit-viral-result-${idx}`);
-      const origText = btn.textContent;
+      const origText  = btn.textContent;
       btn.textContent = "🔥 Rewriting…";
-      btn.disabled = true;
+      btn.disabled    = true;
       resultBox.hidden = false;
       resultBox.innerHTML = `<div class="viral-loading">🔥 Rewriting for Reddit virality… ⏳</div>`;
       try {
-        const draft = `${post.title}\n\n${post.body}`;
-        const data = await redditCallApi("viral", { draft, subreddit: document.getElementById("reddit-subreddit")?.value?.trim() || "" });
+        const draft    = `${post.title}\n\n${post.body}`;
+        const subreddit = getActiveSubreddit();
+        const data     = await redditCallApi("viral", { draft, subreddit });
         const viralText = data.post || "";
         resultBox.innerHTML = `
           <div class="viral-label">🔥 Viral Version</div>
@@ -218,16 +235,17 @@ function renderRedditPosts(posts) {
         resultBox.innerHTML = `<div class="viral-error">⚠ ${escapeHtml(err.message)}</div>`;
       }
       btn.textContent = origText;
-      btn.disabled = false;
+      btn.disabled    = false;
     });
   });
 
+  renderSafetyCard(container);
   redditShowView("reddit-view-results");
 }
 
 function renderTextVariations(variations, titleText) {
   const container = document.getElementById("reddit-results-container");
-  const title = document.getElementById("reddit-results-title");
+  const title     = document.getElementById("reddit-results-title");
   title.textContent = titleText;
   container.innerHTML = "";
 
@@ -252,28 +270,21 @@ function renderTextVariations(variations, titleText) {
     });
   });
 
+  renderSafetyCard(container);
   redditShowView("reddit-view-results");
 }
 
 function renderSubreddits(subs, niche) {
   const container = document.getElementById("reddit-results-container");
-  const title = document.getElementById("reddit-results-title");
+  const title     = document.getElementById("reddit-results-title");
   title.textContent = `Subreddits for: ${niche.substring(0, 40)}${niche.length > 40 ? "…" : ""}`;
   container.innerHTML = "";
 
   subs.forEach((sub) => {
-    const promoClass =
-      sub.promoAllowed === "YES"
-        ? "sub-badge-promo-yes"
-        : sub.promoAllowed === "NO"
-        ? "sub-badge-promo-no"
-        : "sub-badge-promo-rules";
-    const promoLabel =
-      sub.promoAllowed === "YES"
-        ? "✓ Promo OK"
-        : sub.promoAllowed === "NO"
-        ? "✗ No Promo"
-        : "⚠ Check Rules";
+    const promoClass = sub.promoAllowed === "YES" ? "sub-badge-promo-yes"
+      : sub.promoAllowed === "NO" ? "sub-badge-promo-no" : "sub-badge-promo-rules";
+    const promoLabel = sub.promoAllowed === "YES" ? "✓ Promo OK"
+      : sub.promoAllowed === "NO" ? "✗ No Promo" : "⚠ Check Rules";
 
     const card = document.createElement("div");
     card.className = "subreddit-card";
@@ -287,33 +298,63 @@ function renderSubreddits(subs, niche) {
       ${sub.bestTime ? `<div class="sub-best-time">⏰ Best time: ${escapeHtml(sub.bestTime)}</div>` : ""}
       <div class="sub-click-hint">Click to use in Post Generator →</div>
     `;
-
     card.addEventListener("click", () => {
-      // Pre-fill Post Generator with this subreddit
+      // Pre-fill Quick tab subreddit
       const subInput = document.getElementById("reddit-subreddit");
       if (subInput) subInput.value = sub.name;
+      // Switch to Quick tab
+      document.querySelectorAll(".reddit-pg-tab").forEach((t) => t.classList.remove("active"));
+      document.querySelectorAll(".reddit-pg-panel").forEach((p) => p.classList.remove("active"));
+      document.querySelector('[data-pg-tab="quick"]')?.classList.add("active");
+      document.getElementById("reddit-pg-quick")?.classList.add("active");
       redditShowView("reddit-view-post_generator");
     });
-
     container.appendChild(card);
   });
 
-  // Save to recent searches
   redditSaveSubSearch(niche);
-
   redditShowView("reddit-view-results");
 }
 
+function renderCommunityAnalysis(data) {
+  const el = (id) => document.getElementById(id);
+
+  el("reddit-analysis-likes").innerHTML = (data.likes || []).length
+    ? `<div class="analysis-row analysis-likes">
+        <span class="analysis-icon">✅</span>
+        <div><strong>Community likes:</strong> ${escapeHtml((data.likes || []).join(", "))}</div>
+       </div>`
+    : "";
+
+  el("reddit-analysis-avoid").innerHTML = (data.avoid || []).length
+    ? `<div class="analysis-row analysis-avoid">
+        <span class="analysis-icon">⚠️</span>
+        <div><strong>Avoid:</strong> ${escapeHtml((data.avoid || []).join(", "))}</div>
+       </div>`
+    : "";
+
+  el("reddit-analysis-tone").innerHTML = data.tone
+    ? `<div class="analysis-row analysis-tone">
+        <span class="analysis-icon">📝</span>
+        <div><strong>Best tone:</strong> ${escapeHtml(data.tone)}</div>
+       </div>`
+    : "";
+
+  el("reddit-analysis-rules").innerHTML = (data.rules || []).length
+    ? `<div class="analysis-row analysis-rules">
+        <span class="analysis-icon">📋</span>
+        <div><strong>Key rules:</strong> ${escapeHtml((data.rules || []).join(" • "))}</div>
+       </div>`
+    : "";
+}
 
 function escapeHtml(str) {
   return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-/* ── Subreddit search history ───────────────────────── */
+/* ─── Subreddit search history ─────────────────────── */
 
 async function redditSaveSubSearch(niche) {
   const { redditSubHistory } = await chrome.storage.local.get("redditSubHistory");
@@ -326,17 +367,14 @@ async function redditSaveSubSearch(niche) {
 
 async function redditRenderSubHistory() {
   const { redditSubHistory } = await chrome.storage.local.get("redditSubHistory");
-  const list = document.getElementById("reddit-sub-history-list");
+  const list    = document.getElementById("reddit-sub-history-list");
   const section = document.getElementById("reddit-sub-history");
   if (!list || !section) return;
   const history = Array.isArray(redditSubHistory) ? redditSubHistory : [];
   if (!history.length) { section.hidden = true; return; }
   section.hidden = false;
   list.innerHTML = history
-    .map(
-      (h) =>
-        `<div class="reddit-sub-history-item" data-niche="${escapeHtml(h)}">${escapeHtml(h)}</div>`
-    )
+    .map((h) => `<div class="reddit-sub-history-item" data-niche="${escapeHtml(h)}">${escapeHtml(h)}</div>`)
     .join("");
   list.querySelectorAll(".reddit-sub-history-item").forEach((el) => {
     el.addEventListener("click", () => {
@@ -345,21 +383,139 @@ async function redditRenderSubHistory() {
   });
 }
 
-/* ── Feature form handlers ──────────────────────────── */
+/* ─── Option A: Scan Community ─────────────────────── */
 
-async function handlePostGenerator(e) {
+async function handleScanCommunity() {
+  const subredditRaw = document.getElementById("reddit-scan-subreddit")?.value.trim() || "";
+  const subreddit    = subredditRaw.replace(/^r\//, "");
+  const statusEl     = document.getElementById("reddit-scan-status");
+  const btn          = document.getElementById("reddit-scan-btn");
+
+  if (!subreddit) {
+    statusEl.textContent = "⚠ Enter a subreddit name first.";
+    statusEl.hidden = false;
+    return;
+  }
+
+  btn.disabled    = true;
+  btn.textContent = "🔍 Scanning…";
+  statusEl.textContent = `Opening r/${subreddit} in background…`;
+  statusEl.hidden = false;
+
+  let topPosts = [];
+  let rules    = "";
+
+  try {
+    const tab = await chrome.tabs.create({
+      url: `https://www.reddit.com/r/${subreddit}/top/?t=month`,
+      active: false,
+    });
+
+    // Wait for page to finish loading (max 10 s)
+    await new Promise((resolve) => {
+      const timeout = setTimeout(resolve, 10000);
+      const listener = (tabId, info) => {
+        if (tabId === tab.id && info.status === "complete") {
+          clearTimeout(timeout);
+          chrome.tabs.onUpdated.removeListener(listener);
+          setTimeout(resolve, 1500); // let JS-rendered content paint
+        }
+      };
+      chrome.tabs.onUpdated.addListener(listener);
+    });
+
+    statusEl.textContent = `Reading top posts in r/${subreddit}…`;
+
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => {
+        const posts = [];
+        const rulesArr = [];
+
+        // New Reddit — shreddit-post custom elements
+        const shredditPosts = document.querySelectorAll("shreddit-post");
+        if (shredditPosts.length > 0) {
+          shredditPosts.forEach((p) => {
+            const title = p.getAttribute("post-title")
+              || p.querySelector('[slot="title"]')?.textContent?.trim() || "";
+            const score = parseInt(p.getAttribute("score")
+              || p.querySelector("faceplate-number")?.getAttribute("number") || "0") || 0;
+            if (title) posts.push({ title, score, type: p.getAttribute("post-type") || "text" });
+          });
+        } else {
+          // Old Reddit fallback
+          document.querySelectorAll(".thing.link").forEach((p) => {
+            const title = p.querySelector(".title a.title")?.textContent?.trim() || "";
+            const score = parseInt(p.querySelector(".score.unvoted")?.textContent || "0") || 0;
+            if (title) posts.push({ title, score, type: p.classList.contains("self") ? "text" : "link" });
+          });
+        }
+
+        // Sidebar rules — try multiple selectors
+        const ruleSels = [
+          "community-rules-item", "[id*='rule'] li", ".md ul li",
+          "[data-testid*='rule']", ".communityRulesExpander li",
+        ];
+        ruleSels.forEach((sel) => {
+          document.querySelectorAll(sel).forEach((r) => {
+            const text = r.textContent?.trim();
+            if (text && text.length > 5 && text.length < 300) rulesArr.push(text);
+          });
+        });
+
+        return {
+          posts: posts.slice(0, 25),
+          rules: [...new Set(rulesArr)].slice(0, 8).join(" | "),
+        };
+      },
+    });
+
+    const scraped = results?.[0]?.result;
+    topPosts = scraped?.posts || [];
+    rules    = scraped?.rules || "";
+
+    await chrome.tabs.remove(tab.id).catch(() => {});
+
+  } catch {
+    // Silently fall back — AI will analyse without scraped data
+    statusEl.textContent = `⚠ Couldn't read the page directly — using AI knowledge of r/${subreddit}.`;
+  }
+
+  statusEl.textContent = "Analysing community patterns…";
+
+  try {
+    const data = await redditCallApi("analyze-community", {
+      subreddit: `r/${subreddit}`,
+      topPosts: topPosts.length ? topPosts : [{ title: "No posts scraped", score: 0 }],
+      rules,
+    });
+
+    _communityAnalysis = { ...data, subreddit: `r/${subreddit}` };
+
+    renderCommunityAnalysis(data);
+    document.getElementById("reddit-scan-analysis").hidden = false;
+    document.getElementById("reddit-scan-step1").style.display = "none";
+    statusEl.hidden = true;
+
+  } catch (err) {
+    statusEl.textContent = "⚠ Analysis failed: " + err.message;
+  }
+
+  btn.disabled    = false;
+  btn.textContent = "🔍 Scan Community";
+}
+
+async function handleScanGenerate(e) {
   e.preventDefault();
   if (!(await redditCheckLimit("post_generator"))) return;
 
-  const topic = document.getElementById("reddit-topic").value.trim();
-  const subreddit = document.getElementById("reddit-subreddit").value.trim();
-  const activeChip = document.querySelector(".reddit-tone-chip.active");
-  const tone = activeChip ? activeChip.dataset.tone : "Story";
+  const topic     = document.getElementById("reddit-scan-topic")?.value.trim();
+  const subreddit = document.getElementById("reddit-scan-subreddit")?.value.trim();
+  if (!topic) return;
 
-  redditShowLoading("Generating 3 Reddit posts…");
-
+  redditShowLoading("Generating posts tuned for your community…");
   try {
-    const data = await redditCallApi("generate", { topic, subreddit, tone });
+    const data = await redditCallApi("generate", { topic, subreddit, analysisContext: _communityAnalysis });
     await redditIncrementUsage("post_generator");
     renderRedditPosts(data.posts || []);
   } catch (err) {
@@ -368,13 +524,57 @@ async function handlePostGenerator(e) {
   }
 }
 
+/* ─── Option B: From URL ───────────────────────────── */
+
+async function handleUrlGenerate(e) {
+  e.preventDefault();
+  if (!(await redditCheckLimit("post_generator"))) return;
+
+  const url       = document.getElementById("reddit-url-input")?.value.trim();
+  const subreddit = document.getElementById("reddit-url-subreddit")?.value.trim();
+  if (!url) return;
+
+  redditShowLoading("Fetching URL and generating posts…");
+  try {
+    const data = await redditCallApi("from-url", { url, subreddit });
+    await redditIncrementUsage("post_generator");
+    renderRedditPosts(data.posts || []);
+  } catch (err) {
+    redditShowView("reddit-view-post_generator");
+    alert("Error: " + err.message);
+  }
+}
+
+/* ─── Option C: Quick Generate ─────────────────────── */
+
+async function handlePostGenerator(e) {
+  e.preventDefault();
+  if (!(await redditCheckLimit("post_generator"))) return;
+
+  const topic      = document.getElementById("reddit-topic").value.trim();
+  const subreddit  = document.getElementById("reddit-subreddit").value.trim();
+  const template   = document.querySelector(".reddit-template-chip.active")?.dataset.template || "Lesson";
+  const isPromoting = document.getElementById("reddit-promo-toggle")?.dataset.promoting === "yes";
+
+  redditShowLoading("Generating 3 Reddit posts…");
+  try {
+    const data = await redditCallApi("generate", { topic, subreddit, template, isPromoting });
+    await redditIncrementUsage("post_generator");
+    renderRedditPosts(data.posts || []);
+  } catch (err) {
+    redditShowView("reddit-view-post_generator");
+    alert("Error: " + err.message);
+  }
+}
+
+/* ─── Subreddit Finder ─────────────────────────────── */
+
 async function handleSubredditFinder(e) {
   e.preventDefault();
   if (!(await redditCheckLimit("subreddit_finder"))) return;
 
   const niche = document.getElementById("reddit-niche").value.trim();
   redditShowLoading("Finding subreddits…");
-
   try {
     const data = await redditCallApi("subreddits", { niche });
     await redditIncrementUsage("subreddit_finder");
@@ -385,6 +585,8 @@ async function handleSubredditFinder(e) {
   }
 }
 
+/* ─── Comment Reply ────────────────────────────────── */
+
 async function handleCommentReply(e) {
   e.preventDefault();
   if (!(await redditCheckLimit("comment_reply"))) return;
@@ -392,7 +594,6 @@ async function handleCommentReply(e) {
   const commentText = document.getElementById("reddit-comment-text").value.trim();
   const postContext = document.getElementById("reddit-post-context").value.trim();
   redditShowLoading("Generating 3 karma-building replies…");
-
   try {
     const data = await redditCallApi("reply", { commentText, postContext });
     await redditIncrementUsage("comment_reply");
@@ -403,8 +604,7 @@ async function handleCommentReply(e) {
   }
 }
 
-
-/* ── Read from Reddit page ──────────────────────────── */
+/* ─── Read from Reddit page ────────────────────────── */
 
 document.getElementById("reddit-read-page-btn")?.addEventListener("click", async () => {
   const statusEl = document.getElementById("reddit-read-status");
@@ -420,18 +620,12 @@ document.getElementById("reddit-read-page-btn")?.addEventListener("click", async
     const results = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       func: () => {
-        // Try to get selected text first
         const sel = window.getSelection()?.toString().trim();
         if (sel && sel.length > 10) return sel;
-
-        // Try shreddit comment bodies
         const shreddit = document.querySelector("shreddit-comment p");
         if (shreddit) return shreddit.innerText || shreddit.textContent || "";
-
-        // Try old reddit
         const md = document.querySelector(".comment .md p");
         if (md) return md.innerText || md.textContent || "";
-
         return "";
       },
     });
@@ -447,19 +641,17 @@ document.getElementById("reddit-read-page-btn")?.addEventListener("click", async
   }
 });
 
-/* ── Platform Switcher ──────────────────────────────── */
+/* ─── Platform Switcher ────────────────────────────── */
 
 function initPlatformSwitcher() {
   const linkedinPanel = document.querySelector(".main:not(.reddit-main)");
-  const redditPanel = document.getElementById("reddit-panel");
-  const accountBar = document.getElementById("account-bar");
-  const header = document.querySelector(".header");
+  const redditPanel   = document.getElementById("reddit-panel");
+  const accountBar    = document.getElementById("account-bar");
 
   document.querySelectorAll(".platform-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
       document.querySelectorAll(".platform-tab").forEach((t) => t.classList.remove("active"));
       tab.classList.add("active");
-
       const subheading = document.getElementById("header-user-name");
       if (tab.dataset.platform === "reddit") {
         linkedinPanel.hidden = true;
@@ -476,18 +668,44 @@ function initPlatformSwitcher() {
   });
 }
 
-/* ── Tone chips ─────────────────────────────────────── */
+/* ─── Post Generator Tabs ──────────────────────────── */
 
-function initToneChips() {
-  document.querySelectorAll(".reddit-tone-chip").forEach((chip) => {
+function initPostGeneratorTabs() {
+  document.querySelectorAll(".reddit-pg-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".reddit-pg-tab").forEach((t) => t.classList.remove("active"));
+      document.querySelectorAll(".reddit-pg-panel").forEach((p) => p.classList.remove("active"));
+      tab.classList.add("active");
+      document.getElementById(`reddit-pg-${tab.dataset.pgTab}`)?.classList.add("active");
+    });
+  });
+}
+
+/* ─── Template chips ───────────────────────────────── */
+
+function initTemplateChips() {
+  document.querySelectorAll(".reddit-template-chip").forEach((chip) => {
     chip.addEventListener("click", () => {
-      document.querySelectorAll(".reddit-tone-chip").forEach((c) => c.classList.remove("active"));
+      document.querySelectorAll(".reddit-template-chip").forEach((c) => c.classList.remove("active"));
       chip.classList.add("active");
     });
   });
 }
 
-/* ── Feature nav ────────────────────────────────────── */
+/* ─── Promo toggle ─────────────────────────────────── */
+
+function initPromoToggle() {
+  const btn = document.getElementById("reddit-promo-toggle");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    const isYes = btn.dataset.promoting === "yes";
+    btn.dataset.promoting = isYes ? "no" : "yes";
+    btn.textContent = isYes ? "NO" : "YES";
+    btn.classList.toggle("promo-yes", !isYes);
+  });
+}
+
+/* ─── Feature nav ──────────────────────────────────── */
 
 function initRedditFeatureNav() {
   document.querySelectorAll(".reddit-feature-btn").forEach((btn) => {
@@ -500,17 +718,15 @@ function initRedditFeatureNav() {
     btn.addEventListener("click", () => redditShowView("reddit-view-home"));
   });
 
-  // Upgrade back button
   document.getElementById("reddit-upgrade-back")?.addEventListener("click", () => {
     redditShowView("reddit-view-home");
   });
 
-  // Upgrade button
   document.getElementById("reddit-upgrade-btn")?.addEventListener("click", async () => {
     const errEl = document.getElementById("reddit-upgrade-error");
     try {
       const userId = await redditGetUserId();
-      const email = await redditGetEmail();
+      const email  = await redditGetEmail();
       if (!email) {
         errEl.textContent = "Please set your email in the Account section first.";
         errEl.hidden = false;
@@ -535,39 +751,49 @@ function initRedditFeatureNav() {
   });
 }
 
-/* ── Form listeners ─────────────────────────────────── */
+/* ─── Form listeners ───────────────────────────────── */
 
 function initFormListeners() {
   document.getElementById("reddit-form-post_generator")?.addEventListener("submit", handlePostGenerator);
+  document.getElementById("reddit-form-scan-generate")?.addEventListener("submit", handleScanGenerate);
+  document.getElementById("reddit-form-url-generate")?.addEventListener("submit", handleUrlGenerate);
   document.getElementById("reddit-form-subreddit_finder")?.addEventListener("submit", handleSubredditFinder);
   document.getElementById("reddit-form-comment_reply")?.addEventListener("submit", handleCommentReply);
+
+  document.getElementById("reddit-scan-btn")?.addEventListener("click", handleScanCommunity);
+
+  document.getElementById("reddit-scan-reset")?.addEventListener("click", () => {
+    _communityAnalysis = null;
+    document.getElementById("reddit-scan-analysis").hidden = true;
+    document.getElementById("reddit-scan-step1").style.display = "";
+    document.getElementById("reddit-scan-subreddit").value = "";
+  });
 }
 
-/* ── Listen for content script messages ────────────── */
+/* ─── Content script messages ──────────────────────── */
 
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === "REDDIT_DRAFT_REPLY") {
-    // Switch to Reddit panel and pre-fill comment reply
     document.querySelectorAll(".platform-tab").forEach((t) => t.classList.remove("active"));
-    document.querySelector('[data-platform="reddit"]').classList.add("active");
-    document.querySelector(".main:not(.reddit-main)").hidden = true;
-    document.getElementById("account-bar").hidden = true;
+    document.querySelector('[data-platform="reddit"]')?.classList.add("active");
+    const li = document.querySelector(".main:not(.reddit-main)");
+    if (li) li.hidden = true;
+    const ab = document.getElementById("account-bar");
+    if (ab) ab.hidden = true;
     document.getElementById("reddit-panel").hidden = false;
-
     redditShowView("reddit-view-comment_reply");
     const textarea = document.getElementById("reddit-comment-text");
     if (textarea && msg.commentText) textarea.value = msg.commentText;
   }
 });
 
-/* ── Fingerprint send (anti-bypass) ─────────────────────────────────────── */
+/* ─── Fingerprint send (anti-bypass) ───────────────── */
 
 async function redditSendFingerprint() {
   try {
     const email = await redditGetEmail();
     if (!email) return;
     const userId = await redditGetUserId();
-    // generateBrowserFingerprint is defined in popup.js (loaded before this script)
     const deviceFingerprint = typeof generateBrowserFingerprint === "function"
       ? await generateBrowserFingerprint()
       : "";
@@ -580,11 +806,12 @@ async function redditSendFingerprint() {
   } catch { /* non-fatal */ }
 }
 
-/* ── Init ───────────────────────────────────────────── */
+/* ─── Init ──────────────────────────────────────────── */
 
-// Run immediately — DOMContentLoaded has already fired by the time this script loads
 initPlatformSwitcher();
-initToneChips();
+initPostGeneratorTabs();
+initTemplateChips();
+initPromoToggle();
 initRedditFeatureNav();
 initFormListeners();
 redditRenderSubHistory();

@@ -450,27 +450,80 @@
           </div>
         </div>
 
-        <!-- Feature 1: Post Generator -->
+        <!-- Feature 1: Post Generator (3 options) -->
         <div id="reddit-view-post_generator" class="reddit-view">
           <button class="back-btn" data-reddit-back>← Back</button>
           <div class="card">
             <h2 class="form-title">✍️ Reddit Post Generator</h2>
-            <p class="form-hint">Generate 3 Reddit post options with title, body, and auto anti-ban scoring.</p>
-            <form id="reddit-form-post_generator">
-              <label for="reddit-topic">Topic or idea</label>
-              <textarea id="reddit-topic" name="topic" placeholder="e.g. I built a tool that saved my startup 10 hours a week..." required rows="3"></textarea>
-              <label for="reddit-subreddit">Target subreddit</label>
-              <input type="text" id="reddit-subreddit" name="subreddit" placeholder="e.g. r/entrepreneur, r/startups" />
-              <label>Tone</label>
-              <div class="reddit-tone-chips" id="reddit-tone-chips">
-                <button type="button" class="reddit-tone-chip active" data-tone="Story">📖 Story</button>
-                <button type="button" class="reddit-tone-chip" data-tone="Question">❓ Question</button>
-                <button type="button" class="reddit-tone-chip" data-tone="Advice">💡 Advice</button>
-                <button type="button" class="reddit-tone-chip" data-tone="Controversial">🔥 Controversial</button>
-                <button type="button" class="reddit-tone-chip" data-tone="Humble">🙏 Humble</button>
+
+            <!-- 3 Option Tabs -->
+            <div class="reddit-pg-tabs">
+              <button class="reddit-pg-tab active" data-pg-tab="scan">🔍 Scan</button>
+              <button class="reddit-pg-tab" data-pg-tab="url">🔗 URL</button>
+              <button class="reddit-pg-tab" data-pg-tab="quick">⚡ Quick</button>
+            </div>
+
+            <!-- ── Tab A: Scan Community ── -->
+            <div id="reddit-pg-scan" class="reddit-pg-panel active">
+              <p class="form-hint">Scan a subreddit to learn its culture, then generate posts that truly fit.</p>
+              <div id="reddit-scan-step1">
+                <label for="reddit-scan-subreddit">Subreddit to scan</label>
+                <input type="text" id="reddit-scan-subreddit" placeholder="r/entrepreneur" />
+                <button type="button" id="reddit-scan-btn" class="submit-btn reddit-submit-btn">🔍 Scan Community</button>
+                <p id="reddit-scan-status" class="read-from-page-status" hidden></p>
               </div>
-              <button type="submit" class="submit-btn reddit-submit-btn">⚡ Generate 3 Posts</button>
-            </form>
+              <div id="reddit-scan-analysis" hidden>
+                <div class="reddit-analysis-card">
+                  <div id="reddit-analysis-likes"></div>
+                  <div id="reddit-analysis-avoid"></div>
+                  <div id="reddit-analysis-tone"></div>
+                  <div id="reddit-analysis-rules"></div>
+                </div>
+                <button type="button" id="reddit-scan-reset" class="back-link-btn" style="margin:6px 0 10px;">← Scan a different subreddit</button>
+                <form id="reddit-form-scan-generate">
+                  <label for="reddit-scan-topic">Your topic or idea</label>
+                  <textarea id="reddit-scan-topic" placeholder="e.g. I built a tool that saved my startup 10 hours a week..." required rows="3"></textarea>
+                  <button type="submit" class="submit-btn reddit-submit-btn">⚡ Generate 3 Posts</button>
+                </form>
+              </div>
+            </div>
+
+            <!-- ── Tab B: From URL ── -->
+            <div id="reddit-pg-url" class="reddit-pg-panel">
+              <p class="form-hint">Paste any website or product URL. AI extracts the value and turns it into a genuine Reddit post, never an ad.</p>
+              <form id="reddit-form-url-generate">
+                <label for="reddit-url-input">Website or product URL</label>
+                <input type="url" id="reddit-url-input" placeholder="https://yourproduct.com" required />
+                <label for="reddit-url-subreddit">Target subreddit (optional)</label>
+                <input type="text" id="reddit-url-subreddit" placeholder="r/entrepreneur" />
+                <button type="submit" class="submit-btn reddit-submit-btn">⚡ Generate 3 Posts</button>
+              </form>
+            </div>
+
+            <!-- ── Tab C: Quick Generate ── -->
+            <div id="reddit-pg-quick" class="reddit-pg-panel">
+              <p class="form-hint">Type a topic, pick a template, generate instantly. No scanning needed.</p>
+              <form id="reddit-form-post_generator">
+                <label for="reddit-topic">Topic or idea</label>
+                <textarea id="reddit-topic" name="topic" placeholder="e.g. productivity tips for founders" required rows="3"></textarea>
+                <label for="reddit-subreddit">Target subreddit (optional)</label>
+                <input type="text" id="reddit-subreddit" name="subreddit" placeholder="e.g. r/entrepreneur" />
+                <label>Template</label>
+                <div class="reddit-template-chips">
+                  <button type="button" class="reddit-template-chip active" data-template="Lesson">📖 Lesson</button>
+                  <button type="button" class="reddit-template-chip" data-template="Question">❓ Question</button>
+                  <button type="button" class="reddit-template-chip" data-template="Counter">🔄 Counter</button>
+                  <button type="button" class="reddit-template-chip" data-template="Win">🏆 Win</button>
+                  <button type="button" class="reddit-template-chip" data-template="Resource">📋 Resource</button>
+                </div>
+                <div class="reddit-promo-toggle-wrap">
+                  <span class="reddit-promo-label">Promoting something?</span>
+                  <button type="button" id="reddit-promo-toggle" class="reddit-promo-btn" data-promoting="no">NO</button>
+                </div>
+                <button type="submit" class="submit-btn reddit-submit-btn">⚡ Generate 3 Posts</button>
+              </form>
+            </div>
+
           </div>
         </div>
 
