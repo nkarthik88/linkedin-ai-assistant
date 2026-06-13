@@ -8,6 +8,7 @@ import usageRouter from "./routes/usage.js";
 import paymentsRouter from "./routes/payments.js";
 import webhookRouter from "./routes/webhook.js";
 import waitlistRouter from "./routes/waitlist.js";
+import redditRouter from "./routes/reddit.js";
 
 const app = express();
 
@@ -72,6 +73,7 @@ app.use("/api/payments", paymentsRouter);
 app.use("/api/webhook", webhookRouter);
 app.use("/api/webhooks", webhookRouter);
 app.use("/api/waitlist", waitlistRouter);
+app.use("/api/reddit", generateLimiter, redditRouter);
 
 app.use(errorHandler);
 
