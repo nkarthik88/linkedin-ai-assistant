@@ -40,11 +40,11 @@
 
   <main class="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
     <h1 class="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">Privacy Policy</h1>
-    <p class="mt-3 text-slate-600">Last updated: June 9, 2026</p>
+    <p class="mt-3 text-slate-600">Last updated: June 13, 2026</p>
 
     <div class="mt-6 mb-10 rounded-xl bg-linkedin-light/50 border border-linkedin/10 p-6">
       <p class="text-sm text-slate-700">
-        <strong>Plain English summary:</strong> ProPostly collects only what is needed to run the service — your email, a LinkedIn profile ID, and usage counts. We do not sell your data, use it for ads, or share it with anyone except the service providers listed below. You can delete your data at any time by contacting us.
+        <strong>Plain English summary:</strong> ProPostly collects only what is needed to run the service — your email, a LinkedIn profile ID, usage counts, and a device fingerprint used solely to restore your account on reinstall. We do not sell your data, use it for ads, or share it with anyone except the service providers listed below. You can delete your data at any time by contacting us.
       </p>
     </div>
 
@@ -79,6 +79,9 @@
           <li>
             <strong>Subscription status</strong> — Whether your account is on the Free plan or Pro plan. Used to unlock the correct features for your plan.
           </li>
+          <li>
+            <strong>Device fingerprint</strong> — A one-way SHA-256 hash derived from non-identifying browser characteristics (WebGL renderer, canvas rendering, screen resolution, timezone, and language). This hash is used <em>only</em> to recognise your device if you reinstall the extension, so your existing account and usage limits are restored automatically. The raw characteristics are never transmitted or stored — only the resulting hash. This hash cannot be used to track you across websites.
+          </li>
         </ul>
 
         <h3 class="mt-6 text-base font-semibold text-slate-900">Payment information</h3>
@@ -90,10 +93,11 @@
 
         <h3 class="mt-6 text-base font-semibold text-slate-900">What we do NOT collect</h3>
         <ul class="mt-3 list-disc pl-6 space-y-2">
-          <li>Your LinkedIn password or login credentials</li>
+          <li>Your LinkedIn or Reddit password or login credentials</li>
           <li>Your LinkedIn connections, messages, or feed content</li>
+          <li>Your Reddit account name, private messages, karma, or vote history</li>
           <li>Your browsing history</li>
-          <li>Any personal data from LinkedIn beyond the profile ID described above</li>
+          <li>Any personal data from LinkedIn or Reddit beyond what is described above</li>
         </ul>
       </section>
 
@@ -261,20 +265,37 @@
       <section>
         <h2 class="text-xl font-semibold text-slate-900">Chrome Extension Permissions</h2>
         <p class="mt-4">
-          The ProPostly extension requests access to LinkedIn pages in order to display its assistant UI and send generation requests to our backend when you click a button. The extension:
+          ProPostly requests access only to <strong>linkedin.com</strong> and <strong>reddit.com</strong> in order to display its AI assistant panel and send generation requests to our backend when you click a button. It does not run on any other website.
         </p>
-        <ul class="mt-4 list-disc pl-6 space-y-2">
+
+        <h3 class="mt-6 text-base font-semibold text-slate-900">LinkedIn (linkedin.com)</h3>
+        <ul class="mt-3 list-disc pl-6 space-y-2">
           <li>Reads your LinkedIn profile ID from the page URL (the text after <em>linkedin.com/in/</em>) to link usage to your account.</li>
           <li>Does not read your LinkedIn messages, connections, feed, or any content you have not explicitly pasted into the extension.</li>
-          <li>Does not run on any website other than linkedin.com.</li>
+        </ul>
+
+        <h3 class="mt-6 text-base font-semibold text-slate-900">Reddit (reddit.com)</h3>
+        <ul class="mt-3 list-disc pl-6 space-y-2">
+          <li>Injects a "Draft AI Reply" button next to Reddit comment composer boxes. Clicking this button reads only the publicly visible comment text you are replying to and sends it to our backend to generate reply suggestions.</li>
+          <li>Only accesses publicly visible comment text — the same text that any visitor to the page could read.</li>
+          <li>Does not access your Reddit account, username, private messages, vote history, or any data not visible on the public page.</li>
+          <li>Does not store any Reddit content except what you explicitly paste into the extension's text fields.</li>
+        </ul>
+
+        <h3 class="mt-6 text-base font-semibold text-slate-900">Other permissions</h3>
+        <ul class="mt-3 list-disc pl-6 space-y-2">
+          <li><strong>storage</strong> — Stores your email, session token, and monthly usage counts locally in Chrome. No passwords or private data stored.</li>
+          <li><strong>activeTab / tabs</strong> — Detects the active LinkedIn or Reddit tab to read publicly visible content. Only activates when you click the extension icon.</li>
+          <li><strong>scripting</strong> — Required to inject the "Draft AI Reply" button into Reddit pages and read the LinkedIn profile URL from the page.</li>
+          <li><strong>sidePanel</strong> — Allows the extension to open as a side panel inside Chrome for a better in-page experience.</li>
         </ul>
       </section>
 
       <section class="rounded-xl bg-linkedin-light/50 border border-linkedin/10 p-6">
         <h2 class="text-lg font-semibold text-slate-900">Quick Summary</h2>
         <ul class="mt-3 space-y-2 text-sm text-slate-700">
-          <li>We collect: email, LinkedIn profile ID, usage counts, subscription status.</li>
-          <li>We do NOT collect: passwords, LinkedIn content, browsing history, payment card details.</li>
+          <li>We collect: email, LinkedIn profile ID, device fingerprint (hash only), usage counts, subscription status.</li>
+          <li>We do NOT collect: passwords, LinkedIn/Reddit content, browsing history, Reddit account data, payment card details.</li>
           <li>Data is stored in Supabase (encrypted) and processed on Vercel servers.</li>
           <li>We share data only with: Supabase, Vercel, OpenRouter/Anthropic, Dodo Payments.</li>
           <li>We never sell your data or use it for advertising.</li>

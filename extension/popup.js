@@ -78,12 +78,56 @@ async function getUserName() {
 }
 
 // Returns the canonical userId from the backend (may differ from local UUID on reinstall).
+async function generateBrowserFingerprint() {
+  try {
+    const parts = [];
+
+    // WebGL renderer
+    const canvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    if (gl) {
+      const ext = gl.getExtension("WEBGL_debug_renderer_info");
+      if (ext) {
+        parts.push(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL));
+        parts.push(gl.getParameter(ext.UNMASKED_VENDOR_WEBGL));
+      }
+    }
+
+    // Canvas fingerprint
+    const c2d = document.createElement("canvas");
+    c2d.width = 200; c2d.height = 40;
+    const ctx = c2d.getContext("2d");
+    ctx.textBaseline = "top";
+    ctx.font = "14px 'Arial'";
+    ctx.fillStyle = "#f60";
+    ctx.fillRect(125, 1, 62, 20);
+    ctx.fillStyle = "#069";
+    ctx.fillText("ProPostly🟠", 2, 15);
+    ctx.fillStyle = "rgba(102,204,0,0.7)";
+    ctx.fillText("ProPostly🟠", 4, 17);
+    parts.push(c2d.toDataURL());
+
+    // Screen + timezone
+    parts.push(`${screen.width}x${screen.height}x${screen.colorDepth}`);
+    parts.push(Intl.DateTimeFormat().resolvedOptions().timeZone || "");
+    parts.push(navigator.language || "");
+    parts.push(String(navigator.hardwareConcurrency || ""));
+
+    const raw = parts.join("|");
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
+    return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  } catch {
+    return "";
+  }
+}
+
 async function registerWithBackend(userId, email, name) {
   try {
+    const deviceFingerprint = await generateBrowserFingerprint();
     const res = await fetch(`${API_BASE}/api/auth/register-extension`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, email, name: name || undefined }),
+      body: JSON.stringify({ userId, email, name: name || undefined, deviceFingerprint: deviceFingerprint || undefined }),
     });
     if (res.ok) {
       const data = await res.json();

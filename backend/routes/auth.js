@@ -86,12 +86,15 @@ router.post(
 // Extension-only registration: store userId + email in extension_accounts.
 // If the email already exists (reinstall scenario), returns the canonical userId
 // for that email so the reinstalled extension inherits the same account + usage.
+// If only a device_fingerprint is supplied (no email yet), we can still recover
+// the account when the user enters their email later.
 router.post(
   "/register-extension",
   asyncHandler(async (req, res) => {
-    const userId = String(req.body?.userId || "").trim();
-    const email  = String(req.body?.email  || "").trim().toLowerCase();
-    const name   = String(req.body?.name   || "").trim();
+    const userId            = String(req.body?.userId            || "").trim();
+    const email             = String(req.body?.email             || "").trim().toLowerCase();
+    const name              = String(req.body?.name              || "").trim();
+    const deviceFingerprint = String(req.body?.deviceFingerprint || "").trim();
 
     const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!userId || !uuidRe.test(userId)) {
@@ -101,19 +104,45 @@ router.post(
       return res.status(400).json({ error: "Email is required" });
     }
 
-    // Check if this email already exists in extension_accounts (reinstall case)
-    const { data: existing } = await supabaseAdmin
+    // 1. Email match — primary reinstall recovery
+    const { data: existingByEmail } = await supabaseAdmin
       .from("extension_accounts")
-      .select("id")
+      .select("id, device_fingerprint")
       .eq("email", email)
       .maybeSingle();
 
-    if (existing) {
-      // Return the canonical userId — extension will overwrite its local UUID
-      return res.json({ ok: true, userId: existing.id });
+    if (existingByEmail) {
+      // Update fingerprint if we now have one and the row doesn't yet
+      if (deviceFingerprint && !existingByEmail.device_fingerprint) {
+        await supabaseAdmin
+          .from("extension_accounts")
+          .update({ device_fingerprint: deviceFingerprint })
+          .eq("id", existingByEmail.id)
+          .then(() => {}).catch(() => {});
+      }
+      return res.json({ ok: true, userId: existingByEmail.id });
     }
 
-    // Also check users table (paid/auth users who reinstalled)
+    // 2. Fingerprint match — secondary reinstall recovery (new email entered after reinstall)
+    if (deviceFingerprint) {
+      const { data: existingByFp } = await supabaseAdmin
+        .from("extension_accounts")
+        .select("id")
+        .eq("device_fingerprint", deviceFingerprint)
+        .maybeSingle();
+
+      if (existingByFp) {
+        // Same device, possibly updated email — update email and return canonical account
+        await supabaseAdmin
+          .from("extension_accounts")
+          .update({ email })
+          .eq("id", existingByFp.id)
+          .then(() => {}).catch(() => {});
+        return res.json({ ok: true, userId: existingByFp.id });
+      }
+    }
+
+    // 3. Check users table (paid/auth users who reinstalled)
     const { data: authUser } = await supabaseAdmin
       .from("users")
       .select("id")
@@ -124,8 +153,12 @@ router.post(
       return res.json({ ok: true, userId: authUser.id });
     }
 
-    // New user — create account
-    const fields = { id: userId, email };
+    // 4. New user — create account
+    const fields = {
+      id: userId,
+      email,
+      ...(deviceFingerprint ? { device_fingerprint: deviceFingerprint } : {}),
+    };
     const { error } = await supabaseAdmin
       .from("extension_accounts")
       .upsert(fields, { onConflict: "id", ignoreDuplicates: false });
@@ -134,7 +167,6 @@ router.post(
       return res.status(500).json({ error: error.message });
     }
 
-    // Best-effort: save name if column exists
     if (name) {
       await supabaseAdmin
         .from("extension_accounts")
