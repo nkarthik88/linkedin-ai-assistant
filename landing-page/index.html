@@ -877,6 +877,62 @@
     }
     .preview-install:hover { transform:translateY(-1px); box-shadow:0 4px 16px rgba(99,102,241,.4); }
 
+    /* ── Hero browsers line ─────────────────────────────────── */
+    .hero-browsers {
+      display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap;
+      font-size:13px; color:var(--gray-500); margin:0 0 4px; animation:fadeUp .7s ease .35s both;
+    }
+    .hero-browsers strong { color:var(--gray-700); }
+
+    /* ── Browser Support Cards ──────────────────────────────── */
+    .browser-grid-live {
+      display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:880px; margin:0 auto 12px;
+    }
+    .browser-grid-soon {
+      display:grid; grid-template-columns:repeat(3,1fr); gap:16px; max-width:660px; margin:0 auto 40px;
+    }
+    .browser-card {
+      position:relative; border-radius:16px; padding:24px 16px 20px;
+      display:flex; flex-direction:column; align-items:center; gap:8px;
+      transition:transform .2s, box-shadow .2s; text-decoration:none; color:inherit;
+    }
+    .browser-card.live {
+      background:#fff; border:2px solid #bbf7d0;
+      box-shadow:0 2px 16px rgba(34,197,94,.1);
+    }
+    .browser-card.live:hover { transform:translateY(-3px); box-shadow:0 8px 28px rgba(34,197,94,.18); }
+    .browser-card.soon {
+      background:#f9fafb; border:2px solid #e5e7eb; cursor:default; opacity:.85;
+    }
+    .browser-card-badge {
+      position:absolute; top:-11px; left:50%; transform:translateX(-50%);
+      font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
+      padding:3px 10px; border-radius:99px; white-space:nowrap;
+    }
+    .live-badge-sm { background:#22c55e; color:#fff; }
+    .soon-badge-sm { background:#e5e7eb; color:#9ca3af; }
+    .browser-icon-wrap {
+      width:68px; height:68px; border-radius:16px; background:#f0fdf4;
+      display:flex; align-items:center; justify-content:center; margin-bottom:4px;
+    }
+    .browser-card-name { font-size:15px; font-weight:700; color:var(--black); }
+    .browser-card-sub { font-size:11px; color:var(--gray-400); text-align:center; line-height:1.5; }
+    .browser-card-cta {
+      margin-top:6px; font-size:12px; font-weight:700; color:#22c55e;
+    }
+    .coming-cta { color:#9ca3af; }
+    .browser-support-row { display:flex; justify-content:center; margin-top:12px; }
+    @media(max-width:768px){
+      .browser-grid-live { grid-template-columns:repeat(2,1fr); }
+      .browser-grid-soon { grid-template-columns:repeat(2,1fr); max-width:440px; }
+      .browser-grid-soon .browser-card:last-child { grid-column:span 2; max-width:200px; margin:0 auto; }
+    }
+    @media(max-width:480px){
+      .browser-grid-live { grid-template-columns:repeat(2,1fr); gap:12px; }
+      .browser-grid-soon { grid-template-columns:repeat(1,1fr); max-width:200px; }
+      .browser-grid-soon .browser-card:last-child { grid-column:span 1; max-width:unset; margin:0; }
+    }
+
     /* ── FAQ ───────────────────────────────────────────────── */
     .faq { background:var(--white); }
     .faq-list { margin-top:48px; }
@@ -1458,6 +1514,13 @@
         </a>
       </div>
 
+      <p class="hero-browsers">
+        <svg width="16" height="16" viewBox="0 0 28 28" fill="none" style="display:inline-block;vertical-align:middle;margin-right:2px"><circle cx="14" cy="14" r="14" fill="#fff"/><circle cx="14" cy="14" r="6.5" fill="#fff" stroke="#e5e7eb" stroke-width="1"/><path d="M14 7.5h9.5A12.5 12.5 0 0114 1.5z" fill="#EA4335"/><path d="M23.5 7.5A12.5 12.5 0 014.5 20.5L9.5 14z" fill="#FBBC05"/><path d="M4.5 20.5A12.5 12.5 0 0114 1.5v6z" fill="#34A853"/><path d="M14 7.5A6.5 6.5 0 1114 20.5z" fill="#4285F4"/><circle cx="14" cy="14" r="4" fill="#fff"/></svg>
+        <svg width="16" height="16" viewBox="0 0 1024 1024" style="display:inline-block;vertical-align:middle;margin-right:2px"><circle cx="512" cy="512" r="512" fill="#FB542B"/><path d="M512 176c-185.2 0-336 150.8-336 336 0 97.2 41.3 184.8 107.5 247l228.5-228.5-228.5-228.5C349.3 239.3 427.2 208 512 208c165.7 0 304 138.3 304 304 0 165.7-138.3 304-304 304-84.8 0-162.7-31.3-221.5-82.5l-47 47C304.8 839.7 404 880 512 880c185.2 0 336-150.8 336-336S697.2 176 512 176z" fill="#fff" opacity=".9"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" style="display:inline-block;vertical-align:middle;margin-right:2px"><path d="M0 0h24v24H0z" fill="#FF1B2D"/><path d="M16.255 3H24L13.813 13.187 24 21H16.36L12 15.494 7.64 21H0l10.187-7.813L0 3h7.64L12 8.506z" fill="#fff"/></svg>
+        <svg width="16" height="16" viewBox="0 0 32 32" style="display:inline-block;vertical-align:middle;margin-right:6px"><rect width="32" height="32" rx="6" fill="#ef3939"/><path d="M22 10h-5l-1 3h4l-2 6h-3l-1 3h8l1-3h-4l2-6h4z" fill="#fff"/><path d="M8 10l-2 12h5l2-12H8z" fill="#fff"/></svg>
+        Works on <strong>Chrome, Brave, Opera &amp; Vivaldi</strong>
+      </p>
       <p class="hero-note">Free plan available · No credit card required · Cancel anytime</p>
       <div class="hero-trust">
         <span class="trust-item">
@@ -1896,42 +1959,111 @@
       </div>
     </section>
 
-    <!-- ── Platform Roadmap & Support ───────────────────────── -->
+    <!-- ── Browser Compatibility ────────────────────────────── -->
     <section class="social-section" id="community">
       <div class="container">
         <div class="aos" style="text-align:center;">
-          <p class="section-label">Platform Roadmap</p>
-          <h2 class="section-title">Coming to More Platforms 🚀</h2>
-          <p class="section-sub">ProPostly works on LinkedIn today.<br>Instagram and Reddit support is coming soon!</p>
+          <p class="section-label">Browser Support</p>
+          <h2 class="section-title">Works on Your Favourite Browser 🚀</h2>
+          <p class="section-sub">ProPostly is live on Chrome — and works perfectly on Brave, Opera &amp; Vivaldi too.<br>Just install once from the Chrome Web Store.</p>
         </div>
 
-        <!-- 3 Cards -->
-        <div class="social-grid-3">
+        <!-- AVAILABLE NOW — 4 browsers -->
+        <div style="text-align:center;margin:32px 0 12px;">
+          <span style="display:inline-block;background:#dcfce7;color:#15803d;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 14px;border-radius:99px;">✅ Available Now</span>
+        </div>
+        <div class="browser-grid-live">
 
-          <!-- Instagram -->
-          <div class="social-card-new coming aos d1">
-            <div class="social-badge coming-badge">Coming Soon 🔜</div>
-            <div class="social-icon-new ig">
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+          <!-- Chrome -->
+          <a href="https://chrome.google.com/webstore/detail/propostly/hggehcjcbnfpdglbildpaiidhigfcnbb" target="_blank" rel="noopener" class="browser-card live aos d1">
+            <div class="browser-card-badge live-badge-sm">LIVE</div>
+            <div class="browser-icon-wrap">
+              <svg width="44" height="44" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="14" r="14" fill="#fff"/><circle cx="14" cy="14" r="6.5" fill="#fff" stroke="#e5e7eb" stroke-width="1"/><path d="M14 7.5h9.5A12.5 12.5 0 0114 1.5z" fill="#EA4335"/><path d="M23.5 7.5A12.5 12.5 0 014.5 20.5L9.5 14z" fill="#FBBC05"/><path d="M4.5 20.5A12.5 12.5 0 0114 1.5v6z" fill="#34A853"/><path d="M14 7.5A6.5 6.5 0 1114 20.5z" fill="#4285F4"/><circle cx="14" cy="14" r="4" fill="#fff"/></svg>
             </div>
-            <div class="social-card-title">ProPostly for Instagram</div>
-            <div class="social-desc">Generate AI-powered captions, story ideas and bio rewrites directly inside Instagram — just like LinkedIn</div>
-            <button class="btn-social-off" disabled title="Coming soon — stay tuned!">Get Notified</button>
+            <div class="browser-card-name">Chrome</div>
+            <div class="browser-card-sub">Install from Chrome Web Store</div>
+            <div class="browser-card-cta">Install Free →</div>
+          </a>
+
+          <!-- Brave -->
+          <a href="https://chrome.google.com/webstore/detail/propostly/hggehcjcbnfpdglbildpaiidhigfcnbb" target="_blank" rel="noopener" class="browser-card live aos d1">
+            <div class="browser-card-badge live-badge-sm">WORKS NOW</div>
+            <div class="browser-icon-wrap" style="background:#fb542b14;">
+              <svg width="44" height="44" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256" fill="#FB542B"/><path d="M390 160c-10-22-30-36-52-36H174c-22 0-42 14-52 36l-38 96c-6 16-4 34 6 48l120 152c12 16 34 16 46 0l120-152c10-14 12-32 6-48z" fill="#fff" opacity=".9"/><path d="M256 120c-75 0-136 61-136 136s61 136 136 136 136-61 136-136S331 120 256 120zm0 220c-46 0-84-38-84-84s38-84 84-84 84 38 84 84-38 84-84 84z" fill="#FB542B"/></svg>
+            </div>
+            <div class="browser-card-name">Brave</div>
+            <div class="browser-card-sub">Install from Chrome Web Store<br>Works perfectly on Brave!</div>
+            <div class="browser-card-cta">Install Free →</div>
+          </a>
+
+          <!-- Opera -->
+          <a href="https://chrome.google.com/webstore/detail/propostly/hggehcjcbnfpdglbildpaiidhigfcnbb" target="_blank" rel="noopener" class="browser-card live aos d2">
+            <div class="browser-card-badge live-badge-sm">WORKS NOW</div>
+            <div class="browser-icon-wrap" style="background:#ff1b2d14;">
+              <svg width="44" height="44" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="#FF1B2D"/><path d="M16.255 3H24L13.813 13.187 24 21H16.36L12 15.494 7.64 21H0l10.187-7.813L0 3h7.64L12 8.506z" fill="#fff"/></svg>
+            </div>
+            <div class="browser-card-name">Opera</div>
+            <div class="browser-card-sub">Install from Chrome Web Store<br>Works perfectly on Opera!</div>
+            <div class="browser-card-cta">Install Free →</div>
+          </a>
+
+          <!-- Vivaldi -->
+          <a href="https://chrome.google.com/webstore/detail/propostly/hggehcjcbnfpdglbildpaiidhigfcnbb" target="_blank" rel="noopener" class="browser-card live aos d2">
+            <div class="browser-card-badge live-badge-sm">WORKS NOW</div>
+            <div class="browser-icon-wrap" style="background:#ef393914;">
+              <svg width="44" height="44" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#ef3939"/><path d="M22 8h-5l-1 3h4l-2 6h-3l-1 3h8l1-3h-4l2-6h4z" fill="#fff"/><path d="M8 8l-2 12h5l2-12H8z" fill="#fff"/></svg>
+            </div>
+            <div class="browser-card-name">Vivaldi</div>
+            <div class="browser-card-sub">Install from Chrome Web Store<br>Works perfectly on Vivaldi!</div>
+            <div class="browser-card-cta">Install Free →</div>
+          </a>
+
+        </div>
+
+        <!-- COMING SOON — 3 browsers -->
+        <div style="text-align:center;margin:40px 0 12px;">
+          <span style="display:inline-block;background:#f3f4f6;color:#6b7280;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 14px;border-radius:99px;">🔜 Coming Soon</span>
+        </div>
+        <div class="browser-grid-soon">
+
+          <!-- Edge -->
+          <div class="browser-card soon aos d3">
+            <div class="browser-card-badge soon-badge-sm">COMING SOON</div>
+            <div class="browser-icon-wrap" style="background:#f0f4ff;">
+              <svg width="44" height="44" viewBox="0 0 24 24"><path d="M21.86 17.86c-.35.19-.72.35-1.1.49a9.93 9.93 0 01-3.33.58A7.5 7.5 0 019.5 13H21a10.94 10.94 0 00.86 4.86zM12 2a10 10 0 00-9.95 9h8.5a4.5 4.5 0 014.47-4c1.13 0 2.16.42 2.95 1.1A9.96 9.96 0 0012 2z" fill="#0078d7"/><path d="M12 2a10 10 0 00-8.3 15.56C5.1 15.08 6.38 13 8.1 11.62A7.5 7.5 0 0121 13H9.5a7.5 7.5 0 008.93 5.93c.49-.1.96-.24 1.42-.42A10 10 0 0012 2z" fill="#0078d7" opacity=".5"/></svg>
+            </div>
+            <div class="browser-card-name" style="color:#9ca3af;">Microsoft Edge</div>
+            <div class="browser-card-sub" style="color:#d1d5db;">Edge version coming soon!</div>
+            <div class="browser-card-cta coming-cta">Notify Me</div>
           </div>
 
-          <!-- Reddit -->
-          <div class="social-card-new coming aos d2">
-            <div class="social-badge coming-badge">Coming Soon 🔜</div>
-            <div class="social-icon-new reddit-bg">
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
+          <!-- Firefox -->
+          <div class="browser-card soon aos d3">
+            <div class="browser-card-badge soon-badge-sm">COMING SOON</div>
+            <div class="browser-icon-wrap" style="background:#fff4ee;">
+              <svg width="44" height="44" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18a8 8 0 110-16 8 8 0 010 16z" fill="#FF9500" opacity=".3"/><path d="M20.6 8.5c-.5-1.2-1.6-2.8-2.8-3.6.4.8.6 1.7.5 2.5-.3-1-1-2.5-2.4-3.4C13.4 2.3 11 2 9.2 2.8 7 3.7 5.5 5.7 5.1 7.9c-.3 1.5 0 3 .7 4.3-.3-.9-.3-2 .1-2.9.2 1.4 1 2.7 2.2 3.5.4.3.9.5 1.4.5-.5-.5-.7-1.3-.5-2 .3 1 1.1 1.8 2.1 2.1.8.3 1.7.1 2.4-.3-.2.5-.7.9-1.3 1-.2 0-.4 0-.6-.1.7.5 1.6.7 2.5.5.9-.2 1.7-.8 2.2-1.5.6-.9.9-2 .8-3.1.5.7.7 1.5.6 2.3 1-1.3 1.4-3 .8-4.7z" fill="#FF9500"/></svg>
             </div>
-            <div class="social-card-title">ProPostly for Reddit</div>
-            <div class="social-desc">Generate AI-powered posts, comments and replies directly inside Reddit — same magic as LinkedIn</div>
-            <button class="btn-social-off" disabled title="Coming soon — stay tuned!">Get Notified</button>
+            <div class="browser-card-name" style="color:#9ca3af;">Firefox</div>
+            <div class="browser-card-sub" style="color:#d1d5db;">Firefox version coming soon!</div>
+            <div class="browser-card-cta coming-cta">Notify Me</div>
           </div>
 
-          <!-- Contact & Support — LIVE -->
-          <div class="social-card-new support-live aos d3">
+          <!-- Safari -->
+          <div class="browser-card soon aos d3">
+            <div class="browser-card-badge soon-badge-sm">COMING SOON</div>
+            <div class="browser-icon-wrap" style="background:#f0f9ff;">
+              <svg width="44" height="44" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="url(#safariGrad)"/><defs><linearGradient id="safariGrad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse"><stop stop-color="#1a9eff"/><stop offset="1" stop-color="#006edc"/></linearGradient></defs><path d="M12 4l1.5 6.5L18 12l-4.5 1.5L12 20l-1.5-6.5L6 12l4.5-1.5z" fill="none" stroke="white" stroke-width="1.5"/><circle cx="12" cy="12" r="1.2" fill="white"/></svg>
+            </div>
+            <div class="browser-card-name" style="color:#9ca3af;">Safari</div>
+            <div class="browser-card-sub" style="color:#d1d5db;">Safari version coming soon!</div>
+            <div class="browser-card-cta coming-cta">Notify Me</div>
+          </div>
+
+        </div>
+
+        <!-- Support card -->
+        <div class="browser-support-row aos d2">
+          <div class="social-card-new support-live" style="max-width:400px;margin:0 auto;">
             <div class="social-badge live-badge"><span class="live-dot"></span>&nbsp;✅ Live Now</div>
             <div class="social-icon-new twitter-bg">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
@@ -1941,44 +2073,6 @@
             <div class="social-sub-desc">DM or tweet @Karthik23n for help, feedback or just to say hi 👋</div>
             <a href="https://x.com/Karthik23n" target="_blank" rel="noopener" class="btn-social-live">Contact on Twitter/X →</a>
             <p class="social-respond">We respond within 24 hours</p>
-          </div>
-        </div>
-
-        <!-- Platform Previews -->
-        <div class="preview-section aos d2">
-          <p class="preview-title">What ProPostly will do on each platform 👇</p>
-          <div class="preview-grid">
-
-            <!-- Instagram -->
-            <div class="preview-card muted">
-              <div class="preview-platform">📱 Instagram</div>
-              <div style="font-size:13px;font-weight:700;color:var(--black);margin-bottom:8px;">ProPostly for Instagram</div>
-              <div class="preview-divider"></div>
-              <div class="preview-label">Generate captions like:</div>
-              <div class="preview-text">"Just launched our new product! Here's the story behind it ✨ #Entrepreneur #Startup"</div>
-              <span class="preview-cs-badge">Coming Soon 🔜</span>
-            </div>
-
-            <!-- Reddit -->
-            <div class="preview-card muted">
-              <div class="preview-platform">🤖 Reddit</div>
-              <div style="font-size:13px;font-weight:700;color:var(--black);margin-bottom:8px;">ProPostly for Reddit</div>
-              <div class="preview-divider"></div>
-              <div class="preview-label">Generate posts like:</div>
-              <div class="preview-text">"I spent 6 months building my side project. Here's everything I learned..."</div>
-              <span class="preview-cs-badge">Coming Soon 🔜</span>
-            </div>
-
-            <!-- LinkedIn — AVAILABLE NOW -->
-            <div class="preview-card highlight">
-              <div class="preview-platform">💼 <span style="color:#22c55e;font-weight:800;">✅ Available NOW</span></div>
-              <div style="font-size:13px;font-weight:700;color:var(--black);margin-bottom:8px;">ProPostly for LinkedIn</div>
-              <div class="preview-divider"></div>
-              <div class="preview-label">Already generating:</div>
-              <div class="preview-text">Posts, DMs, Replies, Headlines &amp; Lead Search — directly on LinkedIn!</div>
-              <a href="https://chrome.google.com/webstore/detail/propostly/hggehcjcbnfpdglbildpaiidhigfcnbb" target="_blank" rel="noopener" class="preview-install">Install Free →</a>
-            </div>
-
           </div>
         </div>
 
@@ -1993,6 +2087,10 @@
           <h2 class="section-title">Everything you need to know</h2>
         </div>
         <div class="faq-list aos d1">
+          <div class="faq-item">
+            <button class="faq-trigger" aria-expanded="false">Which browsers does ProPostly support?<svg class="faq-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></button>
+            <div class="faq-body"><p>ProPostly works on <strong>Chrome, Brave, Opera and Vivaldi</strong> right now — just install once from the Chrome Web Store and it works across all four browsers. Microsoft Edge and Firefox versions are coming soon!</p></div>
+          </div>
           <div class="faq-item">
             <button class="faq-trigger" aria-expanded="false">Is my LinkedIn account safe?<svg class="faq-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></button>
             <div class="faq-body"><p>100% yes. We never ask for or store your LinkedIn password. The extension only reads publicly visible profile data when you're on a LinkedIn page — no auto-posting, no bulk actions. You review and approve every piece of content before it goes anywhere.</p></div>
