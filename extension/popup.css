@@ -199,8 +199,9 @@ body.side-panel .option-text {
 
 /* ── Header ── */
 .header {
-  background: var(--linkedin-blue);
-  color: var(--white);
+  background: #ffffff;
+  color: #111827;
+  border-bottom: 1px solid #E5E7EB;
   padding: 14px 18px;
 }
 
@@ -214,24 +215,27 @@ body.side-panel .option-text {
   font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.01em;
+  color: #111827;
 }
 
 .header p {
   font-size: 11px;
-  opacity: 0.85;
+  color: #6B7280;
+  opacity: 1;
   margin-top: 2px;
 }
 
 .header-user-name {
   font-size: 11px;
-  opacity: 0.9;
+  color: #6B7280;
+  opacity: 1;
   margin-top: 2px;
   font-weight: 500;
 }
 
 .account-tab-btn {
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.3);
+  background: #f3f4f6;
+  border: 1px solid #E5E7EB;
   border-radius: 50%;
   width: 34px;
   height: 34px;
@@ -239,13 +243,14 @@ body.side-panel .option-text {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: white;
+  color: #374151;
   flex-shrink: 0;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 
 .account-tab-btn:hover {
-  background: rgba(255,255,255,0.25);
+  background: #e8f3fc;
+  color: #0a66c2;
 }
 
 /* ── Account bar (global profile strip — 2-row layout) ── */
@@ -269,7 +274,7 @@ body.side-panel .option-text {
   flex-direction: column;
   min-width: 0;
   flex: 1;
-  gap: 2px;
+  gap: 4px;
 }
 
 .ab-email {
@@ -617,9 +622,10 @@ label {
 textarea,
 input[type="text"],
 input[type="email"],
-input[type="url"] {
+input[type="url"],
+select {
   width: 100%;
-  padding: 10px 12px;
+  padding: 10px 14px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   font-family: inherit;
@@ -636,7 +642,8 @@ input[type="url"] {
 textarea:focus,
 input[type="text"]:focus,
 input[type="email"]:focus,
-input[type="url"]:focus {
+input[type="url"]:focus,
+select:focus {
   outline: none;
   border-color: var(--linkedin-blue);
   background: var(--white);

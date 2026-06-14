@@ -248,6 +248,14 @@
   box-shadow: 0 4px 12px rgba(255, 69, 0, 0.35) !important;
 }
 
+/* Reddit-specific input padding */
+.reddit-main textarea,
+.reddit-main input[type="text"],
+.reddit-main input[type="url"],
+.reddit-main select {
+  padding: 10px 14px;
+}
+
 /* Reddit-specific input focus */
 .reddit-main textarea:focus,
 .reddit-main input[type="text"]:focus,
