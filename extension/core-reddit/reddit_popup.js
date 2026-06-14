@@ -128,10 +128,10 @@ function applyRedditPlanToBar(plan, tierEl, usageEl) {
     tierEl.className = "tier-badge pro";
     usageEl.textContent = "5 uses/feature (Reddit free tier)";
   } else if (plan === "pro" || plan === "plus") {
-    // Legacy paid plans
-    tierEl.textContent = "Pro Tier";
+    // Legacy paid plans = LinkedIn Pro (our original product was LinkedIn-only)
+    tierEl.textContent = "LinkedIn Pro";
     tierEl.className = "tier-badge pro";
-    usageEl.textContent = "Unlimited Reddit";
+    usageEl.textContent = "5 uses/feature (Reddit free tier)";
   } else {
     tierEl.textContent = "Free Tier";
     tierEl.className = "tier-badge";
