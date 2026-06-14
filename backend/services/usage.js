@@ -6,6 +6,7 @@ import {
   getLeadLimitForPlan,
   getFeatureLimitForPlan,
   normalizePlan,
+  isLinkedInUnlimited,
 } from "../constants/plans.js";
 
 const OWNER_LIMIT = 999999;
@@ -43,7 +44,7 @@ async function withLeadUsage(account) {
 }
 
 function resolveMonthlyLimit(row, plan) {
-  if (plan === "pro" || plan === "plus") {
+  if (isLinkedInUnlimited(plan)) {
     return getLimitForPlan(plan);
   }
   const fromDb = row?.usage_limit;
@@ -129,11 +130,16 @@ export async function resolveAccount(userId) {
     // Payment status is tracked via `users.is_pro`.
     // Keep `plan` as a fallback for legacy rows, but prefer `is_pro`.
     const owner = isOwnerEmail(authUser.email);
+    // Prefer the stored plan string (supports linkedin_pro/reddit_pro/bundle).
+    // Fall back to "pro" for legacy rows that have is_pro:true but no plan string.
+    const normalizedPlan = normalizePlan(authUser.plan);
     const plan = owner
       ? "pro"
+      : normalizedPlan !== "free"
+      ? normalizedPlan
       : authUser.is_pro === true
       ? "pro"
-      : normalizePlan(authUser.plan);
+      : "free";
     const limit = owner ? OWNER_LIMIT : resolveMonthlyLimit(authUser, plan);
     const usedThisMonth = authUser.usage_this_month ?? 0;
     return withLeadUsage({
@@ -198,7 +204,7 @@ export async function getAccountStatus(userId) {
     account.isOwner ||
     (authUser != null
       ? authUser.is_pro === true
-      : account.plan === "pro" || account.plan === "plus");
+      : isLinkedInUnlimited(account.plan));
 
   const remaining = Math.max(0, account.limit - account.usedThisMonth);
 
@@ -217,11 +223,21 @@ export async function getAccountStatus(userId) {
     };
   }
 
+  const plan = account.plan;
+  const tierLabel = account.isOwner
+    ? "Owner"
+    : plan === "bundle"       ? "Bundle"
+    : plan === "linkedin_pro" ? "LinkedIn Pro"
+    : plan === "reddit_pro"   ? "Reddit Pro"
+    : isPro                   ? "Pro Tier"
+    : "Free Tier";
+
   return {
     isPro,
+    plan,
     isOwner: Boolean(account.isOwner),
     tier: account.isOwner ? "owner" : isPro ? "pro" : "free",
-    tierLabel: account.isOwner ? "Owner" : isPro ? "Pro Tier" : "Free Tier",
+    tierLabel,
     usedThisMonth: account.usedThisMonth,
     limit: account.limit,
     remaining,
@@ -267,8 +283,8 @@ export async function consumeCredit(userId) {
 export async function consumeFeatureCredit(userId, feature) {
   const account = await resolveAccount(userId);
 
-  // Pro / owner → unlimited, just return account state
-  if (account.isOwner || account.plan === "pro" || account.plan === "plus") {
+  // LinkedIn-unlimited plans → unlimited LinkedIn feature usage
+  if (account.isOwner || isLinkedInUnlimited(account.plan)) {
     return { ...account, featureRemaining: null };
   }
 
@@ -329,14 +345,15 @@ export async function consumeLeadSearch(userId) {
   const used = account.leadSearchesUsed;
 
   if (account.leadTrackable && used >= limit) {
+    const isHighLeadPlan = isLinkedInUnlimited(account.plan);
     const err = new Error(
-      account.plan === "pro" || account.plan === "plus"
-        ? "You've used all 50 lead searches this month. Resets next month."
-        : "You've used all 5 free lead searches this month. Upgrade to Pro for 50/month."
+      isHighLeadPlan
+        ? `You've used all ${limit} lead searches this month. Resets next month.`
+        : `You've used all ${limit} free lead searches this month. Upgrade to LinkedIn Pro or Bundle for ${25}/month.`
     );
     err.statusCode = 402;
     err.leadLimit = true;
-    err.isPro = account.plan === "pro" || account.plan === "plus";
+    err.isPro = isHighLeadPlan;
     throw err;
   }
 

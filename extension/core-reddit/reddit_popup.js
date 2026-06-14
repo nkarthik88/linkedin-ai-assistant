@@ -91,7 +91,7 @@ async function redditIncrementUsage(feature) {
 
 async function redditCheckLimit(feature) {
   const plan = await redditGetPlan();
-  if (plan === "pro" || plan === "plus" || plan === "reddit_pro") return true;
+  if (plan === "pro" || plan === "plus" || plan === "reddit_pro" || plan === "bundle") return true;
   const usage = await redditGetUsage();
   const counts = usage.counts || {};
   if ((counts[feature] || 0) >= REDDIT_FREE_LIMIT) {
@@ -108,7 +108,7 @@ function redditShowUpgrade(feature) {
     comment_reply:   "Comment Reply",
   };
   const desc = document.getElementById("reddit-upgrade-desc");
-  if (desc) desc.textContent = `You've used all ${REDDIT_FREE_LIMIT} free Reddit uses for "${labels[feature] || feature}" this month.`;
+  if (desc) desc.textContent = `Upgrade to Bundle ($15) to unlock unlimited Reddit operations`;
   redditShowView("reddit-view-upgrade");
 }
 

@@ -1,14 +1,19 @@
 import { Router } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { requireAuth } from "../middleware/auth.js";
-import { FREE_TIER_LIMIT, LEAD_FREE_LIMIT } from "../constants/plans.js";
+import { FREE_TIER_LIMIT, LEAD_FREE_LIMIT, FEATURE_FREE_LIMITS } from "../constants/plans.js";
 import { getUsageSummary, getAccountStatus } from "../services/usage.js";
 
 const router = Router();
 
 function fallbackStatus() {
+  const feature_usage = {};
+  for (const [f, limit] of Object.entries(FEATURE_FREE_LIMITS)) {
+    feature_usage[f] = { used: 0, limit, remaining: limit, unlimited: false };
+  }
   return {
     isPro: false,
+    plan: "free",
     tier: "free",
     tierLabel: "Free Tier",
     usedThisMonth: 0,
@@ -18,6 +23,7 @@ function fallbackStatus() {
     lead_searches_used: 0,
     lead_searches_limit: LEAD_FREE_LIMIT,
     lead_searches_remaining: LEAD_FREE_LIMIT,
+    feature_usage,
     message: `${FREE_TIER_LIMIT} uses remaining this month`,
   };
 }

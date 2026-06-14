@@ -221,24 +221,41 @@ function renderAccountStatus(status) {
   if (!tierEl || !usageEl || !upgradeBtn) return;
 
   const isPro = Boolean(status?.isPro);
+  const plan = status?.plan || (isPro ? "linkedin_pro" : "free");
   const tierLabel = status?.tierLabel || (isPro ? "Pro Tier" : "Free Tier");
   tierEl.textContent = tierLabel;
   tierEl.classList.toggle("pro", isPro);
 
-  if (isPro) {
-    usageEl.textContent = "Unlimited access";
+  const fu = status?.feature_usage || {};
+  const entries = Object.values(fu);
+  const anyExhausted = entries.some((f) => f.remaining === 0);
+  const leadExhausted = (status?.lead_searches_remaining ?? 1) === 0;
+  const limitHit = anyExhausted || leadExhausted;
+
+  const isLinkedInPro = plan === "linkedin_pro";
+  const isRedditPro   = plan === "reddit_pro";
+  const isBundle      = plan === "bundle";
+  const isHighLead    = isLinkedInPro || isBundle || plan === "pro" || plan === "plus";
+
+  usageEl.style.color = "";
+  if (isBundle) {
+    usageEl.textContent = "Unlimited LinkedIn & Reddit · 25 leads/mo";
+    upgradeBtn.hidden = true;
+  } else if (isLinkedInPro) {
+    usageEl.textContent = leadExhausted ? "⚠️ Lead limit reached (25/mo)" : "Unlimited LinkedIn · 25 leads/mo";
+    usageEl.style.color = leadExhausted ? "var(--error)" : "";
+    upgradeBtn.hidden = !leadExhausted;
+  } else if (isRedditPro) {
+    usageEl.textContent = limitHit ? "⚠️ LinkedIn features at limit" : "5 uses/feature · 5 leads · Reddit: Unlimited";
+    usageEl.style.color = limitHit ? "var(--error)" : "";
+    upgradeBtn.hidden = !limitHit;
+  } else if (isPro) {
+    // legacy "pro"/"plus" rows
+    usageEl.textContent = "Unlimited access · 25 leads/mo";
     upgradeBtn.hidden = true;
   } else {
-    const fu = status?.feature_usage || {};
-    const entries = Object.values(fu);
-    const anyExhausted = entries.some((f) => f.remaining === 0);
-    const leadExhausted = (status?.lead_searches_remaining ?? 1) === 0;
-    const limitHit = anyExhausted || leadExhausted;
-    usageEl.textContent = limitHit
-      ? "⚠️ Some features at limit"
-      : "10 uses/feature · 5 lead searches/mo";
+    usageEl.textContent = limitHit ? "⚠️ Some features at limit" : "5 uses/feature · 5 lead searches/mo";
     usageEl.style.color = limitHit ? "var(--error)" : "";
-    // Only show upgrade button when a limit is actually hit
     upgradeBtn.hidden = !limitHit;
   }
 
@@ -246,7 +263,7 @@ function renderAccountStatus(status) {
   renderFeatureCounters(status);
 }
 
-const FEATURE_DEFAULT_LIMIT = { generate_post: 10, personalized_dm: 10, reply_comment: 10, improve_headline: 10 };
+const FEATURE_DEFAULT_LIMIT = { generate_post: 5, personalized_dm: 5, reply_comment: 5, improve_headline: 5 };
 
 function renderFeatureCounters(status) {
   const isPro = Boolean(status?.isPro);
@@ -343,7 +360,7 @@ async function refreshAccountStatus() {
     const status = await fetchAccountStatus();
     renderAccountStatus(status);
     renderLeadCounter();
-    await chrome.storage.local.set({ isPro: Boolean(status.isPro) });
+    await chrome.storage.local.set({ isPro: Boolean(status.isPro), userPlan: status.plan || "free" });
     return status;
   } catch {
     if (tierEl) tierEl.textContent = "Free Tier";
@@ -381,7 +398,7 @@ async function renderAccountPage(status) {
   }
 
   if (usageText) {
-    usageText.textContent = isPro ? "Unlimited" : "10 uses / feature / month";
+    usageText.textContent = isPro ? "Unlimited" : "5 uses / feature / month";
   }
 
   // Hide the aggregate progress bar for free users — per-feature bars replace it
@@ -429,7 +446,7 @@ async function renderAccountPage(status) {
             counterEl.className = `fur-counter${remaining === 0 ? " fur-exhausted" : ""}`;
             updateFurBar(row, pct, remaining === 0);
           } else {
-            counterEl.textContent = "0/10 · 10 left";
+            counterEl.textContent = "0/5 · 5 left";
             counterEl.className = "fur-counter";
             updateFurBar(row, 0, false);
           }
@@ -878,7 +895,7 @@ async function callApi(body) {
     const remaining = data.featureRemaining ?? Math.max(0, limit - used);
 
     // Merge into accountStatus (create skeleton if not yet populated)
-    const base = accountStatus || { isPro: false, feature_usage: {}, lead_searches_used: 0, lead_searches_limit: 5, lead_searches_remaining: 5 };
+    const base = accountStatus || { isPro: false, plan: "free", feature_usage: {}, lead_searches_used: 0, lead_searches_limit: 5, lead_searches_remaining: 5 };
     const updatedStatus = {
       ...base,
       feature_usage: {
@@ -1582,9 +1599,9 @@ function renderLeadCounter() {
 
   if (engagEl) {
     if (remaining === 0) {
-      engagEl.textContent = isPro ? "Monthly limit reached" : "Upgrade for 50 searches →";
+      engagEl.textContent = isPro ? "Monthly limit reached" : "Upgrade for 25 searches →";
     } else if (!isPro && used >= Math.floor(limit * 0.8)) {
-      engagEl.textContent = `🎯 ${remaining} left — upgrade for 50/month!`;
+      engagEl.textContent = `🎯 ${remaining} left — upgrade for 25/month!`;
     } else if (!isPro && used >= Math.floor(limit * 0.5)) {
       engagEl.textContent = "🔥 You're halfway there!";
     } else {
@@ -1668,16 +1685,17 @@ function formatResetDate(iso) {
 }
 
 function showLeadLimit() {
-  const isPro = Boolean(accountStatus?.isPro);
-  const limit = accountStatus?.lead_searches_limit ?? (isPro ? 50 : 10);
+  const plan = accountStatus?.plan || (accountStatus?.isPro ? "linkedin_pro" : "free");
+  const isHighLead = ["linkedin_pro", "bundle", "pro", "plus"].includes(plan);
+  const limit = accountStatus?.lead_searches_limit ?? (isHighLead ? 25 : 5);
   const msg = document.getElementById("lead-limit-msg");
   const resetEl = document.getElementById("lead-limit-reset");
   const upBtn = document.getElementById("lead-limit-upgrade");
 
   if (msg) {
-    msg.textContent = isPro
+    msg.textContent = isHighLead
       ? `You've used all ${limit} lead searches this month.`
-      : "You've used all 5 free lead searches this month. Upgrade to Pro for 50 searches/month.";
+      : `You've used all ${limit} free lead searches this month. Upgrade to LinkedIn Pro or Bundle for 25 searches/month.`;
   }
 
   const resetsOn = formatResetDate(accountStatus?.resets_on);
@@ -1686,7 +1704,7 @@ function showLeadLimit() {
     resetEl.hidden = !resetsOn;
   }
 
-  if (upBtn) upBtn.hidden = isPro;
+  if (upBtn) upBtn.hidden = isHighLead;
 
   showView("view-lead-limit");
 }
@@ -2123,11 +2141,25 @@ async function qualifyAndShow(profiles, targetDescription, filters = null) {
 
   const searchStart = Date.now();
   const userId = await getUserId();
-  const res = await fetch(API_URL_LEADS, {
+
+  const leadsTimeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("Lead search timed out. Please try again.")), 15000)
+  );
+  const leadsFetch = fetch(API_URL_LEADS, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId, profiles, targetDescription, filters }),
   });
+
+  let res;
+  try {
+    res = await Promise.race([leadsFetch, leadsTimeout]);
+  } catch (err) {
+    showView("view-deep_lead_search");
+    renderLeadCounter();
+    showError("form-deep_lead_search", err.message);
+    return;
+  }
 
   if (res.status === 402) {
     showLeadLimit();
@@ -2416,13 +2448,44 @@ window.addEventListener("focus", () => {
 // ── Init ───────────────────────────────────────────────────────────────────
 
 (async function init() {
-  const { onboardingDone } = await chrome.storage.local.get("onboardingDone");
+  const { onboardingDone, upgradeEmail, isPro: cachedIsPro, userPlan: cachedPlan } = await chrome.storage.local.get([
+    "onboardingDone",
+    "upgradeEmail",
+    "isPro",
+    "userPlan",
+  ]);
+
   if (!onboardingDone) {
     // Show onboarding and stop — do NOT call the backend before email is submitted.
     const overlay = document.getElementById("onboarding");
     if (overlay) overlay.hidden = false;
     return;
   }
+
+  // Pre-populate account bar immediately from cache to avoid blank/flicker state.
+  const emailEl = document.getElementById("account-bar-email");
+  if (emailEl && upgradeEmail) emailEl.textContent = upgradeEmail;
+  const tierEl = document.getElementById("tier-label");
+  const usageEl = document.getElementById("usage-label");
+  const plan = cachedPlan || (cachedIsPro ? "linkedin_pro" : "free");
+  const cachedTierLabel =
+    plan === "bundle"       ? "Bundle"
+    : plan === "linkedin_pro" ? "LinkedIn Pro"
+    : plan === "reddit_pro"   ? "Reddit Pro"
+    : cachedIsPro             ? "Pro Tier"
+    : "Free Tier";
+  const cachedUsageLabel =
+    plan === "bundle"         ? "Unlimited LinkedIn & Reddit · 25 leads/mo"
+    : plan === "linkedin_pro" ? "Unlimited LinkedIn · 25 leads/mo"
+    : plan === "reddit_pro"   ? "5 uses/feature · 5 leads · Reddit: Unlimited"
+    : cachedIsPro             ? "Unlimited access · 25 leads/mo"
+    : "5 uses/feature · 5 lead searches/mo";
+  if (tierEl) {
+    tierEl.textContent = cachedTierLabel;
+    tierEl.classList.toggle("pro", Boolean(cachedIsPro));
+  }
+  if (usageEl) usageEl.textContent = cachedUsageLabel;
+
   await refreshAccountStatus();
   renderAccountBarEmail();
   renderSavedLeads();
