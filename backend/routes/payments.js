@@ -23,6 +23,8 @@ router.post(
       country === "IN" ||
       req.body?.india === true ||
       String(req.body?.india || "").toLowerCase() === "true";
+    const VALID_PLANS = new Set(["linkedin_pro", "reddit_pro", "bundle"]);
+    const plan = VALID_PLANS.has(req.body?.plan) ? req.body.plan : "linkedin_pro";
 
     if (!userId) {
       return res.status(400).json({ error: "Missing userId" });
@@ -51,6 +53,7 @@ router.post(
       customerName: customerName || undefined,
       country: country || undefined,
       india,
+      plan,
     });
 
     res.json({ checkoutUrl, method });

@@ -62,7 +62,7 @@
           <span id="tier-label" class="tier-badge">Free Tier</span>
         </div>
         <button type="button" id="upgrade-btn" class="upgrade-btn" hidden>
-          Unlock Unlimited — ₹862/month
+          LinkedIn Pro — $15/month →
         </button>
         <p id="upgrade-error" class="upgrade-error" hidden></p>
       </section>
@@ -188,7 +188,7 @@
 
             <div id="account-free-section" class="account-free-section" hidden>
               <button id="account-upgrade-btn" class="upgrade-btn" style="margin-top:8px;">
-                Upgrade to Pro — ₹862/month
+                LinkedIn Pro — $15/month →
               </button>
             </div>
 
@@ -377,7 +377,7 @@
             <h2 id="lead-limit-title">Lead search limit reached</h2>
             <p id="lead-limit-msg"></p>
             <p id="lead-limit-reset" class="lead-limit-reset" hidden></p>
-            <button id="lead-limit-upgrade" class="submit-btn upgrade-prompt-btn-main" hidden>Upgrade to Pro — ₹862/month</button>
+            <button id="lead-limit-upgrade" class="submit-btn upgrade-prompt-btn-main" data-plan="linkedin_pro" hidden>LinkedIn Pro — $15/month →</button>
             <button id="lead-limit-back" class="back-link-btn">← Back to home</button>
             <p id="lead-limit-error" class="upgrade-error" hidden></p>
           </div>
@@ -406,12 +406,12 @@
             <h2 id="upgrade-prompt-title">Free limit reached!</h2>
             <p id="upgrade-prompt-desc">You've used all free uses for this feature this month.</p>
             <ul class="upgrade-perks">
-              <li>✓ Unlimited everything</li>
+              <li>✓ Unlimited LinkedIn features</li>
               <li>✓ 25 lead searches/month</li>
-              <li>✓ Just ₹862/month ($9)</li>
               <li>✓ Cancel anytime</li>
             </ul>
-            <button id="upgrade-prompt-btn" class="submit-btn upgrade-prompt-btn-main">Upgrade to Pro Now →</button>
+            <button id="upgrade-prompt-btn" class="submit-btn upgrade-prompt-btn-main" data-plan="linkedin_pro">LinkedIn Pro — $15/month →</button>
+            <button id="upgrade-prompt-bundle-btn" class="submit-btn" style="margin-top:8px;background:#f97316;" data-plan="bundle">Bundle $25/month → LinkedIn + Reddit unlimited!</button>
             <p id="upgrade-prompt-reset" class="upgrade-prompt-reset" hidden></p>
             <p id="upgrade-prompt-error" class="upgrade-error" hidden></p>
           </div>
@@ -469,12 +469,11 @@
             <h2>Reddit limit reached!</h2>
             <p id="reddit-upgrade-desc">You've used all 5 free Reddit uses this month.</p>
             <ul class="upgrade-perks">
-              <li>✓ Reddit Pro: ₹862/month</li>
-              <li>✓ Bundle (LinkedIn + Reddit): ₹1,400/month</li>
               <li>✓ Unlimited Reddit features</li>
               <li>✓ Cancel anytime</li>
             </ul>
-            <button id="reddit-upgrade-btn" class="submit-btn reddit-upgrade-btn-main">Upgrade Reddit Pro →</button>
+            <button id="reddit-upgrade-btn" class="submit-btn reddit-upgrade-btn-main" data-plan="reddit_pro">Reddit Pro $15/month →</button>
+            <button id="reddit-upgrade-bundle-btn" class="submit-btn" style="margin-top:8px;background:#f97316;" data-plan="bundle">Bundle $25/month → LinkedIn + Reddit unlimited!</button>
             <button id="reddit-upgrade-back" class="back-link-btn">← Back to home</button>
             <p id="reddit-upgrade-error" class="upgrade-error" hidden></p>
           </div>

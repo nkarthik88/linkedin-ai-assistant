@@ -837,33 +837,34 @@ function initRedditFeatureNav() {
     redditShowView("reddit-view-home");
   });
 
-  document.getElementById("reddit-upgrade-btn")?.addEventListener("click", async () => {
+  async function redditStartUpgrade(plan = "reddit_pro") {
     const errEl = document.getElementById("reddit-upgrade-error");
+    if (errEl) { errEl.textContent = ""; errEl.hidden = true; }
     try {
       const userId = await redditGetUserId();
       const email  = await redditGetEmail();
-      if (!email) {
-        errEl.textContent = "Please set your email in the Account section first.";
-        errEl.hidden = false;
-        return;
-      }
-      const r = await fetch(`${REDDIT_API_BASE}/api/payments/create-checkout`, {
+      const locale = (typeof navigator !== "undefined" && navigator.language) || "";
+      const india  = locale.toUpperCase().endsWith("-IN") ||
+                     Intl.DateTimeFormat().resolvedOptions().timeZone === "Asia/Kolkata";
+      const r = await fetch(`${REDDIT_API_BASE}/api/payments/upgrade`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, email, plan: "reddit_pro" }),
+        body: JSON.stringify({ userId, email, plan, country: india ? "IN" : undefined, india }),
       });
       const d = await r.json();
-      if (d.url) {
-        chrome.tabs.create({ url: d.url });
+      const url = d.checkoutUrl || d.payment_link || d.url;
+      if (url) {
+        chrome.tabs.create({ url, active: true });
       } else {
-        errEl.textContent = d.error || "Could not start checkout.";
-        errEl.hidden = false;
+        if (errEl) { errEl.textContent = d.error || "Could not start checkout."; errEl.hidden = false; }
       }
     } catch (err) {
-      errEl.textContent = "Error: " + err.message;
-      errEl.hidden = false;
+      if (errEl) { errEl.textContent = "Error: " + err.message; errEl.hidden = false; }
     }
-  });
+  }
+
+  document.getElementById("reddit-upgrade-btn")?.addEventListener("click", () => redditStartUpgrade("reddit_pro"));
+  document.getElementById("reddit-upgrade-bundle-btn")?.addEventListener("click", () => redditStartUpgrade("bundle"));
 }
 
 /* ─── Form listeners ───────────────────────────────── */

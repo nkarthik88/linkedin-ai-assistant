@@ -621,9 +621,11 @@ document.getElementById("account-upgrade-btn")?.addEventListener("click", (e) =>
 
 // ── Upgrade flow ───────────────────────────────────────────────────────────
 
-async function startUpgrade(triggerBtn = null) {
+async function startUpgrade(triggerBtn = null, plan = "linkedin_pro") {
   const btn = triggerBtn instanceof HTMLElement ? triggerBtn : null;
   if (btn?.disabled) return;
+  // Allow plan to be specified via data-plan attribute on the button
+  if (btn?.dataset?.plan) plan = btn.dataset.plan;
 
   const errorSetter = (msg) => {
     setUpgradeError(msg);
@@ -679,6 +681,7 @@ async function startUpgrade(triggerBtn = null) {
         customerName: customerName || undefined,
         country: india ? "IN" : undefined,
         india,
+        plan,
       }),
     });
 
@@ -717,7 +720,7 @@ async function startUpgrade(triggerBtn = null) {
     }, 10000);
   } catch (err) {
     errorSetter(err.message);
-    if (btn) btn.textContent = btn.dataset.prevText || "Upgrade to Pro — ₹862/month";
+    if (btn) btn.textContent = btn.dataset.prevText || "Upgrade Now →";
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -725,7 +728,7 @@ async function startUpgrade(triggerBtn = null) {
 
 document.getElementById("upgrade-btn")?.addEventListener("click", (e) => startUpgrade(e.currentTarget));
 document.getElementById("upgrade-prompt-btn")?.addEventListener("click", (e) => startUpgrade(e.currentTarget));
-// upgrade-prompt-back removed — no skip option when limit is reached
+document.getElementById("upgrade-prompt-bundle-btn")?.addEventListener("click", (e) => startUpgrade(e.currentTarget, "bundle"));
 
 // ── LinkedIn ID capture (anti-bypass) ─────────────────────────────────────
 

@@ -18,6 +18,12 @@ function getReturnUrl() {
   return (fromEnv || DEFAULT_RETURN_URL).replace(/\/+$/, "");
 }
 
+function getProductIdForPlan(plan) {
+  if (plan === "reddit_pro") return (config.dodoProductIdReddit || "").trim();
+  if (plan === "bundle")     return (config.dodoProductIdBundle  || "").trim();
+  return (config.dodoProductIdLinkedIn || config.dodoProductId || "").trim();
+}
+
 function resolveCustomerEmail(userId, customerEmail) {
   const email = (customerEmail || "").trim();
   if (email && email.includes("@")) return email;
@@ -74,8 +80,9 @@ export function buildStaticCheckoutUrl({
   customerName,
   country,
   india,
+  plan = "linkedin_pro",
 }) {
-  const productId = (config.dodoProductId || "").trim();
+  const productId = getProductIdForPlan(plan);
   if (!productId) {
     throw new Error("DODO_PRODUCT_ID is not configured");
   }
@@ -155,8 +162,9 @@ export async function createDodoCheckoutSession({
   customerName,
   country,
   india,
+  plan = "linkedin_pro",
 }) {
-  const productId = (config.dodoProductId || "").trim();
+  const productId = getProductIdForPlan(plan);
   if (!productId) {
     const err = new Error("DODO_PRODUCT_ID is not configured");
     err.statusCode = 500;
@@ -204,8 +212,9 @@ export async function createDodoPaymentLink({
   customerName,
   country,
   india,
+  plan = "linkedin_pro",
 }) {
-  const productId = (config.dodoProductId || "").trim();
+  const productId = getProductIdForPlan(plan);
   if (!productId) {
     throw new Error("DODO_PRODUCT_ID is not configured");
   }
@@ -252,8 +261,9 @@ export async function createUpgradeCheckoutUrl({
   customerName,
   country,
   india,
+  plan = "linkedin_pro",
 }) {
-  const checkoutOpts = { userId, customerEmail, customerName, country, india };
+  const checkoutOpts = { userId, customerEmail, customerName, country, india, plan };
   const indiaCheckout = isIndiaCheckout({ country, india });
 
   // Checkout Session API — proper interactive hosted page, all fields editable

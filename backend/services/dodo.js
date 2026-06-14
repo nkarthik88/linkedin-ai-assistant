@@ -106,10 +106,17 @@ export function extractPlanFromWebhookEvent(event) {
       data.metadata?.plan ||
       data.subscription?.product_id;
 
-    const productStr = String(productId || "").toLowerCase();
+    // Map exact product IDs to plan strings
+    const PRODUCT_PLAN_MAP = {
+      "pdt_0nfglmamcuzd4givlnt0h": "linkedin_pro",
+      "pdt_0nh1zryt8ch4kti9b5yvj": "reddit_pro",
+      "pdt_0nh23ajmtvbuwaxksi2ds": "bundle",
+    };
+    const productStr = String(productId || "").toLowerCase().replace(/\?.*$/, "");
+    if (PRODUCT_PLAN_MAP[productStr]) return PRODUCT_PLAN_MAP[productStr];
+    // Fallback: keyword matching
     if (productStr.includes("bundle")) return "bundle";
     if (productStr.includes("reddit")) return "reddit_pro";
-    // Default paid product is LinkedIn Pro (our original/only product)
     return "linkedin_pro";
   }
 
