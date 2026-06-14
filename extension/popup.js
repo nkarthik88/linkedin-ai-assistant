@@ -151,14 +151,19 @@ function updateHeaderName(name) {
 // ── Onboarding ─────────────────────────────────────────────────────────────
 
 function setOnboardingPlatformContext() {
-  // Detect the active platform tab so onboarding copy matches context.
   const activeTab = document.querySelector(".platform-tab.active");
   const isReddit = activeTab?.dataset.platform === "reddit";
-  const subtitle = document.getElementById("onboarding-subtitle");
+
+  const subtitle   = document.getElementById("onboarding-subtitle");
+  const usageText  = document.getElementById("onboarding-usage-text");
+  const leadText   = document.getElementById("onboarding-lead-text");
   const leadBullet = document.getElementById("onboarding-lead-bullet");
-  if (subtitle) subtitle.textContent = isReddit
+
+  if (subtitle)  subtitle.textContent = isReddit
     ? "Your AI copilot for Reddit"
     : "Your AI copilot for LinkedIn & Reddit";
+  if (usageText) usageText.textContent = "5 uses per feature/month";
+  if (leadText)  leadText.textContent  = "5 lead searches/month";
   // Lead search bullet is LinkedIn-specific — hide it on Reddit
   if (leadBullet) leadBullet.hidden = isReddit;
 }
