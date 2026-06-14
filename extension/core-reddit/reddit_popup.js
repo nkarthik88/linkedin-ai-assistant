@@ -112,7 +112,8 @@ function redditShowUpgrade(feature) {
 /* ─── Reddit account bar ───────────────────────────── */
 
 function applyRedditPlanToBar(plan, tierEl, usageEl) {
-  const isRedditUnlimited = plan === "reddit_pro" || plan === "bundle" || plan === "pro" || plan === "plus";
+  const isRedditUnlimited = plan === "reddit_pro" || plan === "bundle";
+  const upgradeEl = document.getElementById("reddit-home-upgrade");
 
   if (plan === "bundle") {
     tierEl.textContent = "Bundle";
@@ -123,15 +124,17 @@ function applyRedditPlanToBar(plan, tierEl, usageEl) {
     tierEl.className = "tier-badge pro";
     usageEl.textContent = "Unlimited Reddit";
   } else if (plan === "linkedin_pro" || plan === "pro" || plan === "plus") {
-    // LinkedIn Pro only — Reddit stays on free tier, show FREE TIER badge here
     tierEl.textContent = "Free Tier";
     tierEl.className = "tier-badge";
     usageEl.textContent = "5 uses/feature/month · Upgrade for Reddit Pro";
   } else {
     tierEl.textContent = "Free Tier";
     tierEl.className = "tier-badge";
-    usageEl.textContent = "5 uses per feature/month";
+    usageEl.textContent = "5 uses/feature/month · Upgrade for Reddit Pro";
   }
+
+  // Show upgrade nudge on home screen for non-Reddit-unlimited users
+  if (upgradeEl) upgradeEl.style.display = isRedditUnlimited ? "none" : "block";
 }
 
 function isRedditTabNowActive() {
@@ -865,6 +868,10 @@ function initRedditFeatureNav() {
 
   document.getElementById("reddit-upgrade-btn")?.addEventListener("click", () => redditStartUpgrade("reddit_pro"));
   document.getElementById("reddit-upgrade-bundle-btn")?.addEventListener("click", () => redditStartUpgrade("bundle"));
+
+  // Home screen upgrade nudge buttons
+  document.getElementById("reddit-home-upgrade-pro")?.addEventListener("click", () => redditStartUpgrade("reddit_pro"));
+  document.getElementById("reddit-home-upgrade-bundle")?.addEventListener("click", () => redditStartUpgrade("bundle"));
 }
 
 /* ─── Form listeners ───────────────────────────────── */

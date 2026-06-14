@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ProPostly",
-  "version": "1.6.7",
+  "version": "1.6.8",
   "description": "AI-powered content for LinkedIn & Reddit: posts, DMs, comment replies, headlines, viral rewrites, lead generation, and Reddit tools.",
   "homepage_url": "https://www.propostly.com",
   "permissions": ["storage", "activeTab", "tabs", "scripting", "sidePanel"],

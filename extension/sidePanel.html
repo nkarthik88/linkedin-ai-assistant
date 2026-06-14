@@ -57,9 +57,9 @@
         <div class="ab-row">
           <div class="ab-left">
             <span id="account-bar-email" class="ab-email"></span>
-            <span id="usage-label" class="ab-usage">—</span>
+            <span id="usage-label" class="ab-usage"></span>
           </div>
-          <span id="tier-label" class="tier-badge">Free Tier</span>
+          <span id="tier-label" class="tier-badge"></span>
         </div>
         <button type="button" id="upgrade-btn" class="upgrade-btn" hidden>
           LinkedIn Pro — $15/month →
@@ -451,6 +451,12 @@
               </div>
               <div class="rhc-arrow">›</div>
             </button>
+          </div>
+          <!-- Upgrade nudge — shown for free/linkedin_pro users, hidden for reddit_pro/bundle -->
+          <div id="reddit-home-upgrade" style="padding:12px 0 4px;display:none;">
+            <button id="reddit-home-upgrade-pro" class="submit-btn" style="width:100%;margin-bottom:8px;">⚡ Reddit Pro $15/month →</button>
+            <button id="reddit-home-upgrade-bundle" class="submit-btn" style="width:100%;background:#f97316;">🎯 Bundle $25/month — Both Platforms →</button>
+            <p id="reddit-home-upgrade-error" class="upgrade-error" hidden></p>
           </div>
         </div>
 
