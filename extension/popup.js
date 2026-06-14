@@ -150,11 +150,25 @@ function updateHeaderName(name) {
 
 // ── Onboarding ─────────────────────────────────────────────────────────────
 
+function setOnboardingPlatformContext() {
+  // Detect the active platform tab so onboarding copy matches context.
+  const activeTab = document.querySelector(".platform-tab.active");
+  const isReddit = activeTab?.dataset.platform === "reddit";
+  const subtitle = document.getElementById("onboarding-subtitle");
+  const leadBullet = document.getElementById("onboarding-lead-bullet");
+  if (subtitle) subtitle.textContent = isReddit
+    ? "Your AI copilot for Reddit"
+    : "Your AI copilot for LinkedIn & Reddit";
+  // Lead search bullet is LinkedIn-specific — hide it on Reddit
+  if (leadBullet) leadBullet.hidden = isReddit;
+}
+
 async function checkOnboarding() {
   const { onboardingDone } = await chrome.storage.local.get("onboardingDone");
   if (!onboardingDone) {
     const overlay = document.getElementById("onboarding");
     if (overlay) overlay.hidden = false;
+    setOnboardingPlatformContext();
   }
 }
 
@@ -2190,7 +2204,7 @@ async function qualifyAndShow(profiles, targetDescription, filters = null) {
     showToast(`🔎 ${used}/${limit} searches used · ${data.leadSearchesRemaining} remaining`, "success");
     const pct = limit > 0 ? (used / limit) * 100 : 0;
     if (data.leadSearchesRemaining === 1) {
-      setTimeout(() => showToast("⚠️ Last free lead search — upgrade for 50/month!", "default"), 3200);
+      setTimeout(() => showToast("⚠️ Last free lead search — upgrade for 25/month!", "default"), 3200);
     } else if (pct >= 80 && used === Math.ceil(limit * 0.8)) {
       setTimeout(() => showToast(`⚠️ ${data.leadSearchesRemaining} searches left — ready to upgrade?`, "default"), 3200);
     }

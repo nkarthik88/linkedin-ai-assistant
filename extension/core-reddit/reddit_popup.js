@@ -112,6 +112,41 @@ function redditShowUpgrade(feature) {
   redditShowView("reddit-view-upgrade");
 }
 
+/* ─── Reddit account bar ───────────────────────────── */
+
+async function renderRedditAccountBar() {
+  const tierEl  = document.getElementById("tier-label");
+  const usageEl = document.getElementById("usage-label");
+  if (!tierEl || !usageEl) return;
+
+  const plan = await redditGetPlan();
+  const isRedditUnlimited = plan === "reddit_pro" || plan === "bundle" || plan === "pro" || plan === "plus";
+
+  if (plan === "bundle") {
+    tierEl.textContent = "Bundle";
+    tierEl.className = "tier-badge pro";
+    usageEl.textContent = "Unlimited Reddit";
+  } else if (plan === "reddit_pro") {
+    tierEl.textContent = "Reddit Pro";
+    tierEl.className = "tier-badge pro";
+    usageEl.textContent = "Unlimited Reddit";
+  } else if (plan === "linkedin_pro") {
+    // LinkedIn Pro — Reddit stays on free tier
+    tierEl.textContent = "LinkedIn Pro";
+    tierEl.className = "tier-badge pro";
+    usageEl.textContent = "5 uses/feature (Reddit free tier)";
+  } else if (plan === "pro" || plan === "plus") {
+    // Legacy paid plans
+    tierEl.textContent = "Pro Tier";
+    tierEl.className = "tier-badge pro";
+    usageEl.textContent = "Unlimited Reddit";
+  } else {
+    tierEl.textContent = "Free Tier";
+    tierEl.className = "tier-badge";
+    usageEl.textContent = "5 uses per feature/month";
+  }
+}
+
 /* ─── API calls ────────────────────────────────────── */
 
 async function redditCallApi(endpoint, payload) {
@@ -682,11 +717,14 @@ function initPlatformSwitcher() {
         redditPanel.hidden = false;
         if (subheading) subheading.textContent = "AI-powered content for Reddit";
         if (header) header.classList.add("header-reddit");
+        renderRedditAccountBar();
       } else {
         linkedinPanel.hidden = false;
         redditPanel.hidden = true;
         if (subheading) subheading.textContent = "AI-powered content for your LinkedIn";
         if (header) header.classList.remove("header-reddit");
+        // Restore LinkedIn account bar via popup.js refreshAccountStatus
+        if (typeof refreshAccountStatus === "function") refreshAccountStatus();
       }
     });
   });
@@ -879,3 +917,9 @@ initRedditFeatureNav();
 initFormListeners();
 redditRenderSubHistory();
 redditSendFingerprint();
+
+// Render Reddit-specific account bar if Reddit tab is already active on load
+(function () {
+  const activeTab = document.querySelector(".platform-tab.active");
+  if (activeTab?.dataset.platform === "reddit") renderRedditAccountBar();
+})();
