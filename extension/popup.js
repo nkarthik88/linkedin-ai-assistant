@@ -2509,24 +2509,27 @@ window.addEventListener("focus", () => {
   if (emailEl && upgradeEmail) emailEl.textContent = upgradeEmail;
   const tierEl = document.getElementById("tier-label");
   const usageEl = document.getElementById("usage-label");
-  const plan = cachedPlan || (cachedIsPro ? "linkedin_pro" : "free");
-  const cachedTierLabel =
-    plan === "bundle"       ? "Bundle"
-    : plan === "linkedin_pro" ? "LinkedIn Pro"
-    : plan === "reddit_pro"   ? "Reddit Pro"
-    : cachedIsPro             ? "Pro Tier"
-    : "Free Tier";
-  const cachedUsageLabel =
-    plan === "bundle"         ? "Unlimited LinkedIn & Reddit · 25 leads/mo"
-    : plan === "linkedin_pro" ? "Unlimited LinkedIn · 25 leads/mo"
-    : plan === "reddit_pro"   ? "5 uses/feature · 5 leads · Reddit: Unlimited"
-    : cachedIsPro             ? "Unlimited access · 25 leads/mo"
-    : "5 uses/feature · 5 lead searches/mo";
-  if (tierEl) {
-    tierEl.textContent = cachedTierLabel;
-    tierEl.classList.toggle("pro", Boolean(cachedIsPro));
+  // Only pre-populate if we actually have cached data — avoid showing wrong "Free Tier" on first install
+  if (cachedPlan || cachedIsPro) {
+    const plan = cachedPlan || (cachedIsPro ? "linkedin_pro" : "free");
+    const cachedTierLabel =
+      plan === "bundle"         ? "Bundle"
+      : plan === "linkedin_pro" ? "LinkedIn Pro"
+      : plan === "reddit_pro"   ? "Reddit Pro"
+      : cachedIsPro             ? "Pro Tier"
+      : "Free Tier";
+    const cachedUsageLabel =
+      plan === "bundle"         ? "Unlimited LinkedIn & Reddit · 25 leads/mo"
+      : plan === "linkedin_pro" ? "Unlimited LinkedIn · 25 leads/mo"
+      : plan === "reddit_pro"   ? "5 uses/feature · 5 leads · Reddit: Unlimited"
+      : cachedIsPro             ? "Unlimited access · 25 leads/mo"
+      : "5 uses/feature · 5 lead searches/mo";
+    if (tierEl) {
+      tierEl.textContent = cachedTierLabel;
+      tierEl.classList.toggle("pro", Boolean(cachedIsPro));
+    }
+    if (usageEl) usageEl.textContent = cachedUsageLabel;
   }
-  if (usageEl) usageEl.textContent = cachedUsageLabel;
 
   await refreshAccountStatus();
   renderAccountBarEmail();

@@ -139,6 +139,10 @@ function applyRedditPlanToBar(plan, tierEl, usageEl) {
   }
 }
 
+function isRedditTabNowActive() {
+  return document.querySelector(".platform-tab.active")?.dataset.platform === "reddit";
+}
+
 async function renderRedditAccountBar() {
   const tierEl  = document.getElementById("tier-label");
   const usageEl = document.getElementById("usage-label");
@@ -146,11 +150,15 @@ async function renderRedditAccountBar() {
 
   // Render from cache immediately — no loading flash
   const cached = await chrome.storage.local.get(["userPlan", "isPro"]);
+  // Bail if user switched to LinkedIn tab while we were awaiting storage
+  if (!isRedditTabNowActive()) return;
   const cachedPlan = cached.userPlan || (cached.isPro ? "pro" : "free");
   applyRedditPlanToBar(cachedPlan, tierEl, usageEl);
 
   // Silently refresh from network in background
   const freshPlan = await redditGetPlan();
+  // Bail again if tab switched during network call
+  if (!isRedditTabNowActive()) return;
   if (freshPlan !== cachedPlan) {
     applyRedditPlanToBar(freshPlan, tierEl, usageEl);
     await chrome.storage.local.set({ userPlan: freshPlan });
