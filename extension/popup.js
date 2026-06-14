@@ -385,7 +385,8 @@ async function refreshAccountStatus() {
   const usageEl = document.getElementById("usage-label");
 
   // Only show loading state when we have no cached data to display
-  if (!isRedditTabActive() && !cachedPlan && !cachedIsPro) {
+  const _cached = await chrome.storage.local.get(["userPlan", "isPro"]);
+  if (!isRedditTabActive() && !_cached.userPlan && !_cached.isPro) {
     if (tierEl) tierEl.textContent = "…";
     if (usageEl) usageEl.textContent = "Loading…";
   }
