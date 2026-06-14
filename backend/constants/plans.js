@@ -26,7 +26,7 @@ export const PAID_PLANS = new Set(["pro", "plus", "linkedin_pro", "reddit_pro", 
 export const LINKEDIN_UNLIMITED_PLANS = new Set(["pro", "plus", "linkedin_pro", "bundle"]);
 
 /** Plans that unlock unlimited Reddit feature usage. */
-export const REDDIT_UNLIMITED_PLANS = new Set(["pro", "plus", "reddit_pro", "bundle"]);
+export const REDDIT_UNLIMITED_PLANS = new Set(["reddit_pro", "bundle"]);
 
 /** Plans that get the elevated 25-lead cap (vs 5 for free/reddit_pro). */
 export const HIGH_LEAD_PLANS = new Set(["pro", "plus", "linkedin_pro", "bundle"]);

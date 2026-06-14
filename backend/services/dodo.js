@@ -107,9 +107,10 @@ export function extractPlanFromWebhookEvent(event) {
       data.subscription?.product_id;
 
     const productStr = String(productId || "").toLowerCase();
-    if (productStr.includes("plus")) return "plus";
-    if (productStr.includes("pro")) return "pro";
-    return "pro";
+    if (productStr.includes("bundle")) return "bundle";
+    if (productStr.includes("reddit")) return "reddit_pro";
+    // Default paid product is LinkedIn Pro (our original/only product)
+    return "linkedin_pro";
   }
 
   return null;
