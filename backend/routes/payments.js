@@ -60,6 +60,69 @@ router.post(
   })
 );
 
+// Change plan for existing subscribers (e.g. LinkedIn Pro → Bundle, pays only difference)
+router.post(
+  "/upgrade-plan",
+  asyncHandler(async (req, res) => {
+    const userId = String(req.body?.userId || "").trim();
+    const newPlan = req.body?.newPlan;
+    const VALID_PLANS = new Set(["reddit_pro", "bundle", "linkedin_pro"]);
+    if (!userId || !VALID_PLANS.has(newPlan)) {
+      return res.status(400).json({ error: "Missing userId or invalid newPlan" });
+    }
+
+    // Get current subscription_id from DB
+    const { data: acct } = await supabaseAdmin
+      .from("extension_accounts")
+      .select("subscription_id, plan")
+      .eq("id", userId)
+      .maybeSingle();
+
+    const subscriptionId = acct?.subscription_id;
+    if (!subscriptionId) {
+      // No subscription on file — fall back to new checkout
+      return res.status(404).json({ error: "no_subscription", message: "No active subscription found. Please use the standard checkout." });
+    }
+
+    // Map plan to Dodo product ID
+    const PLAN_PRODUCT = {
+      linkedin_pro: config.dodoProductIdLinkedIn,
+      reddit_pro:   config.dodoProductIdReddit,
+      bundle:       config.dodoProductIdBundle,
+    };
+    const newProductId = PLAN_PRODUCT[newPlan];
+    if (!newProductId) {
+      return res.status(500).json({ error: "Product ID not configured for plan: " + newPlan });
+    }
+
+    const apiKey = (config.dodoSecretKey || config.dodoApiKey || "").trim();
+    const apiBase = (process.env.DODO_API_BASE || "https://live.dodopayments.com").replace(/\/+$/, "");
+
+    // Call Dodo Change Plan API
+    const r = await fetch(`${apiBase}/subscriptions/${subscriptionId}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        product_id: newProductId,
+        proration_billing_mode: "difference_immediately",
+      }),
+    });
+
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      return res.status(502).json({ error: err.message || "Dodo plan change failed" });
+    }
+
+    // Update plan in DB immediately
+    await supabaseAdmin
+      .from("extension_accounts")
+      .update({ plan: newPlan })
+      .eq("id", userId);
+
+    res.json({ success: true, newPlan });
+  })
+);
+
 router.post(
   "/cancel",
   asyncHandler(async (req, res) => {

@@ -105,13 +105,16 @@ function redditShowUpgrade(feature) {
     comment_reply:   "Comment Reply",
   };
   const desc = document.getElementById("reddit-upgrade-desc");
-  if (desc) desc.textContent = `Upgrade to Bundle ($15) to unlock unlimited Reddit operations`;
   redditShowView("reddit-view-upgrade");
+  if (typeof renderRedditUpgradeScreen === "function") renderRedditUpgradeScreen();
 }
 
 /* ─── Reddit account bar ───────────────────────────── */
 
 function applyRedditPlanToBar(plan, tierEl, usageEl) {
+  // Hard guard — never write Reddit labels onto the LinkedIn tab
+  if (!isRedditTabNowActive()) return;
+
   const isRedditUnlimited = plan === "reddit_pro" || plan === "bundle";
   const upgradeEl = document.getElementById("reddit-home-upgrade");
 
@@ -840,12 +843,37 @@ function initRedditFeatureNav() {
     redditShowView("reddit-view-home");
   });
 
-  async function redditStartUpgrade(plan = "reddit_pro") {
+  async function redditStartUpgrade(plan = "reddit_pro", useChangePlan = false) {
     const errEl = document.getElementById("reddit-upgrade-error");
     if (errEl) { errEl.textContent = ""; errEl.hidden = true; }
     try {
       const userId = await redditGetUserId();
       const email  = await redditGetEmail();
+
+      // If user has an active subscription, try change-plan API first (pays difference only)
+      if (useChangePlan) {
+        const r = await fetch(`${REDDIT_API_BASE}/api/payments/upgrade-plan`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, newPlan: plan }),
+        });
+        const d = await r.json();
+        if (d.success) {
+          await chrome.storage.local.set({ userPlan: plan });
+          if (typeof renderRedditAccountBar === "function") renderRedditAccountBar();
+          document.getElementById("reddit-upgrade-success-msg") &&
+            (document.getElementById("reddit-upgrade-success-msg").hidden = false);
+          redditShowView("reddit-view-home");
+          return;
+        }
+        // If no_subscription, fall through to regular checkout
+        if (d.error !== "no_subscription") {
+          if (errEl) { errEl.textContent = d.error || "Upgrade failed."; errEl.hidden = false; }
+          return;
+        }
+      }
+
+      // Standard new checkout
       const locale = (typeof navigator !== "undefined" && navigator.language) || "";
       const india  = locale.toUpperCase().endsWith("-IN") ||
                      Intl.DateTimeFormat().resolvedOptions().timeZone === "Asia/Kolkata";
@@ -864,6 +892,36 @@ function initRedditFeatureNav() {
     } catch (err) {
       if (errEl) { errEl.textContent = "Error: " + err.message; errEl.hidden = false; }
     }
+  }
+
+  // Dynamically update Reddit upgrade screen based on current plan
+  async function renderRedditUpgradeScreen() {
+    const cached = await chrome.storage.local.get(["userPlan"]);
+    const plan = cached.userPlan || "free";
+    const isLinkedInPro = plan === "linkedin_pro" || plan === "pro" || plan === "plus";
+
+    const upgradeBtn  = document.getElementById("reddit-upgrade-btn");
+    const bundleBtn   = document.getElementById("reddit-upgrade-bundle-btn");
+    const upgradeDesc = document.getElementById("reddit-upgrade-desc");
+
+    if (isLinkedInPro && upgradeBtn && bundleBtn) {
+      // LinkedIn Pro user — only show Bundle upgrade (pays difference)
+      upgradeBtn.hidden = true;
+      bundleBtn.textContent = "⬆️ Upgrade to Bundle →";
+      bundleBtn.style.background = "#7c3aed";
+      if (upgradeDesc) upgradeDesc.innerHTML =
+        "✅ Your LinkedIn Pro stays active.<br>We'll charge only the difference — <strong>pay $10 today, then $25/month</strong>.";
+    } else {
+      // Free user — show both options
+      if (upgradeBtn) { upgradeBtn.hidden = false; upgradeBtn.textContent = "⚡ Reddit Pro $15/month →"; }
+      if (bundleBtn)  { bundleBtn.textContent = "🎯 Bundle $25/month — Both Platforms →"; bundleBtn.style.background = "#f97316"; }
+      if (upgradeDesc) upgradeDesc.textContent = "You've used all 5 free Reddit uses this month.";
+    }
+
+    // Wire Bundle btn: if linkedin_pro use change-plan, otherwise new checkout
+    bundleBtn?.removeEventListener("click", bundleBtn._handler);
+    bundleBtn._handler = () => redditStartUpgrade("bundle", isLinkedInPro);
+    bundleBtn?.addEventListener("click", bundleBtn._handler);
   }
 
   document.getElementById("reddit-upgrade-btn")?.addEventListener("click", () => redditStartUpgrade("reddit_pro"));

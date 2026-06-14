@@ -4,6 +4,7 @@ import {
   verifyDodoWebhook,
   extractPlanFromWebhookEvent,
   extractUserIdFromWebhookEvent,
+  extractSubscriptionIdFromWebhookEvent,
 } from "../services/dodo.js";
 import { setProStatusForUser } from "../services/usage.js";
 import { sendPaymentReceiptEmail } from "../services/email.js";
@@ -27,10 +28,20 @@ router.post(
 
     const userId = extractUserIdFromWebhookEvent(event);
     const plan = extractPlanFromWebhookEvent(event);
+    const subscriptionId = extractSubscriptionIdFromWebhookEvent(event);
 
     if (userId && plan) {
       const isPro = plan !== "free";
       await setProStatusForUser(userId, isPro);
+
+      // Store subscription_id and plan for change-plan upgrades
+      if (isPro && subscriptionId) {
+        try {
+          await supabaseAdmin
+            .from("extension_accounts")
+            .upsert({ id: userId, subscription_id: subscriptionId, plan }, { onConflict: "id" });
+        } catch { /* non-fatal */ }
+      }
 
       // Send receipt email on upgrade (fire-and-forget)
       if (isPro) {
@@ -42,7 +53,6 @@ router.post(
           null;
 
         if (email) {
-          // Store email so cancel flow can use it
           try {
             await supabaseAdmin
               .from("extension_accounts")

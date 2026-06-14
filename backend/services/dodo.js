@@ -123,6 +123,16 @@ export function extractPlanFromWebhookEvent(event) {
   return null;
 }
 
+export function extractSubscriptionIdFromWebhookEvent(event) {
+  const data = event.data || event;
+  return (
+    data.subscription_id ||
+    data.id ||
+    data.subscription?.id ||
+    null
+  );
+}
+
 export function extractUserIdFromWebhookEvent(event) {
   const data = event.data || event;
   return (
