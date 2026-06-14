@@ -384,8 +384,8 @@ async function refreshAccountStatus() {
   const tierEl = document.getElementById("tier-label");
   const usageEl = document.getElementById("usage-label");
 
-  // Only show loading state when LinkedIn tab is active
-  if (!isRedditTabActive()) {
+  // Only show loading state when we have no cached data to display
+  if (!isRedditTabActive() && !cachedPlan && !cachedIsPro) {
     if (tierEl) tierEl.textContent = "…";
     if (usageEl) usageEl.textContent = "Loading…";
   }

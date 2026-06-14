@@ -111,12 +111,7 @@ function redditShowUpgrade(feature) {
 
 /* ─── Reddit account bar ───────────────────────────── */
 
-async function renderRedditAccountBar() {
-  const tierEl  = document.getElementById("tier-label");
-  const usageEl = document.getElementById("usage-label");
-  if (!tierEl || !usageEl) return;
-
-  const plan = await redditGetPlan();
+function applyRedditPlanToBar(plan, tierEl, usageEl) {
   const isRedditUnlimited = plan === "reddit_pro" || plan === "bundle" || plan === "pro" || plan === "plus";
 
   if (plan === "bundle") {
@@ -141,6 +136,24 @@ async function renderRedditAccountBar() {
     tierEl.textContent = "Free Tier";
     tierEl.className = "tier-badge";
     usageEl.textContent = "5 uses per feature/month";
+  }
+}
+
+async function renderRedditAccountBar() {
+  const tierEl  = document.getElementById("tier-label");
+  const usageEl = document.getElementById("usage-label");
+  if (!tierEl || !usageEl) return;
+
+  // Render from cache immediately — no loading flash
+  const cached = await chrome.storage.local.get(["userPlan", "isPro"]);
+  const cachedPlan = cached.userPlan || (cached.isPro ? "pro" : "free");
+  applyRedditPlanToBar(cachedPlan, tierEl, usageEl);
+
+  // Silently refresh from network in background
+  const freshPlan = await redditGetPlan();
+  if (freshPlan !== cachedPlan) {
+    applyRedditPlanToBar(freshPlan, tierEl, usageEl);
+    await chrome.storage.local.set({ userPlan: freshPlan });
   }
 }
 
@@ -714,11 +727,6 @@ function initPlatformSwitcher() {
         redditPanel.hidden = false;
         if (subheading) subheading.textContent = "AI-powered content for Reddit";
         if (header) header.classList.add("header-reddit");
-        // Set a neutral loading state while we fetch the real plan
-        const tierEl  = document.getElementById("tier-label");
-        const usageEl = document.getElementById("usage-label");
-        if (tierEl)  tierEl.textContent  = "…";
-        if (usageEl) usageEl.textContent = "Loading…";
         renderRedditAccountBar();
       } else {
         linkedinPanel.hidden = false;
