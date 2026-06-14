@@ -887,7 +887,11 @@ function initRedditFeatureNav() {
       if (url) {
         chrome.tabs.create({ url, active: true });
       } else {
-        if (errEl) { errEl.textContent = d.error || "Could not start checkout."; errEl.hidden = false; }
+        // Fall back to static checkout URL
+        const staticUrl = plan === "bundle"
+          ? "https://checkout.dodopayments.com/buy/pdt_0Nh23AJmTvBuWAXKsi2ds?quantity=1"
+          : "https://checkout.dodopayments.com/buy/pdt_0Nh1zryt8Ch4KTi9B5yVJ?quantity=1";
+        chrome.tabs.create({ url: staticUrl, active: true });
       }
     } catch (err) {
       if (errEl) { errEl.textContent = "Error: " + err.message; errEl.hidden = false; }
@@ -928,8 +932,40 @@ function initRedditFeatureNav() {
   document.getElementById("reddit-upgrade-bundle-btn")?.addEventListener("click", () => redditStartUpgrade("bundle"));
 
   // Home screen upgrade nudge buttons
-  document.getElementById("reddit-home-upgrade-pro")?.addEventListener("click", () => redditStartUpgrade("reddit_pro"));
-  document.getElementById("reddit-home-upgrade-bundle")?.addEventListener("click", () => redditStartUpgrade("bundle"));
+  const STATIC_URLS = {
+    reddit_pro: "https://checkout.dodopayments.com/buy/pdt_0Nh1zryt8Ch4KTi9B5yVJ?quantity=1",
+    bundle:     "https://checkout.dodopayments.com/buy/pdt_0Nh23AJmTvBuWAXKsi2ds?quantity=1",
+  };
+
+  async function redditHomeUpgrade(plan) {
+    const cached = await chrome.storage.local.get(["userPlan"]);
+    const currentPlan = cached.userPlan || "free";
+    const isLinkedInPro = currentPlan === "linkedin_pro" || currentPlan === "pro" || currentPlan === "plus";
+
+    // For linkedin_pro upgrading to bundle, try change-plan first
+    if (plan === "bundle" && isLinkedInPro) {
+      const userId = await redditGetUserId();
+      try {
+        const r = await fetch(`${REDDIT_API_BASE}/api/payments/upgrade-plan`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, newPlan: "bundle" }),
+        });
+        const d = await r.json();
+        if (d.success) {
+          await chrome.storage.local.set({ userPlan: "bundle" });
+          renderRedditAccountBar();
+          return;
+        }
+      } catch { /* fall through to static checkout */ }
+    }
+
+    // Open static checkout URL directly — always works
+    chrome.tabs.create({ url: STATIC_URLS[plan], active: true });
+  }
+
+  document.getElementById("reddit-home-upgrade-pro")?.addEventListener("click", () => redditHomeUpgrade("reddit_pro"));
+  document.getElementById("reddit-home-upgrade-bundle")?.addEventListener("click", () => redditHomeUpgrade("bundle"));
 }
 
 /* ─── Form listeners ───────────────────────────────── */
