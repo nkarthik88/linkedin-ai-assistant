@@ -122,16 +122,11 @@ function applyRedditPlanToBar(plan, tierEl, usageEl) {
     tierEl.textContent = "Reddit Pro";
     tierEl.className = "tier-badge pro";
     usageEl.textContent = "Unlimited Reddit";
-  } else if (plan === "linkedin_pro") {
-    // LinkedIn Pro — Reddit stays on free tier
-    tierEl.textContent = "LinkedIn Pro";
-    tierEl.className = "tier-badge pro";
-    usageEl.textContent = "5 uses/feature (Reddit free tier)";
-  } else if (plan === "pro" || plan === "plus") {
-    // Legacy paid plans = LinkedIn Pro (our original product was LinkedIn-only)
-    tierEl.textContent = "LinkedIn Pro";
-    tierEl.className = "tier-badge pro";
-    usageEl.textContent = "5 uses/feature (Reddit free tier)";
+  } else if (plan === "linkedin_pro" || plan === "pro" || plan === "plus") {
+    // LinkedIn Pro only — Reddit stays on free tier, show FREE TIER badge here
+    tierEl.textContent = "Free Tier";
+    tierEl.className = "tier-badge";
+    usageEl.textContent = "5 uses/feature/month · Upgrade for Reddit Pro";
   } else {
     tierEl.textContent = "Free Tier";
     tierEl.className = "tier-badge";

@@ -402,9 +402,12 @@ async function refreshAccountStatus() {
     }
     return status;
   } catch {
+    // Don't overwrite a valid cached label with "Free Tier" — only show offline if bar is blank
     if (!isRedditTabActive()) {
-      if (tierEl) tierEl.textContent = "Free Tier";
-      if (usageEl) usageEl.textContent = "Offline";
+      if (tierEl && (tierEl.textContent === "…" || tierEl.textContent === "")) {
+        if (tierEl) tierEl.textContent = "–";
+        if (usageEl) usageEl.textContent = "Could not load · check connection";
+      }
     }
     return null;
   }
