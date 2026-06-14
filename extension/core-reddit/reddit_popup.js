@@ -28,13 +28,10 @@ async function redditGetEmail() {
 async function redditGetPlan() {
   try {
     const userId = await redditGetUserId();
-    const email  = await redditGetEmail();
-    if (!email) return "free";
-    const r = await fetch(`${REDDIT_API_BASE}/api/auth/status`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, email }),
-    });
+    if (!userId) return "free";
+    const r = await fetch(
+      `${REDDIT_API_BASE}/api/usage/status?userId=${encodeURIComponent(userId)}`
+    );
     if (!r.ok) return "free";
     const d = await r.json();
     return d.plan || "free";
@@ -717,13 +714,18 @@ function initPlatformSwitcher() {
         redditPanel.hidden = false;
         if (subheading) subheading.textContent = "AI-powered content for Reddit";
         if (header) header.classList.add("header-reddit");
+        // Set a neutral loading state while we fetch the real plan
+        const tierEl  = document.getElementById("tier-label");
+        const usageEl = document.getElementById("usage-label");
+        if (tierEl)  tierEl.textContent  = "…";
+        if (usageEl) usageEl.textContent = "Loading…";
         renderRedditAccountBar();
       } else {
         linkedinPanel.hidden = false;
         redditPanel.hidden = true;
         if (subheading) subheading.textContent = "AI-powered content for your LinkedIn";
         if (header) header.classList.remove("header-reddit");
-        // Restore LinkedIn account bar via popup.js refreshAccountStatus
+        // Restore LinkedIn account bar
         if (typeof refreshAccountStatus === "function") refreshAccountStatus();
       }
     });

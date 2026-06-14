@@ -230,6 +230,10 @@ async function renderAccountBarEmail() {
   if (el && email) el.textContent = email;
 }
 
+function isRedditTabActive() {
+  return document.querySelector(".platform-tab.active")?.dataset.platform === "reddit";
+}
+
 function renderAccountStatus(status) {
   accountStatus = status;
 
@@ -238,6 +242,13 @@ function renderAccountStatus(status) {
   const upgradeBtn = document.getElementById("upgrade-btn");
 
   if (!tierEl || !usageEl || !upgradeBtn) return;
+
+  // Reddit tab manages its own account bar — don't overwrite it here
+  if (isRedditTabActive()) {
+    setUpgradeError("");
+    renderFeatureCounters(status);
+    return;
+  }
 
   const isPro = Boolean(status?.isPro);
   const plan = status?.plan || (isPro ? "linkedin_pro" : "free");
@@ -372,18 +383,28 @@ async function fetchAccountStatus() {
 async function refreshAccountStatus() {
   const tierEl = document.getElementById("tier-label");
   const usageEl = document.getElementById("usage-label");
-  if (tierEl) tierEl.textContent = "…";
-  if (usageEl) usageEl.textContent = "Loading…";
+
+  // Only show loading state when LinkedIn tab is active
+  if (!isRedditTabActive()) {
+    if (tierEl) tierEl.textContent = "…";
+    if (usageEl) usageEl.textContent = "Loading…";
+  }
 
   try {
     const status = await fetchAccountStatus();
-    renderAccountStatus(status);
+    renderAccountStatus(status); // tab-aware — skips bar update on Reddit
     renderLeadCounter();
     await chrome.storage.local.set({ isPro: Boolean(status.isPro), userPlan: status.plan || "free" });
+    // If Reddit tab is now active, refresh its bar with the latest plan
+    if (isRedditTabActive() && typeof renderRedditAccountBar === "function") {
+      renderRedditAccountBar();
+    }
     return status;
   } catch {
-    if (tierEl) tierEl.textContent = "Free Tier";
-    if (usageEl) usageEl.textContent = "Offline";
+    if (!isRedditTabActive()) {
+      if (tierEl) tierEl.textContent = "Free Tier";
+      if (usageEl) usageEl.textContent = "Offline";
+    }
     return null;
   }
 }
