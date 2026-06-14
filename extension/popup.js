@@ -2478,6 +2478,7 @@ window.addEventListener("focus", () => {
     // Show onboarding and stop — do NOT call the backend before email is submitted.
     const overlay = document.getElementById("onboarding");
     if (overlay) overlay.hidden = false;
+    setOnboardingPlatformContext();
     return;
   }
 
