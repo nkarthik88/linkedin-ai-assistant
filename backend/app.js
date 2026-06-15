@@ -34,7 +34,7 @@ const generateLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,  // 15 minutes
-  max: 30,                   // 30 auth attempts per 15 min
+  max: 10,                   // 10 auth/registration attempts per 15 min per IP
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many requests. Try again later." },

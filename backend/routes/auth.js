@@ -100,8 +100,9 @@ router.post(
     if (!userId || !uuidRe.test(userId)) {
       return res.status(400).json({ error: "Invalid userId" });
     }
-    if (!email || !email.includes("@")) {
-      return res.status(400).json({ error: "Email is required" });
+    const emailRe = /^[^\s@,]+@[^\s@,]+\.[^\s@,]+$/;
+    if (!email || !emailRe.test(email)) {
+      return res.status(400).json({ error: "Invalid email address. Example: name@gmail.com" });
     }
 
     // 1. Email match — primary reinstall recovery

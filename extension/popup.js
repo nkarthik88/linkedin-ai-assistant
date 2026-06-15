@@ -184,8 +184,8 @@ document.getElementById("onboarding-start")?.addEventListener("click", async () 
 
   const email = emailInput?.value.trim() || "";
 
-  if (!email || !email.includes("@")) {
-    if (errorEl) { errorEl.textContent = "Please enter a valid email address."; errorEl.hidden = false; }
+  if (!email || !/^[^\s@,]+@[^\s@,]+\.[^\s@,]+$/.test(email)) {
+    if (errorEl) { errorEl.textContent = "Please enter a valid email. Example: name@gmail.com"; errorEl.hidden = false; }
     emailInput?.focus();
     return;
   }
@@ -554,9 +554,9 @@ document.getElementById("account-email-save")?.addEventListener("click", async (
   const statusEl = document.getElementById("account-email-status");
   const email = input?.value.trim();
 
-  if (!email || !email.includes("@")) {
+  if (!email || !/^[^\s@,]+@[^\s@,]+\.[^\s@,]+$/.test(email)) {
     if (statusEl) {
-      statusEl.textContent = "Please enter a valid email address.";
+      statusEl.textContent = "Please enter a valid email. Example: name@gmail.com";
       statusEl.style.color = "var(--error)";
       statusEl.hidden = false;
     }
