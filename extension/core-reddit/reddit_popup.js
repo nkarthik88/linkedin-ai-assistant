@@ -143,10 +143,19 @@ function applyRedditPlanToBar(plan, tierEl, usageEl) {
   // Show upgrade nudge on home screen for non-Reddit-unlimited users
   if (upgradeEl) upgradeEl.style.display = isRedditUnlimited ? "none" : "block";
 
-  // Show/hide "$10 today" note for LinkedIn Pro users
+  // Update Bundle button text for LinkedIn Pro users — they pay $10 difference, not $25
   const isLinkedInPro = plan === "linkedin_pro" || plan === "pro" || plan === "plus";
   const noteEl = document.getElementById("reddit-home-upgrade-note");
   if (noteEl) noteEl.hidden = !isLinkedInPro || isRedditUnlimited;
+
+  const bundleBtn = document.getElementById("reddit-home-upgrade-bundle");
+  if (bundleBtn) {
+    if (isLinkedInPro && !isRedditUnlimited) {
+      bundleBtn.innerHTML = '🎯 Bundle — <strong>$10 today</strong>, then $25/mo → <span style="background:#fff;color:#16a34a;font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:4px;">SAVE $5</span>';
+    } else {
+      bundleBtn.innerHTML = '🎯 Bundle $25/month → <span style="background:#fff;color:#16a34a;font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:4px;">BEST VALUE</span>';
+    }
+  }
 }
 
 function isRedditTabNowActive() {
