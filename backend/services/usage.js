@@ -218,7 +218,7 @@ export async function getAccountStatus(userId) {
   const TRACKED_FEATURES = ["generate_post", "personalized_dm", "reply_comment", "improve_headline", "viral_rewriter"];
   const feature_usage = {};
   for (const f of TRACKED_FEATURES) {
-    const used = featureUsage[f] ?? 0;
+    const used = rawToUsed(featureUsage[f]);
     const limit = isLinkedInPro ? null : getFeatureLimitForPlan(f, account.plan);
     feature_usage[f] = {
       used,
@@ -229,9 +229,9 @@ export async function getAccountStatus(userId) {
   }
 
   // Reddit feature usage (reddit_pro/bundle = unlimited; free/linkedin_pro = limited)
-  const REDDIT_FEATURES = ["reddit_post", "reddit_subreddit", "reddit_reply", "reddit_score", "reddit_viral"];
+  const REDDIT_FEATURES = ["reddit_post", "reddit_subreddit", "reddit_reply"];
   for (const f of REDDIT_FEATURES) {
-    const used = featureUsage[f] ?? 0;
+    const used = rawToUsed(featureUsage[f]);
     const limit = isRedditPro ? null : (REDDIT_FREE_LIMITS[f] ?? null);
     feature_usage[f] = {
       used,
@@ -307,7 +307,7 @@ export async function consumeFeatureCredit(userId, feature) {
   }
 
   const featureUsage = account.featureUsage ?? {};
-  const used = featureUsage[feature] ?? 0;
+  const used = rawToUsed(featureUsage[feature]);
   const limit = getFeatureLimitForPlan(feature, account.plan);
 
   if (limit !== null && used >= limit) {
@@ -361,6 +361,13 @@ function featureLabel(feature) {
  * Consume one Reddit feature use. reddit_pro/bundle = unlimited.
  * linkedin_pro and free both enforce REDDIT_FREE_LIMITS.
  */
+// Normalize raw feature_usage value — handles both plain number and {used,limit} object
+function rawToUsed(val) {
+  if (val === null || val === undefined) return 0;
+  if (typeof val === "object") return Number(val.used) || 0;
+  return Number(val) || 0;
+}
+
 export async function consumeRedditFeatureCredit(userId, feature) {
   const account = await resolveAccount(userId);
 
@@ -369,7 +376,7 @@ export async function consumeRedditFeatureCredit(userId, feature) {
   }
 
   const featureUsage = account.featureUsage ?? {};
-  const used = featureUsage[feature] ?? 0;
+  const used = rawToUsed(featureUsage[feature]);
   const limit = REDDIT_FREE_LIMITS[feature] ?? null;
 
   if (limit !== null && used >= limit) {

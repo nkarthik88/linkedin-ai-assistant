@@ -153,6 +153,25 @@ function isRedditTabNowActive() {
   return document.querySelector(".platform-tab.active")?.dataset.platform === "reddit";
 }
 
+const REDDIT_DEFAULT_LIMITS = { reddit_post: 5, reddit_subreddit: 3, reddit_reply: 5 };
+
+function safeCount(info, defaultLimit) {
+  // info can be: undefined, a number, or {used, limit, remaining}
+  if (!info && info !== 0) return { used: 0, limit: defaultLimit, left: defaultLimit };
+  if (typeof info === "object") {
+    const used  = Number(info.used)  || 0;
+    const limit = Number(info.limit) || defaultLimit;
+    const left  = typeof info.remaining === "number"
+      ? Math.max(0, info.remaining)
+      : Math.max(0, limit - used);
+    return { used, limit, left };
+  }
+  // plain number
+  const used  = Number(info) || 0;
+  const limit = defaultLimit;
+  return { used, limit, left: Math.max(0, limit - used) };
+}
+
 function renderRedditUsageCounters(featureUsage, plan) {
   const isUnlimited = plan === "reddit_pro" || plan === "bundle";
   const MAP = {
@@ -168,18 +187,15 @@ function renderRedditUsageCounters(featureUsage, plan) {
       el.style.color = "#16a34a";
       continue;
     }
-    const info = featureUsage?.[feature];
-    if (!info) { el.textContent = ""; continue; }
-    const remaining = info.remaining ?? (info.limit - info.used);
-    const limit = info.limit;
-    if (remaining === 0) {
-      el.textContent = `${info.used}/${limit} used · Limit reached`;
+    const { used, limit, left } = safeCount(featureUsage?.[feature], REDDIT_DEFAULT_LIMITS[feature] ?? 5);
+    if (left === 0) {
+      el.textContent = `${used}/${limit} used · Limit reached 🔒`;
       el.style.color = "#ef4444";
-    } else if (remaining <= 2) {
-      el.textContent = `${remaining} left of ${limit} free`;
+    } else if (left <= 2) {
+      el.textContent = `${left} left of ${limit} free ⚠️`;
       el.style.color = "#f97316";
     } else {
-      el.textContent = `${remaining} left of ${limit} free`;
+      el.textContent = `${left} left of ${limit} free`;
       el.style.color = "#6b7280";
     }
   }
@@ -215,6 +231,21 @@ async function renderRedditAccountBar() {
 
 /* ─── API calls ────────────────────────────────────── */
 
+// Refresh usage counters on home screen after a successful API call
+async function refreshRedditCounters() {
+  try {
+    const userId = await redditGetUserId();
+    if (!userId) return;
+    const r = await fetch(`${REDDIT_API_BASE}/api/usage/status?userId=${encodeURIComponent(userId)}`);
+    if (!r.ok) return;
+    const status = await r.json();
+    const plan = status.plan || "free";
+    // Cache updated plan
+    await chrome.storage.local.set({ userPlan: plan, isPro: status.isPro });
+    renderRedditUsageCounters(status.feature_usage, plan);
+  } catch { /* non-fatal */ }
+}
+
 async function redditCallApi(endpoint, payload) {
   const userId = await redditGetUserId();
   const email  = await redditGetEmail();
@@ -238,7 +269,11 @@ async function redditCallApi(endpoint, payload) {
     const txt = await r.text().catch(() => "");
     throw new Error(txt || `Server error ${r.status}`);
   }
-  return r.json();
+  const result = await r.json();
+  // Refresh counters in background after every successful tracked call
+  const tracked = ["generate","from-url","reply","subreddits","viral","score"];
+  if (tracked.some(e => endpoint.startsWith(e))) refreshRedditCounters();
+  return result;
 }
 
 /* ─── Safety card ──────────────────────────────────── */
