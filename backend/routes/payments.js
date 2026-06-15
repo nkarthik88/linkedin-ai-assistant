@@ -140,10 +140,26 @@ router.post(
 
     if (!r.ok) {
       const err = await r.json().catch(() => ({}));
+      console.error("[upgrade-plan] Dodo PATCH error:", err);
       return res.status(502).json({ error: err.message || "Dodo plan change failed" });
     }
 
-    // Update plan in DB immediately
+    // CRITICAL: Verify Dodo actually applied the plan change.
+    // Dodo can return HTTP 200 but silently ignore the request — we must
+    // check that product_id in the response matches what we requested.
+    const updatedSub = await r.json().catch(() => ({}));
+    console.log("[upgrade-plan] Dodo response product_id:", updatedSub.product_id, "expected:", newProductId);
+
+    if (updatedSub.product_id !== newProductId) {
+      // Dodo did not apply the change — do NOT update Supabase
+      return res.status(402).json({
+        error: "plan_change_not_applied",
+        message: "Dodo did not apply the plan change. Please use the checkout link to upgrade.",
+        fallback_checkout: true,
+      });
+    }
+
+    // Dodo confirmed the change — now safe to update Supabase
     await supabaseAdmin
       .from("extension_accounts")
       .update({ plan: newPlan })
