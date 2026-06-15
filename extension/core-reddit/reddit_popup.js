@@ -250,11 +250,15 @@ async function renderRedditAccountBar() {
   const usageEl = document.getElementById("usage-label");
   if (!tierEl || !usageEl) return;
 
-  // Render from cache immediately — no loading flash
-  const cached = await chrome.storage.local.get(["userPlan", "isPro"]);
+  // Render from cache immediately — no loading flash, and lock cards right away
+  const cached = await chrome.storage.local.get(["userPlan", "isPro", "cachedFeatureUsage"]);
   if (!isRedditTabNowActive()) return;
   const cachedPlan = cached.userPlan || (cached.isPro ? "pro" : "free");
   applyRedditPlanToBar(cachedPlan, tierEl, usageEl);
+  // Apply cached feature usage immediately so cards are locked before backend fetch completes
+  if (cached.cachedFeatureUsage) {
+    renderRedditUsageCounters(cached.cachedFeatureUsage, cachedPlan);
+  }
 
   // Fetch fresh status including Reddit usage counters
   try {
