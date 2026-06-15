@@ -977,21 +977,13 @@ function initRedditFeatureNav() {
           body: JSON.stringify({ userId, newPlan: "bundle" }),
         });
         const d = await r.json();
-        if (d.success) {
-          // Backend confirmed Dodo applied the change — safe to update locally
-          await chrome.storage.local.set({ userPlan: "bundle", isPro: true });
-          renderRedditAccountBar();
-          redditShowView("reddit-view-home");
-          if (typeof showToast === "function") showToast("🎉 Upgraded to Bundle! Reddit Pro is now active.", "success");
-          else alert("🎉 Upgraded to Bundle! Reddit Pro is now active.");
+        if (d.checkoutUrl) {
+          // Open $10 upgrade checkout — plan will update via webhook after payment
+          chrome.tabs.create({ url: d.checkoutUrl, active: true });
           return;
         }
-        // Dodo didn't apply change or no subscription — fall through to checkout
-        if (d.error !== "no_subscription" && !d.fallback_checkout) {
-          if (errEl) { errEl.textContent = d.message || d.error || "Upgrade failed. Try again."; errEl.hidden = false; }
-          return;
-        }
-        // Fall through to Dodo checkout below
+        if (errEl) { errEl.textContent = d.message || d.error || "Upgrade failed. Try again."; errEl.hidden = false; }
+        return;
       } catch (err) {
         if (errEl) { errEl.textContent = "Network error. Try again."; errEl.hidden = false; }
         return;
@@ -1000,7 +992,7 @@ function initRedditFeatureNav() {
       }
     }
 
-    // Standard Dodo checkout — used for free users or when Change Plan API is unavailable
+    // Standard Dodo checkout — used for free users
     chrome.tabs.create({ url: STATIC_URLS[plan] || STATIC_URLS.bundle, active: true });
   }
 
