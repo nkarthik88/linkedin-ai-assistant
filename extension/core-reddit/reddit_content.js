@@ -43,15 +43,12 @@ function injectButton(composer) {
 }
 
 function readCommentText(composer) {
-  // Try contenteditable inside shadow DOM (shreddit)
   const shadowHost = composer.querySelector("[contenteditable]");
   if (shadowHost) return shadowHost.innerText || shadowHost.textContent || "";
 
-  // Try textarea
   const textarea = composer.querySelector("textarea");
   if (textarea) return textarea.value || "";
 
-  // Walk up to find nearby comment text (the parent comment being replied to)
   let el = composer.parentElement;
   for (let i = 0; i < 6 && el; i++) {
     const p = el.querySelector("p, [data-testid='comment'], .md");
@@ -61,24 +58,65 @@ function readCommentText(composer) {
   return "";
 }
 
-function processNewComposers() {
-  // New Reddit shreddit-composer
-  document.querySelectorAll("shreddit-composer").forEach(injectButton);
+// Process only newly added nodes — not the entire DOM
+function processNewNodes(addedNodes) {
+  addedNodes.forEach((node) => {
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
 
-  // Standard comment forms
-  document
-    .querySelectorAll("form[id*='comment'], .commentarea form, .usertext-edit")
-    .forEach(injectButton);
+    // Check if the added node itself is a composer
+    if (
+      node.matches("shreddit-composer, form[id*='comment'], .commentarea form, .usertext-edit")
+    ) {
+      injectButton(node);
+    }
+
+    // Check children of the added node
+    node.querySelectorAll(
+      "shreddit-composer, form[id*='comment'], .commentarea form, .usertext-edit"
+    ).forEach(injectButton);
+  });
+}
+
+function processAllComposers() {
+  document.querySelectorAll(
+    "shreddit-composer, form[id*='comment'], .commentarea form, .usertext-edit"
+  ).forEach(injectButton);
 }
 
 // Initial pass
-processNewComposers();
+processAllComposers();
 
-// Watch for dynamically added composers — debounced to avoid freezing heavy pages
-let _debounceTimer = null;
-const observer = new MutationObserver(() => {
-  clearTimeout(_debounceTimer);
-  _debounceTimer = setTimeout(processNewComposers, 500);
+// Target the comment container specifically — not document.body
+const TARGET_SELECTORS = [
+  "#comment-tree",         // new Reddit shreddit
+  ".commentarea",          // old Reddit
+  "[data-scrim-type='comment-thread']",
+  "main",                  // fallback
+];
+
+const targetNode = TARGET_SELECTORS.reduce(
+  (found, sel) => found || document.querySelector(sel),
+  null
+) || document.body;
+
+const OBS_CONFIG = { childList: true, subtree: true };
+
+const observer = new MutationObserver((mutations) => {
+  // Disconnect immediately to prevent recursive re-triggering
+  observer.disconnect();
+
+  // Use requestIdleCallback — only runs when main thread is free
+  requestIdleCallback(() => {
+    mutations.forEach((mutation) => {
+      // Only process if nodes were actually added
+      if (mutation.addedNodes.length > 0) {
+        processNewNodes(mutation.addedNodes);
+      }
+    });
+
+    // Reconnect after processing is done
+    observer.observe(targetNode, OBS_CONFIG);
+  });
 });
 
-observer.observe(document.body, { childList: true, subtree: true });
+observer.observe(targetNode, OBS_CONFIG);
