@@ -932,14 +932,23 @@ function initPromoToggle() {
 
 function initRedditFeatureNav() {
   document.querySelectorAll("[data-reddit-feature]").forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
+      const feature = btn.dataset.redditFeature;
+
+      // Gate post_generator and subreddit_finder on their respective limits
+      const featureToLimit = { post_generator: "post_generator", subreddit_finder: "subreddit_finder", comment_reply: "comment_reply" };
+      if (featureToLimit[feature]) {
+        const allowed = await redditCheckLimit(featureToLimit[feature]);
+        if (!allowed) return; // redditCheckLimit already shows upgrade screen
+      }
+
       // Reset finder flow when entering a feature fresh from home
-      if (btn.dataset.redditFeature === "post_generator") {
+      if (feature === "post_generator") {
         _fromSubredditFinder = false;
         const msg = document.getElementById("reddit-pg-finder-msg");
         if (msg) msg.hidden = true;
       }
-      redditShowView(`reddit-view-${btn.dataset.redditFeature}`);
+      redditShowView(`reddit-view-${feature}`);
     });
   });
 
