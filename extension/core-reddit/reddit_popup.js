@@ -98,13 +98,11 @@ async function redditCheckLimit(feature) {
   return true;
 }
 
-function redditShowUpgrade(feature) {
-  const labels = {
-    post_generator:  "Post Generator",
-    subreddit_finder:"Subreddit Finder",
-    comment_reply:   "Comment Reply",
-  };
-  const desc = document.getElementById("reddit-upgrade-desc");
+function redditShowUpgrade(feature, fromLimit = false) {
+  const backBtn = document.getElementById("reddit-upgrade-back");
+  if (backBtn) backBtn.hidden = fromLimit; // hide back when forced by limit
+  const descEl = document.getElementById("reddit-upgrade-desc");
+  if (descEl) descEl._limitSet = false; // allow renderRedditUpgradeScreen to reset desc
   redditShowView("reddit-view-upgrade");
   if (typeof renderRedditUpgradeScreen === "function") renderRedditUpgradeScreen();
 }
@@ -226,11 +224,14 @@ async function redditCallApi(endpoint, payload) {
     body: JSON.stringify({ userId, email, ...payload }),
   });
   if (r.status === 402) {
-    // Usage limit hit — show upgrade screen
+    // Usage limit hit — show upgrade screen (no back button — must upgrade)
     const data = await r.json().catch(() => ({}));
-    redditShowView("reddit-view-upgrade");
     const descEl = document.getElementById("reddit-upgrade-desc");
-    if (descEl) descEl.innerHTML = data.error || "You've used all free Reddit uses this month.";
+    if (descEl) {
+      descEl.innerHTML = (data.error || "You've used all free Reddit uses this month.") + "<br><small style='color:var(--muted)'>Resets 1st of next month.</small>";
+      descEl._limitSet = true; // prevent renderRedditUpgradeScreen overwriting this
+    }
+    redditShowUpgrade(null, true); // fromLimit=true hides back button
     throw new Error("LIMIT_REACHED");
   }
   if (!r.ok) {
@@ -924,28 +925,29 @@ function initRedditFeatureNav() {
     redditShowView("reddit-view-home");
   });
 
-  async function redditStartUpgrade(plan = "reddit_pro", useChangePlan = false) {
+  // fromPlan: if set, build $10 bundle upgrade URL for existing subscriber
+  async function redditStartUpgrade(plan = "reddit_pro", fromPlan = null) {
     const errEl = document.getElementById("reddit-upgrade-error");
     if (errEl) { errEl.textContent = ""; errEl.hidden = true; }
     try {
       const userId = await redditGetUserId();
       const email  = await redditGetEmail();
 
-      // LinkedIn Pro → Bundle: build $10 checkout URL client-side (no API call needed)
-      if (useChangePlan) {
+      // Existing subscriber → Bundle: $10 one-time checkout
+      if (fromPlan) {
         const params = new URLSearchParams({ quantity: "1" });
         if (userId) {
           params.set("metadata[user_id]", userId);
           params.set("metadata[userId]", userId);
           params.set("client_reference_id", userId);
         }
-        params.set("metadata[upgrade_from]", "linkedin_pro");
+        params.set("metadata[upgrade_from]", fromPlan);
         params.set("metadata[upgrade_to]", "bundle");
         chrome.tabs.create({ url: `https://checkout.dodopayments.com/buy/pdt_0Nh513vWBknhkf541Vkd2?${params.toString()}`, active: true });
         return;
       }
 
-      // Standard new checkout
+      // Standard new subscription checkout
       const locale = (typeof navigator !== "undefined" && navigator.language) || "";
       const india  = locale.toUpperCase().endsWith("-IN") ||
                      Intl.DateTimeFormat().resolvedOptions().timeZone === "Asia/Kolkata";
@@ -959,9 +961,10 @@ function initRedditFeatureNav() {
       if (url) {
         chrome.tabs.create({ url, active: true });
       } else {
-        // Fall back to static checkout URL
         const staticUrl = plan === "bundle"
           ? "https://checkout.dodopayments.com/buy/pdt_0Nh23AJmTvBuWAXKsi2ds?quantity=1"
+          : plan === "linkedin_pro"
+          ? "https://checkout.dodopayments.com/buy/pdt_0Nh1YWHrfWoHzrfK5qEJF?quantity=1"
           : "https://checkout.dodopayments.com/buy/pdt_0Nh1zryt8Ch4KTi9B5yVJ?quantity=1";
         chrome.tabs.create({ url: staticUrl, active: true });
       }
@@ -975,43 +978,56 @@ function initRedditFeatureNav() {
     const cached = await chrome.storage.local.get(["userPlan"]);
     const plan = cached.userPlan || "free";
     const isLinkedInPro = plan === "linkedin_pro" || plan === "pro" || plan === "plus";
+    const isRedditPro   = plan === "reddit_pro";
 
-    const upgradeBtn  = document.getElementById("reddit-upgrade-btn");
+    const redditBtn   = document.getElementById("reddit-upgrade-btn");
+    const linkedinBtn = document.getElementById("reddit-upgrade-linkedin-btn");
     const bundleBtn   = document.getElementById("reddit-upgrade-bundle-btn");
     const bundleNote  = document.getElementById("reddit-upgrade-bundle-note");
-    const upgradeDesc = document.getElementById("reddit-upgrade-desc");
+    const descEl      = document.getElementById("reddit-upgrade-desc");
 
-    if (isLinkedInPro) {
-      // LinkedIn Pro — hide Reddit Pro btn, show Bundle at $10
-      if (upgradeBtn) upgradeBtn.hidden = true;
-      if (bundleBtn) {
-        bundleBtn.innerHTML = "⬆️ Upgrade to Bundle — <strong>$10 today</strong>, then $25/mo";
-        bundleBtn.style.background = "#16a34a";
-      }
-      if (bundleNote) bundleNote.hidden = false;
-      if (upgradeDesc) upgradeDesc.innerHTML =
-        "✅ Your LinkedIn Pro stays active.<br>Pay only <strong>$10 today</strong> (save $5!), then $25/month.";
-    } else {
-      // Free user — show both
-      if (upgradeBtn) { upgradeBtn.hidden = false; upgradeBtn.textContent = "⚡ Reddit Pro — $15/month →"; }
-      if (bundleBtn) { bundleBtn.innerHTML = "🎯 Bundle — $25/month → LinkedIn + Reddit unlimited!"; bundleBtn.style.background = "#16a34a"; }
-      if (bundleNote) bundleNote.hidden = true;
-      if (upgradeDesc) upgradeDesc.textContent = "You've used all free Reddit uses this month.";
+    // Helper to rewire a button handler
+    function wire(btn, handler) {
+      if (!btn) return;
+      btn.removeEventListener("click", btn._upgradeHandler);
+      btn._upgradeHandler = handler;
+      btn.addEventListener("click", handler);
     }
 
-    // Wire buttons — remove old handlers first
-    const proHandler = () => redditStartUpgrade("reddit_pro", false);
-    const bundleHandler = () => redditStartUpgrade("bundle", isLinkedInPro);
-    upgradeBtn?.removeEventListener("click", upgradeBtn._handler);
-    upgradeBtn._handler = proHandler;
-    upgradeBtn?.addEventListener("click", proHandler);
-    bundleBtn?.removeEventListener("click", bundleBtn._handler);
-    bundleBtn._handler = bundleHandler;
-    bundleBtn?.addEventListener("click", bundleHandler);
-  }
+    if (isLinkedInPro) {
+      // LinkedIn Pro user: Reddit Pro + Bundle $10
+      if (redditBtn)   { redditBtn.hidden = false; redditBtn.textContent = "⚡ Reddit Pro — $15/month →"; }
+      if (linkedinBtn) linkedinBtn.hidden = true;
+      if (bundleBtn)   { bundleBtn.hidden = false; bundleBtn.innerHTML = "⬆️ Bundle — <strong>$10 today</strong>, then $25/mo · Save $5!"; }
+      if (bundleNote)  bundleNote.hidden = false;
+      if (descEl && !descEl._limitSet) descEl.innerHTML = "✅ Your LinkedIn Pro stays active.<br>Pay only <strong>$10 today</strong> (save $5!), then $25/month.";
+      wire(redditBtn,   () => redditStartUpgrade("reddit_pro", null));
+      wire(bundleBtn,   () => redditStartUpgrade("bundle", "linkedin_pro"));
 
-  document.getElementById("reddit-upgrade-btn")?.addEventListener("click", () => redditStartUpgrade("reddit_pro", false));
-  document.getElementById("reddit-upgrade-bundle-btn")?.addEventListener("click", () => redditStartUpgrade("bundle", false));
+    } else if (isRedditPro) {
+      // Reddit Pro user: LinkedIn Pro + Bundle $10
+      if (redditBtn)   redditBtn.hidden = true;
+      if (linkedinBtn) { linkedinBtn.hidden = false; linkedinBtn.textContent = "💼 LinkedIn Pro — $15/month →"; }
+      if (bundleBtn)   { bundleBtn.hidden = false; bundleBtn.innerHTML = "⬆️ Bundle — <strong>$10 today</strong>, then $25/mo · Save $5!"; }
+      if (bundleNote)  bundleNote.hidden = false;
+      if (descEl && !descEl._limitSet) descEl.innerHTML = "✅ Your Reddit Pro stays active.<br>Pay only <strong>$10 today</strong> (save $5!), then $25/month.";
+      wire(linkedinBtn, () => redditStartUpgrade("linkedin_pro", null));
+      wire(bundleBtn,   () => redditStartUpgrade("bundle", "reddit_pro"));
+
+    } else {
+      // Free user: Reddit Pro + LinkedIn Pro + Bundle $25
+      if (redditBtn)   { redditBtn.hidden = false; redditBtn.textContent = "⚡ Reddit Pro — $15/month →"; }
+      if (linkedinBtn) { linkedinBtn.hidden = false; linkedinBtn.textContent = "💼 LinkedIn Pro — $15/month →"; }
+      if (bundleBtn)   { bundleBtn.hidden = false; bundleBtn.innerHTML = '🎯 Bundle — $25/month &nbsp;<span style="background:rgba(255,255,255,0.25);font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;">BEST VALUE</span>'; }
+      if (bundleNote)  bundleNote.hidden = true;
+      if (descEl && !descEl._limitSet) descEl.textContent = "You've used all free Reddit uses this month. Resets 1st of next month.";
+      wire(redditBtn,   () => redditStartUpgrade("reddit_pro", null));
+      wire(linkedinBtn, () => redditStartUpgrade("linkedin_pro", null));
+      wire(bundleBtn,   () => redditStartUpgrade("bundle", null));
+    }
+    // Mark that limit message was already set (don't overwrite 402 error text)
+    if (descEl) descEl._limitSet = true;
+  }
 
   // Home screen upgrade nudge buttons
   const STATIC_URLS = {

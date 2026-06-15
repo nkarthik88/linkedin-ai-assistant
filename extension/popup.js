@@ -753,6 +753,61 @@ document.getElementById("upgrade-prompt-btn")?.addEventListener("click", (e) => 
 document.getElementById("upgrade-prompt-reddit-btn")?.addEventListener("click", (e) => startUpgrade(e.currentTarget, "reddit_pro"));
 document.getElementById("upgrade-prompt-bundle-btn")?.addEventListener("click", (e) => startUpgrade(e.currentTarget, "bundle"));
 
+// Open $10 bundle checkout for existing subscribers (client-side, no API call)
+async function startBundleUpgradeFromExisting(fromPlan) {
+  const userId = await getUserId();
+  const params = new URLSearchParams({ quantity: "1" });
+  if (userId) {
+    params.set("metadata[user_id]", userId);
+    params.set("metadata[userId]", userId);
+    params.set("client_reference_id", userId);
+  }
+  params.set("metadata[upgrade_from]", fromPlan);
+  params.set("metadata[upgrade_to]", "bundle");
+  chrome.tabs.create({ url: `https://checkout.dodopayments.com/buy/pdt_0Nh513vWBknhkf541Vkd2?${params.toString()}`, active: true });
+}
+
+// Adjust LinkedIn upgrade screen buttons based on current plan
+async function renderLinkedInUpgradeScreen() {
+  const cached = await chrome.storage.local.get(["userPlan"]);
+  const plan = cached.userPlan || "free";
+  const isRedditPro = plan === "reddit_pro";
+
+  const linkedinBtn = document.getElementById("upgrade-prompt-btn");
+  const redditBtn   = document.getElementById("upgrade-prompt-reddit-btn");
+  const redditNote  = document.getElementById("upgrade-prompt-reddit-note");
+  const bundleBtn   = document.getElementById("upgrade-prompt-bundle-btn");
+  const bundleNote  = document.getElementById("upgrade-prompt-bundle-note");
+  const bundleSub   = document.getElementById("upgrade-prompt-bundle-sub");
+
+  if (isRedditPro) {
+    // Reddit Pro user: show LinkedIn Pro + Bundle $10, hide Reddit Pro
+    if (linkedinBtn) { linkedinBtn.hidden = false; linkedinBtn.textContent = "💼 LinkedIn Pro — $15/month →"; }
+    if (redditBtn)   { redditBtn.hidden = true; }
+    if (redditNote)  { redditNote.hidden = true; }
+    if (bundleBtn) {
+      bundleBtn.innerHTML = '⬆️ Bundle — <strong>$10 today</strong>, then $25/mo &nbsp;<span style="background:rgba(255,255,255,0.25);font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;">SAVE $5</span>';
+      bundleBtn.removeEventListener("click", bundleBtn._bundleHandler);
+      bundleBtn._bundleHandler = () => startBundleUpgradeFromExisting("reddit_pro");
+      bundleBtn.addEventListener("click", bundleBtn._bundleHandler);
+    }
+    if (bundleNote) bundleNote.hidden = false;
+    if (bundleSub)  bundleSub.hidden = true;
+  } else {
+    // Free user: show all 3 at full price
+    if (linkedinBtn) { linkedinBtn.hidden = false; }
+    if (redditBtn)   { redditBtn.hidden = false; }
+    if (redditNote)  { redditNote.hidden = false; }
+    if (bundleBtn) {
+      bundleBtn.innerHTML = '🎯 Bundle — $25/month &nbsp;<span style="background:rgba(255,255,255,0.25);font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;">BEST VALUE</span>';
+      bundleBtn._bundleHandler && bundleBtn.removeEventListener("click", bundleBtn._bundleHandler);
+      bundleBtn._bundleHandler = null;
+    }
+    if (bundleNote) bundleNote.hidden = true;
+    if (bundleSub)  bundleSub.hidden = false;
+  }
+}
+
 // ── LinkedIn ID capture (anti-bypass) ─────────────────────────────────────
 
 async function captureAndStoreLinkedInId(userId) {
@@ -931,6 +986,7 @@ async function callApi(body) {
       resetEl.textContent = `Resets: ${formatResetDate(accountStatus.resets_on)}`;
       resetEl.hidden = false;
     }
+    renderLinkedInUpgradeScreen();
     showView("view-upgrade-prompt");
     throw new Error("__LIMIT_REACHED__");
   }
