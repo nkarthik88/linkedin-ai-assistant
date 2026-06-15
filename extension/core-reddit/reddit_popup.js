@@ -868,7 +868,7 @@ function initRedditFeatureNav() {
       const userId = await redditGetUserId();
       const email  = await redditGetEmail();
 
-      // If user has an active subscription, try change-plan API first (pays difference only)
+      // LinkedIn Pro → Bundle: use upgrade-plan API to get $10 checkout URL
       if (useChangePlan) {
         const r = await fetch(`${REDDIT_API_BASE}/api/payments/upgrade-plan`, {
           method: "POST",
@@ -876,19 +876,12 @@ function initRedditFeatureNav() {
           body: JSON.stringify({ userId, newPlan: plan }),
         });
         const d = await r.json();
-        if (d.success) {
-          await chrome.storage.local.set({ userPlan: plan });
-          if (typeof renderRedditAccountBar === "function") renderRedditAccountBar();
-          document.getElementById("reddit-upgrade-success-msg") &&
-            (document.getElementById("reddit-upgrade-success-msg").hidden = false);
-          redditShowView("reddit-view-home");
+        if (d.checkoutUrl) {
+          chrome.tabs.create({ url: d.checkoutUrl, active: true });
           return;
         }
-        // If no_subscription, fall through to regular checkout
-        if (d.error !== "no_subscription") {
-          if (errEl) { errEl.textContent = d.error || "Upgrade failed."; errEl.hidden = false; }
-          return;
-        }
+        if (errEl) { errEl.textContent = d.message || d.error || "Upgrade failed. Try again."; errEl.hidden = false; }
+        return;
       }
 
       // Standard new checkout
