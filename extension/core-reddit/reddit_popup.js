@@ -126,10 +126,14 @@ function applyRedditPlanToBar(plan, tierEl, usageEl) {
     tierEl.textContent = "Reddit Pro";
     tierEl.className = "tier-badge pro";
     usageEl.textContent = "Unlimited Reddit";
-  } else if (plan === "linkedin_pro" || plan === "pro" || plan === "plus") {
-    tierEl.textContent = "Free Tier";
-    tierEl.className = "tier-badge";
-    usageEl.textContent = "5 uses/feature/month · Upgrade for Reddit Pro";
+  } else if (plan === "linkedin_pro") {
+    tierEl.textContent = "LinkedIn Pro";
+    tierEl.className = "tier-badge pro";
+    usageEl.textContent = "Reddit: Free · Upgrade for Reddit Pro";
+  } else if (plan === "pro" || plan === "plus") {
+    tierEl.textContent = "Pro";
+    tierEl.className = "tier-badge pro";
+    usageEl.textContent = "Reddit: Free · Upgrade for Reddit Pro";
   } else {
     tierEl.textContent = "Free Tier";
     tierEl.className = "tier-badge";
