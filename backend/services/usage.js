@@ -67,7 +67,25 @@ function shouldResetQuota(quotaResetAt) {
   return new Date(quotaResetAt).getTime() <= Date.now();
 }
 
+async function sanitizeFeatureUsage(raw) {
+  if (!raw || typeof raw !== "object") return {};
+  const out = {};
+  for (const [k, v] of Object.entries(raw)) {
+    out[k] = rawToUsed(v); // flatten any {used,limit} objects to plain numbers
+  }
+  return out;
+}
+
 async function maybeResetUsage(row, table) {
+  // Auto-heal corrupted feature_usage (object values instead of numbers)
+  const rawUsage = row.feature_usage ?? {};
+  const hasCorruption = Object.values(rawUsage).some(v => v !== null && typeof v === "object");
+  if (hasCorruption) {
+    const healed = await sanitizeFeatureUsage(rawUsage);
+    await supabaseAdmin.from(table).update({ feature_usage: healed }).eq("id", row.id).then(() => {}).catch(() => {});
+    row = { ...row, feature_usage: healed };
+  }
+
   if (!shouldResetQuota(row.quota_reset_at)) {
     return row;
   }
