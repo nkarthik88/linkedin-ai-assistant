@@ -121,23 +121,16 @@ function applyRedditPlanToBar(plan, tierEl, usageEl) {
   if (plan === "bundle") {
     tierEl.textContent = "Bundle";
     tierEl.className = "tier-badge pro";
-    usageEl.textContent = "Unlimited Reddit";
+    usageEl.textContent = "Bundle · Unlimited Reddit";
   } else if (plan === "reddit_pro") {
     tierEl.textContent = "Reddit Pro";
     tierEl.className = "tier-badge pro";
-    usageEl.textContent = "Unlimited Reddit";
-  } else if (plan === "linkedin_pro") {
-    tierEl.textContent = "LinkedIn Pro";
-    tierEl.className = "tier-badge pro";
-    usageEl.textContent = "Reddit: Free · Upgrade for Reddit Pro";
-  } else if (plan === "pro" || plan === "plus") {
-    tierEl.textContent = "Pro";
-    tierEl.className = "tier-badge pro";
-    usageEl.textContent = "Reddit: Free · Upgrade for Reddit Pro";
+    usageEl.textContent = "Reddit Pro · Unlimited";
   } else {
+    // linkedin_pro, pro, plus, free — all show as free on Reddit tab
     tierEl.textContent = "Free Tier";
     tierEl.className = "tier-badge";
-    usageEl.textContent = "5 uses/feature/month · Upgrade for Reddit Pro";
+    usageEl.textContent = "Reddit: Free · Upgrade for Reddit Pro";
   }
 
   // Show upgrade nudge on home screen for non-Reddit-unlimited users
@@ -868,19 +861,17 @@ function initRedditFeatureNav() {
       const userId = await redditGetUserId();
       const email  = await redditGetEmail();
 
-      // LinkedIn Pro → Bundle: use upgrade-plan API to get $10 checkout URL
+      // LinkedIn Pro → Bundle: build $10 checkout URL client-side (no API call needed)
       if (useChangePlan) {
-        const r = await fetch(`${REDDIT_API_BASE}/api/payments/upgrade-plan`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, newPlan: plan }),
-        });
-        const d = await r.json();
-        if (d.checkoutUrl) {
-          chrome.tabs.create({ url: d.checkoutUrl, active: true });
-          return;
+        const params = new URLSearchParams({ quantity: "1" });
+        if (userId) {
+          params.set("metadata[user_id]", userId);
+          params.set("metadata[userId]", userId);
+          params.set("client_reference_id", userId);
         }
-        if (errEl) { errEl.textContent = d.message || d.error || "Upgrade failed. Try again."; errEl.hidden = false; }
+        params.set("metadata[upgrade_from]", "linkedin_pro");
+        params.set("metadata[upgrade_to]", "bundle");
+        chrome.tabs.create({ url: `https://checkout.dodopayments.com/buy/pdt_0Nh513vWBknhkf541Vkd2?${params.toString()}`, active: true });
         return;
       }
 
@@ -955,33 +946,20 @@ function initRedditFeatureNav() {
     const errEl = document.getElementById("reddit-home-upgrade-error");
     if (errEl) { errEl.textContent = ""; errEl.hidden = true; }
 
-    // For linkedin_pro upgrading to bundle — get $10 checkout URL directly, no popup
+    // For linkedin_pro upgrading to bundle — build $10 checkout URL client-side (no API call)
     if (plan === "bundle" && isLinkedInPro) {
       const userId = await redditGetUserId();
-      const btn = document.getElementById("reddit-home-upgrade-bundle");
-      const origText = btn?.textContent;
-      if (btn) { btn.textContent = "Processing…"; btn.disabled = true; }
-
-      try {
-        const r = await fetch(`${REDDIT_API_BASE}/api/payments/upgrade-plan`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, newPlan: "bundle" }),
-        });
-        const d = await r.json();
-        if (d.checkoutUrl) {
-          // Open $10 upgrade checkout — plan will update via webhook after payment
-          chrome.tabs.create({ url: d.checkoutUrl, active: true });
-          return;
-        }
-        if (errEl) { errEl.textContent = d.message || d.error || "Upgrade failed. Try again."; errEl.hidden = false; }
-        return;
-      } catch (err) {
-        if (errEl) { errEl.textContent = "Network error. Try again."; errEl.hidden = false; }
-        return;
-      } finally {
-        if (btn) { btn.textContent = origText; btn.disabled = false; }
+      const params = new URLSearchParams({ quantity: "1" });
+      if (userId) {
+        params.set("metadata[user_id]", userId);
+        params.set("metadata[userId]", userId);
+        params.set("client_reference_id", userId);
       }
+      params.set("metadata[upgrade_from]", currentPlan);
+      params.set("metadata[upgrade_to]", "bundle");
+      const checkoutUrl = `https://checkout.dodopayments.com/buy/pdt_0Nh513vWBknhkf541Vkd2?${params.toString()}`;
+      chrome.tabs.create({ url: checkoutUrl, active: true });
+      return;
     }
 
     // Standard Dodo checkout — used for free users
