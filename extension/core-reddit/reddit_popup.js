@@ -479,11 +479,20 @@ function renderTextVariations(variations, titleText) {
   redditShowView("reddit-view-results");
 }
 
-function renderSubreddits(subs, niche) {
+async function renderSubreddits(subs, niche) {
   const container = document.getElementById("reddit-results-container");
   const title     = document.getElementById("reddit-results-title");
   title.textContent = `Subreddits for: ${niche.substring(0, 40)}${niche.length > 40 ? "…" : ""}`;
   container.innerHTML = "";
+
+  // Check post limit upfront to show correct hint on all cards
+  const { cachedFeatureUsage } = await chrome.storage.local.get("cachedFeatureUsage");
+  const postInfo = (cachedFeatureUsage || {})["reddit_post"];
+  const postUsed = postInfo && typeof postInfo === "object" ? (Number(postInfo.used) || 0) : (Number(postInfo) || 0);
+  const postRemaining = postInfo && typeof postInfo === "object" && typeof postInfo.remaining === "number"
+    ? postInfo.remaining : Math.max(0, 5 - postUsed);
+  const plan = await redditGetPlan();
+  const postLocked = !(plan === "reddit_pro" || plan === "bundle") && postRemaining <= 0;
 
   subs.forEach((sub) => {
     const promoClass = sub.promoAllowed === "YES" ? "sub-badge-promo-yes"
@@ -501,7 +510,7 @@ function renderSubreddits(subs, niche) {
         ${sub.vibe ? `<span class="sub-badge sub-badge-vibe">${escapeHtml(sub.vibe)}</span>` : ""}
       </div>
       ${sub.bestTime ? `<div class="sub-best-time">⏰ Best time: ${escapeHtml(sub.bestTime)}</div>` : ""}
-      <div class="sub-click-hint">Click to use in Post Generator →</div>
+      <div class="sub-click-hint" style="${postLocked ? "color:#ef4444;font-weight:600;" : ""}">${postLocked ? "🔒 Post limit reached — upgrade to generate" : "Click to use in Post Generator →"}</div>
     `;
     card.addEventListener("click", async () => {
       // If post generation limit is hit, show blocked message on the card — no popup
@@ -637,87 +646,12 @@ async function handleScanCommunity() {
 
   btn.disabled    = true;
   btn.textContent = "🔍 Scanning…";
-  statusEl.textContent = `Opening r/${subreddit} in background…`;
+  statusEl.textContent = `Analysing r/${subreddit} with AI…`;
   statusEl.hidden = false;
 
-  let topPosts = [];
-  let rules    = "";
-
-  try {
-    const tab = await chrome.tabs.create({
-      url: `https://www.reddit.com/r/${subreddit}/top/?t=month`,
-      active: false,
-    });
-
-    // Wait for page to finish loading (max 10 s)
-    await new Promise((resolve) => {
-      const timeout = setTimeout(resolve, 10000);
-      const listener = (tabId, info) => {
-        if (tabId === tab.id && info.status === "complete") {
-          clearTimeout(timeout);
-          chrome.tabs.onUpdated.removeListener(listener);
-          setTimeout(resolve, 1500); // let JS-rendered content paint
-        }
-      };
-      chrome.tabs.onUpdated.addListener(listener);
-    });
-
-    statusEl.textContent = `Reading top posts in r/${subreddit}…`;
-
-    const results = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: () => {
-        const posts = [];
-        const rulesArr = [];
-
-        // New Reddit — shreddit-post custom elements
-        const shredditPosts = document.querySelectorAll("shreddit-post");
-        if (shredditPosts.length > 0) {
-          shredditPosts.forEach((p) => {
-            const title = p.getAttribute("post-title")
-              || p.querySelector('[slot="title"]')?.textContent?.trim() || "";
-            const score = parseInt(p.getAttribute("score")
-              || p.querySelector("faceplate-number")?.getAttribute("number") || "0") || 0;
-            if (title) posts.push({ title, score, type: p.getAttribute("post-type") || "text" });
-          });
-        } else {
-          // Old Reddit fallback
-          document.querySelectorAll(".thing.link").forEach((p) => {
-            const title = p.querySelector(".title a.title")?.textContent?.trim() || "";
-            const score = parseInt(p.querySelector(".score.unvoted")?.textContent || "0") || 0;
-            if (title) posts.push({ title, score, type: p.classList.contains("self") ? "text" : "link" });
-          });
-        }
-
-        // Sidebar rules — try multiple selectors
-        const ruleSels = [
-          "community-rules-item", "[id*='rule'] li", ".md ul li",
-          "[data-testid*='rule']", ".communityRulesExpander li",
-        ];
-        ruleSels.forEach((sel) => {
-          document.querySelectorAll(sel).forEach((r) => {
-            const text = r.textContent?.trim();
-            if (text && text.length > 5 && text.length < 300) rulesArr.push(text);
-          });
-        });
-
-        return {
-          posts: posts.slice(0, 25),
-          rules: [...new Set(rulesArr)].slice(0, 8).join(" | "),
-        };
-      },
-    });
-
-    const scraped = results?.[0]?.result;
-    topPosts = scraped?.posts || [];
-    rules    = scraped?.rules || "";
-
-    await chrome.tabs.remove(tab.id).catch(() => {});
-
-  } catch {
-    // Silently fall back — AI will analyse without scraped data
-    statusEl.textContent = `⚠ Couldn't read the page directly — using AI knowledge of r/${subreddit}.`;
-  }
+  // Use AI knowledge directly — no background tab needed (avoids Page Unresponsive crash)
+  const topPosts = [];
+  const rules    = "";
 
   statusEl.textContent = "Analysing community patterns…";
 
