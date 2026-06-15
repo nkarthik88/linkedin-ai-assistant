@@ -191,6 +191,29 @@ function safeCount(info, defaultLimit) {
   return { used, limit, left: Math.max(0, limit - used) };
 }
 
+// Map backend feature key → home card's data-reddit-feature value
+const FEATURE_KEY_TO_CARD = {
+  reddit_post:      "post_generator",
+  reddit_subreddit: "subreddit_finder",
+  reddit_reply:     "comment_reply",
+};
+
+function setCardLocked(featureCardName, locked) {
+  const card = document.querySelector(`[data-reddit-feature="${featureCardName}"]`);
+  if (!card) return;
+  if (locked) {
+    card.disabled = true;
+    card.style.opacity = "0.45";
+    card.style.cursor = "not-allowed";
+    card.style.pointerEvents = "none";
+  } else {
+    card.disabled = false;
+    card.style.opacity = "";
+    card.style.cursor = "";
+    card.style.pointerEvents = "";
+  }
+}
+
 function renderRedditUsageCounters(featureUsage, plan) {
   const isUnlimited = plan === "reddit_pro" || plan === "bundle";
   const MAP = {
@@ -204,18 +227,22 @@ function renderRedditUsageCounters(featureUsage, plan) {
     if (isUnlimited) {
       el.textContent = "Unlimited ✓";
       el.style.color = "#16a34a";
+      setCardLocked(FEATURE_KEY_TO_CARD[feature], false);
       continue;
     }
     const { used, limit, left } = safeCount(featureUsage?.[feature], REDDIT_DEFAULT_LIMITS[feature] ?? 5);
     if (left === 0) {
       el.textContent = `${used}/${limit} used · Limit reached 🔒`;
       el.style.color = "#ef4444";
+      setCardLocked(FEATURE_KEY_TO_CARD[feature], true);
     } else if (left <= 2) {
       el.textContent = `${left} left of ${limit} free ⚠️`;
       el.style.color = "#f97316";
+      setCardLocked(FEATURE_KEY_TO_CARD[feature], false);
     } else {
       el.textContent = `${left} left of ${limit} free`;
       el.style.color = "#6b7280";
+      setCardLocked(FEATURE_KEY_TO_CARD[feature], false);
     }
   }
 }
@@ -960,17 +987,9 @@ function initPromoToggle() {
 
 function initRedditFeatureNav() {
   document.querySelectorAll("[data-reddit-feature]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
+    btn.addEventListener("click", () => {
       const feature = btn.dataset.redditFeature;
-
-      // Gate post_generator and subreddit_finder on their respective limits
-      const featureToLimit = { post_generator: "post_generator", subreddit_finder: "subreddit_finder", comment_reply: "comment_reply" };
-      if (featureToLimit[feature]) {
-        const allowed = await redditCheckLimit(featureToLimit[feature]);
-        if (!allowed) return; // redditCheckLimit already shows upgrade screen
-      }
-
-      // Reset finder flow when entering a feature fresh from home
+      // Cards are disabled via CSS/pointer-events when limit is reached — no JS gate needed here
       if (feature === "post_generator") {
         _fromSubredditFinder = false;
         const msg = document.getElementById("reddit-pg-finder-msg");
