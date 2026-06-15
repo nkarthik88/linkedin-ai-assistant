@@ -202,15 +202,13 @@ function setCardLocked(featureCardName, locked) {
   const card = document.querySelector(`[data-reddit-feature="${featureCardName}"]`);
   if (!card) return;
   if (locked) {
-    card.disabled = true;
-    card.style.opacity = "0.45";
+    card.dataset.locked = "true";
+    card.style.opacity = "0.5";
     card.style.cursor = "not-allowed";
-    card.style.pointerEvents = "none";
   } else {
-    card.disabled = false;
+    delete card.dataset.locked;
     card.style.opacity = "";
     card.style.cursor = "";
-    card.style.pointerEvents = "";
   }
 }
 
@@ -501,7 +499,11 @@ function renderSubreddits(subs, niche) {
       ${sub.bestTime ? `<div class="sub-best-time">⏰ Best time: ${escapeHtml(sub.bestTime)}</div>` : ""}
       <div class="sub-click-hint">Click to use in Post Generator →</div>
     `;
-    card.addEventListener("click", () => {
+    card.addEventListener("click", async () => {
+      // If post generation limit is hit, show upgrade instead of post generator
+      const postAllowed = await redditCheckLimit("post_generator");
+      if (!postAllowed) return; // redditCheckLimit shows upgrade screen
+
       // Fill subreddit in Quick tab
       const subInput = document.getElementById("reddit-subreddit");
       if (subInput) subInput.value = sub.name;
@@ -989,7 +991,11 @@ function initRedditFeatureNav() {
   document.querySelectorAll("[data-reddit-feature]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const feature = btn.dataset.redditFeature;
-      // Cards are disabled via CSS/pointer-events when limit is reached — no JS gate needed here
+      // If card is locked (limit reached) → show upgrade screen
+      if (btn.dataset.locked === "true") {
+        redditShowUpgrade(feature);
+        return;
+      }
       if (feature === "post_generator") {
         _fromSubredditFinder = false;
         const msg = document.getElementById("reddit-pg-finder-msg");
