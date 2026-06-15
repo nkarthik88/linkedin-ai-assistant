@@ -206,6 +206,10 @@ document.getElementById("onboarding-start")?.addEventListener("click", async () 
   if (overlay) overlay.hidden = true;
   if (btn) { btn.disabled = false; btn.textContent = "Get Started Free →"; }
 
+  // Load full UI and check plan from backend immediately
+  refreshAccountStatus();
+  renderLeadCounter();
+
   // Capture LinkedIn ID in the background after onboarding
   captureAndStoreLinkedInId(canonicalUserId);
 });
