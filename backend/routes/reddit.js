@@ -406,7 +406,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const userId = validateUserId(req, res);
     if (!userId) return;
-    await consumeRedditFeatureCredit(userId, "reddit_score");
+    await consumeRedditFeatureCredit(userId, "reddit_post");
 
     const { postTitle, postBody } = req.body;
     if (!postTitle || !postBody) {
@@ -453,7 +453,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const userId = validateUserId(req, res);
     if (!userId) return;
-    await consumeRedditFeatureCredit(userId, "reddit_viral");
+    await consumeRedditFeatureCredit(userId, "reddit_post");
 
     const { draft, subreddit } = req.body;
     if (!draft) return res.status(400).json({ error: "draft is required" });

@@ -373,8 +373,9 @@ export async function consumeRedditFeatureCredit(userId, feature) {
   const limit = REDDIT_FREE_LIMITS[feature] ?? null;
 
   if (limit !== null && used >= limit) {
+    const label = feature === "reddit_subreddit" ? "subreddit searches" : feature === "reddit_reply" ? "Reddit replies" : "Reddit posts";
     const err = new Error(
-      `You've used all ${limit} free ${featureLabel(feature)} this month. Upgrade for unlimited Reddit access.`
+      `You've used all ${limit} free ${label} this month. Upgrade for unlimited Reddit access.`
     );
     err.statusCode = 402;
     err.featureLimit = true;

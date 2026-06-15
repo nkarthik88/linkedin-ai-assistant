@@ -495,14 +495,16 @@
           <div class="upgrade-prompt-card">
             <div class="upgrade-prompt-icon">🟠</div>
             <h2>Reddit limit reached!</h2>
-            <p id="reddit-upgrade-desc">You've used all 5 free Reddit uses this month.</p>
+            <p id="reddit-upgrade-desc">You've used all 5 free Reddit posts this month.</p>
             <ul class="upgrade-perks">
-              <li>✓ Unlimited Reddit features</li>
+              <li id="reddit-upgrade-perk-1">✓ Unlimited Reddit features</li>
               <li>✓ Cancel anytime</li>
             </ul>
-            <button id="reddit-upgrade-btn" class="submit-btn reddit-upgrade-btn-main" data-plan="reddit_pro">Reddit Pro $15/month →</button>
-            <button id="reddit-upgrade-bundle-btn" class="submit-btn" style="margin-top:8px;background:#f97316;" data-plan="bundle">Bundle $25/month → LinkedIn + Reddit unlimited!</button>
-            <button id="reddit-upgrade-back" class="back-link-btn">← Back to home</button>
+            <!-- Buttons updated dynamically by renderRedditUpgradeScreen() -->
+            <button id="reddit-upgrade-btn" class="submit-btn reddit-upgrade-btn-main">⚡ Reddit Pro — $15/month →</button>
+            <button id="reddit-upgrade-bundle-btn" class="submit-btn" style="margin-top:8px;background:#16a34a;font-weight:700;">🎯 Bundle — $25/month → LinkedIn + Reddit unlimited!</button>
+            <p id="reddit-upgrade-bundle-note" style="font-size:11px;color:#16a34a;font-weight:600;margin:4px 0 0 0;text-align:center;" hidden>You pay $10 today (save $5!) · then $25/month</p>
+            <button id="reddit-upgrade-back" class="back-link-btn" style="margin-top:12px;">← Back to home</button>
             <p id="reddit-upgrade-error" class="upgrade-error" hidden></p>
           </div>
         </div>

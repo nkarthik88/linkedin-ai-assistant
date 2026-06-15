@@ -978,30 +978,40 @@ function initRedditFeatureNav() {
 
     const upgradeBtn  = document.getElementById("reddit-upgrade-btn");
     const bundleBtn   = document.getElementById("reddit-upgrade-bundle-btn");
+    const bundleNote  = document.getElementById("reddit-upgrade-bundle-note");
     const upgradeDesc = document.getElementById("reddit-upgrade-desc");
 
-    if (isLinkedInPro && upgradeBtn && bundleBtn) {
-      // LinkedIn Pro user — only show Bundle upgrade (pays difference)
-      upgradeBtn.hidden = true;
-      bundleBtn.textContent = "⬆️ Upgrade to Bundle →";
-      bundleBtn.style.background = "#7c3aed";
+    if (isLinkedInPro) {
+      // LinkedIn Pro — hide Reddit Pro btn, show Bundle at $10
+      if (upgradeBtn) upgradeBtn.hidden = true;
+      if (bundleBtn) {
+        bundleBtn.innerHTML = "⬆️ Upgrade to Bundle — <strong>$10 today</strong>, then $25/mo";
+        bundleBtn.style.background = "#16a34a";
+      }
+      if (bundleNote) bundleNote.hidden = false;
       if (upgradeDesc) upgradeDesc.innerHTML =
-        "✅ Your LinkedIn Pro stays active.<br>We'll charge only the difference — <strong>pay $10 today, then $25/month</strong>.";
+        "✅ Your LinkedIn Pro stays active.<br>Pay only <strong>$10 today</strong> (save $5!), then $25/month.";
     } else {
-      // Free user — show both options
-      if (upgradeBtn) { upgradeBtn.hidden = false; upgradeBtn.textContent = "⚡ Reddit Pro $15/month →"; }
-      if (bundleBtn)  { bundleBtn.textContent = "🎯 Bundle $25/month — Both Platforms →"; bundleBtn.style.background = "#f97316"; }
-      if (upgradeDesc) upgradeDesc.textContent = "You've used all 5 free Reddit uses this month.";
+      // Free user — show both
+      if (upgradeBtn) { upgradeBtn.hidden = false; upgradeBtn.textContent = "⚡ Reddit Pro — $15/month →"; }
+      if (bundleBtn) { bundleBtn.innerHTML = "🎯 Bundle — $25/month → LinkedIn + Reddit unlimited!"; bundleBtn.style.background = "#16a34a"; }
+      if (bundleNote) bundleNote.hidden = true;
+      if (upgradeDesc) upgradeDesc.textContent = "You've used all free Reddit uses this month.";
     }
 
-    // Wire Bundle btn: if linkedin_pro use change-plan, otherwise new checkout
+    // Wire buttons — remove old handlers first
+    const proHandler = () => redditStartUpgrade("reddit_pro", false);
+    const bundleHandler = () => redditStartUpgrade("bundle", isLinkedInPro);
+    upgradeBtn?.removeEventListener("click", upgradeBtn._handler);
+    upgradeBtn._handler = proHandler;
+    upgradeBtn?.addEventListener("click", proHandler);
     bundleBtn?.removeEventListener("click", bundleBtn._handler);
-    bundleBtn._handler = () => redditStartUpgrade("bundle", isLinkedInPro);
-    bundleBtn?.addEventListener("click", bundleBtn._handler);
+    bundleBtn._handler = bundleHandler;
+    bundleBtn?.addEventListener("click", bundleHandler);
   }
 
-  document.getElementById("reddit-upgrade-btn")?.addEventListener("click", () => redditStartUpgrade("reddit_pro"));
-  document.getElementById("reddit-upgrade-bundle-btn")?.addEventListener("click", () => redditStartUpgrade("bundle"));
+  document.getElementById("reddit-upgrade-btn")?.addEventListener("click", () => redditStartUpgrade("reddit_pro", false));
+  document.getElementById("reddit-upgrade-bundle-btn")?.addEventListener("click", () => redditStartUpgrade("bundle", false));
 
   // Home screen upgrade nudge buttons
   const STATIC_URLS = {

@@ -17,11 +17,9 @@ export const FEATURE_FREE_LIMITS = {
 
 /** Reddit-specific per-feature monthly limits for free/linkedin_pro users. */
 export const REDDIT_FREE_LIMITS = {
-  reddit_post:       5,
+  reddit_post:       5,   // includes viral rewrites
   reddit_subreddit:  3,
   reddit_reply:      5,
-  reddit_score:     10,
-  reddit_viral:      5,
 };
 
 /**
