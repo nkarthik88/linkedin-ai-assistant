@@ -950,10 +950,26 @@ function initRedditFeatureNav() {
     const cached = await chrome.storage.local.get(["userPlan"]);
     const currentPlan = cached.userPlan || "free";
     const isLinkedInPro = currentPlan === "linkedin_pro" || currentPlan === "pro" || currentPlan === "plus";
+    const errEl = document.getElementById("reddit-home-upgrade-error");
+    if (errEl) { errEl.textContent = ""; errEl.hidden = true; }
 
-    // For linkedin_pro upgrading to bundle, try change-plan first
+    // For linkedin_pro upgrading to bundle — use Change Plan API (charges only $10 difference)
     if (plan === "bundle" && isLinkedInPro) {
+      const confirmed = confirm(
+        "⬆️ Upgrade to Bundle\n\n" +
+        "Current plan: LinkedIn Pro ($15/mo)\n" +
+        "New plan: Bundle ($25/mo)\n" +
+        "Charged today: ~$10 (difference only)\n" +
+        "Next billing: $25/month\n\n" +
+        "Confirm upgrade?"
+      );
+      if (!confirmed) return;
+
       const userId = await redditGetUserId();
+      const btn = document.getElementById("reddit-home-upgrade-bundle");
+      const origText = btn?.textContent;
+      if (btn) { btn.textContent = "Processing…"; btn.disabled = true; }
+
       try {
         const r = await fetch(`${REDDIT_API_BASE}/api/payments/upgrade-plan`, {
           method: "POST",
@@ -962,15 +978,28 @@ function initRedditFeatureNav() {
         });
         const d = await r.json();
         if (d.success) {
-          await chrome.storage.local.set({ userPlan: "bundle" });
+          await chrome.storage.local.set({ userPlan: "bundle", isPro: true });
           renderRedditAccountBar();
+          redditShowView("reddit-view-home");
+          if (typeof showToast === "function") showToast("🎉 Upgraded to Bundle! Reddit Pro is now active.", "success");
+          else alert("🎉 Upgraded to Bundle! Reddit Pro is now active.");
           return;
         }
-      } catch { /* fall through to static checkout */ }
+        // no_subscription → fall through to checkout
+        if (d.error !== "no_subscription") {
+          if (errEl) { errEl.textContent = d.message || d.error || "Upgrade failed. Try again."; errEl.hidden = false; }
+          return;
+        }
+      } catch (err) {
+        if (errEl) { errEl.textContent = "Network error. Try again."; errEl.hidden = false; }
+        return;
+      } finally {
+        if (btn) { btn.textContent = origText; btn.disabled = false; }
+      }
     }
 
-    // Open static checkout URL directly — always works
-    chrome.tabs.create({ url: STATIC_URLS[plan], active: true });
+    // Standard checkout for free users or fallback
+    chrome.tabs.create({ url: STATIC_URLS[plan] || STATIC_URLS.bundle, active: true });
   }
 
   document.getElementById("reddit-home-upgrade-pro")?.addEventListener("click", () => redditHomeUpgrade("reddit_pro"));

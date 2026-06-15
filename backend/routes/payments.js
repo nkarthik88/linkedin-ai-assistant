@@ -78,9 +78,39 @@ router.post(
       .eq("id", userId)
       .maybeSingle();
 
-    const subscriptionId = acct?.subscription_id;
+    let subscriptionId = acct?.subscription_id;
+
+    // Auto-lookup from Dodo if not stored (handles users who paid before webhook saved it)
     if (!subscriptionId) {
-      // No subscription on file — fall back to new checkout
+      try {
+        const apiKey = (config.dodoSecretKey || config.dodoApiKey || "").trim();
+        const apiBase = (process.env.DODO_API_BASE || "https://live.dodopayments.com").replace(/\/+$/, "");
+        const subsRes = await fetch(`${apiBase}/subscriptions?limit=20`, {
+          headers: { Authorization: `Bearer ${apiKey}` },
+        });
+        if (subsRes.ok) {
+          const subsData = await subsRes.json();
+          const items = subsData.items || subsData.data || [];
+          const activeSub = items.find(
+            (s) =>
+              (s.metadata?.user_id === userId || s.metadata?.userId === userId ||
+               s.metadata?.connector_response_reference_id === userId ||
+               s.client_reference_id === userId) &&
+              s.status === "active"
+          );
+          if (activeSub) {
+            subscriptionId = activeSub.subscription_id || activeSub.id;
+            // Save it so next call is instant
+            await supabaseAdmin
+              .from("extension_accounts")
+              .update({ subscription_id: subscriptionId })
+              .eq("id", userId);
+          }
+        }
+      } catch { /* non-fatal — fall through to no_subscription */ }
+    }
+
+    if (!subscriptionId) {
       return res.status(404).json({ error: "no_subscription", message: "No active subscription found. Please use the standard checkout." });
     }
 
