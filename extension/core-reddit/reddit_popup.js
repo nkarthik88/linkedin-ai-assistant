@@ -668,14 +668,18 @@ async function handleScanCommunity() {
   btn.textContent = "🔍 Scan Community";
 }
 
+let _generatingPost = false;
+
 async function handleScanGenerate(e) {
   e.preventDefault();
+  if (_generatingPost) return;
   if (!(await redditCheckLimit("post_generator"))) return;
 
   const topic     = document.getElementById("reddit-scan-topic")?.value.trim();
   const subreddit = document.getElementById("reddit-scan-subreddit")?.value.trim();
   if (!topic) return;
 
+  _generatingPost = true;
   redditShowLoading("Generating posts tuned for your community…");
   try {
     const data = await redditCallApi("generate", { topic, subreddit, analysisContext: _communityAnalysis });
@@ -683,7 +687,9 @@ async function handleScanGenerate(e) {
     renderRedditPosts(data.posts || []);
   } catch (err) {
     redditShowView("reddit-view-post_generator");
-    alert("Error: " + err.message);
+    if (err.message !== "LIMIT_REACHED") alert("Error: " + err.message);
+  } finally {
+    _generatingPost = false;
   }
 }
 
@@ -691,12 +697,14 @@ async function handleScanGenerate(e) {
 
 async function handleUrlGenerate(e) {
   e.preventDefault();
+  if (_generatingPost) return;
   if (!(await redditCheckLimit("post_generator"))) return;
 
   const url       = document.getElementById("reddit-url-input")?.value.trim();
   const subreddit = document.getElementById("reddit-url-subreddit")?.value.trim();
   if (!url) return;
 
+  _generatingPost = true;
   redditShowLoading("Fetching URL and generating posts…");
   try {
     const data = await redditCallApi("from-url", { url, subreddit });
@@ -704,7 +712,9 @@ async function handleUrlGenerate(e) {
     renderRedditPosts(data.posts || []);
   } catch (err) {
     redditShowView("reddit-view-post_generator");
-    alert("Error: " + err.message);
+    if (err.message !== "LIMIT_REACHED") alert("Error: " + err.message);
+  } finally {
+    _generatingPost = false;
   }
 }
 
@@ -712,6 +722,7 @@ async function handleUrlGenerate(e) {
 
 async function handlePostGenerator(e) {
   e.preventDefault();
+  if (_generatingPost) return;
   if (!(await redditCheckLimit("post_generator"))) return;
 
   const topic      = document.getElementById("reddit-topic").value.trim();
@@ -719,6 +730,7 @@ async function handlePostGenerator(e) {
   const template   = document.querySelector(".reddit-template-chip.active")?.dataset.template || "Lesson";
   const isPromoting = document.getElementById("reddit-promo-toggle")?.dataset.promoting === "yes";
 
+  _generatingPost = true;
   redditShowLoading("Generating 3 Reddit posts…");
   try {
     const data = await redditCallApi("generate", { topic, subreddit, template, isPromoting });
@@ -726,7 +738,9 @@ async function handlePostGenerator(e) {
     renderRedditPosts(data.posts || []);
   } catch (err) {
     redditShowView("reddit-view-post_generator");
-    alert("Error: " + err.message);
+    if (err.message !== "LIMIT_REACHED") alert("Error: " + err.message);
+  } finally {
+    _generatingPost = false;
   }
 }
 
