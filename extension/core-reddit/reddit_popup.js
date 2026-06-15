@@ -142,6 +142,22 @@ function applyRedditPlanToBar(plan, tierEl, usageEl) {
 
   // Show upgrade nudge on home screen for non-Reddit-unlimited users
   if (upgradeEl) upgradeEl.style.display = isRedditUnlimited ? "none" : "block";
+
+  // Customize upgrade buttons based on plan
+  const isLinkedInPro = plan === "linkedin_pro" || plan === "pro" || plan === "plus";
+  const proBtn  = document.getElementById("reddit-home-upgrade-pro");
+  const bundleBtn = document.getElementById("reddit-home-upgrade-bundle");
+  const noteEl  = document.getElementById("reddit-home-upgrade-note");
+  if (isLinkedInPro && !isRedditUnlimited) {
+    // LinkedIn Pro user: hide Reddit Pro btn, surface Bundle as the upgrade path
+    if (proBtn)   proBtn.hidden = true;
+    if (bundleBtn) { bundleBtn.textContent = "🎯 Bundle $25/month — Both Platforms →"; bundleBtn.style.background = "#f97316"; }
+    if (noteEl)   noteEl.hidden = false;
+  } else {
+    if (proBtn)   proBtn.hidden = false;
+    if (bundleBtn) { bundleBtn.textContent = "🎯 Bundle $25/month — Both Platforms →"; bundleBtn.style.background = "#f97316"; }
+    if (noteEl)   noteEl.hidden = true;
+  }
 }
 
 function isRedditTabNowActive() {
