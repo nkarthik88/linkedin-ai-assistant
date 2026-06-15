@@ -454,7 +454,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const userId = validateUserId(req, res);
     if (!userId) return;
-    await consumeRedditFeatureCredit(userId, "reddit_post");
+    // Viral rewrite is a free refinement of already-generated content — no credit consumed
 
     const { draft, subreddit } = req.body;
     if (!draft) return res.status(400).json({ error: "draft is required" });
