@@ -500,9 +500,23 @@ function renderSubreddits(subs, niche) {
       <div class="sub-click-hint">Click to use in Post Generator →</div>
     `;
     card.addEventListener("click", async () => {
-      // If post generation limit is hit, show upgrade instead of post generator
-      const postAllowed = await redditCheckLimit("post_generator");
-      if (!postAllowed) return; // redditCheckLimit shows upgrade screen
+      // If post generation limit is hit, show blocked message on the card — no popup
+      const { cachedFeatureUsage } = await chrome.storage.local.get("cachedFeatureUsage");
+      const postInfo = (cachedFeatureUsage || {})["reddit_post"];
+      const postUsed = postInfo && typeof postInfo === "object" ? (Number(postInfo.used) || 0) : (Number(postInfo) || 0);
+      const postRemaining = postInfo && typeof postInfo === "object" && typeof postInfo.remaining === "number"
+        ? postInfo.remaining : Math.max(0, 5 - postUsed);
+      const plan = await redditGetPlan();
+      const isUnlimited = plan === "reddit_pro" || plan === "bundle";
+      if (!isUnlimited && postRemaining <= 0) {
+        const hint = card.querySelector(".sub-click-hint");
+        if (hint) {
+          hint.textContent = "🔒 Post limit reached — upgrade to use";
+          hint.style.color = "#ef4444";
+          hint.style.fontWeight = "600";
+        }
+        return;
+      }
 
       // Fill subreddit in Quick tab
       const subInput = document.getElementById("reddit-subreddit");
@@ -991,11 +1005,8 @@ function initRedditFeatureNav() {
   document.querySelectorAll("[data-reddit-feature]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const feature = btn.dataset.redditFeature;
-      // If card is locked (limit reached) → show upgrade screen
-      if (btn.dataset.locked === "true") {
-        redditShowUpgrade(feature);
-        return;
-      }
+      // If card is locked (limit reached) → block silently, no popup
+      if (btn.dataset.locked === "true") return;
       if (feature === "post_generator") {
         _fromSubredditFinder = false;
         const msg = document.getElementById("reddit-pg-finder-msg");
