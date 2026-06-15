@@ -451,7 +451,7 @@ async function renderAccountPage(status) {
   const name = await getUserName();
   const email = await getUserEmail();
 
-  if (nameEl) nameEl.textContent = name || "—";
+  if (nameEl) nameEl.textContent = name || "";
   if (emailTextEl) emailTextEl.textContent = email || "No email saved";
   if (emailUnsetSection) emailUnsetSection.hidden = Boolean(email);
 
@@ -750,6 +750,7 @@ async function startUpgrade(triggerBtn = null, plan = "linkedin_pro") {
 
 document.getElementById("upgrade-btn")?.addEventListener("click", (e) => startUpgrade(e.currentTarget));
 document.getElementById("upgrade-prompt-btn")?.addEventListener("click", (e) => startUpgrade(e.currentTarget));
+document.getElementById("upgrade-prompt-reddit-btn")?.addEventListener("click", (e) => startUpgrade(e.currentTarget, "reddit_pro"));
 document.getElementById("upgrade-prompt-bundle-btn")?.addEventListener("click", (e) => startUpgrade(e.currentTarget, "bundle"));
 
 // ── LinkedIn ID capture (anti-bypass) ─────────────────────────────────────

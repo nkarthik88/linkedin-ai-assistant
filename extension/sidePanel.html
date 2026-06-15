@@ -405,13 +405,19 @@
             <div class="upgrade-prompt-icon">🔒</div>
             <h2 id="upgrade-prompt-title">Free limit reached!</h2>
             <p id="upgrade-prompt-desc">You've used all free uses for this feature this month.</p>
-            <ul class="upgrade-perks">
-              <li>✓ Unlimited LinkedIn features</li>
-              <li>✓ 25 lead searches/month</li>
-              <li>✓ Cancel anytime</li>
-            </ul>
-            <button id="upgrade-prompt-btn" class="submit-btn upgrade-prompt-btn-main" data-plan="linkedin_pro">LinkedIn Pro — $15/month →</button>
-            <button id="upgrade-prompt-bundle-btn" class="submit-btn" style="margin-top:8px;background:#f97316;" data-plan="bundle">Bundle $25/month → LinkedIn + Reddit unlimited!</button>
+
+            <!-- Option 1: LinkedIn Pro -->
+            <button id="upgrade-prompt-btn" class="submit-btn upgrade-prompt-btn-main" data-plan="linkedin_pro" style="width:100%;margin-bottom:4px;">💼 LinkedIn Pro — $15/month →</button>
+            <p style="font-size:11px;color:var(--muted);margin:0 0 10px 0;text-align:center;">Unlimited LinkedIn features · 25 leads/mo</p>
+
+            <!-- Option 2: Reddit Pro -->
+            <button id="upgrade-prompt-reddit-btn" class="submit-btn" data-plan="reddit_pro" style="width:100%;margin-bottom:4px;background:#ff4500;">🟠 Reddit Pro — $15/month →</button>
+            <p style="font-size:11px;color:var(--muted);margin:0 0 10px 0;text-align:center;">Unlimited Reddit features</p>
+
+            <!-- Option 3: Bundle (best value) -->
+            <button id="upgrade-prompt-bundle-btn" class="submit-btn" data-plan="bundle" style="width:100%;background:#16a34a;font-weight:700;margin-bottom:4px;">🎯 Bundle — $25/month &nbsp;<span style="background:rgba(255,255,255,0.25);font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;">BEST VALUE</span></button>
+            <p style="font-size:11px;color:var(--muted);margin:0 0 10px 0;text-align:center;">Unlimited LinkedIn + Reddit · Save $5!</p>
+
             <p id="upgrade-prompt-reset" class="upgrade-prompt-reset" hidden></p>
             <p id="upgrade-prompt-error" class="upgrade-error" hidden></p>
           </div>
