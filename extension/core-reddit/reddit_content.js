@@ -74,9 +74,11 @@ function processNewComposers() {
 // Initial pass
 processNewComposers();
 
-// Watch for dynamically added composers (Reddit is a SPA)
+// Watch for dynamically added composers — debounced to avoid freezing heavy pages
+let _debounceTimer = null;
 const observer = new MutationObserver(() => {
-  processNewComposers();
+  clearTimeout(_debounceTimer);
+  _debounceTimer = setTimeout(processNewComposers, 500);
 });
 
 observer.observe(document.body, { childList: true, subtree: true });
