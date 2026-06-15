@@ -955,18 +955,8 @@ function initRedditFeatureNav() {
     const errEl = document.getElementById("reddit-home-upgrade-error");
     if (errEl) { errEl.textContent = ""; errEl.hidden = true; }
 
-    // For linkedin_pro upgrading to bundle — use Change Plan API (charges only $10 difference)
+    // For linkedin_pro upgrading to bundle — get $10 checkout URL directly, no popup
     if (plan === "bundle" && isLinkedInPro) {
-      const confirmed = confirm(
-        "⬆️ Upgrade to Bundle\n\n" +
-        "Current plan: LinkedIn Pro ($15/mo)\n" +
-        "New plan: Bundle ($25/mo)\n" +
-        "Charged today: ~$10 (difference only)\n" +
-        "Next billing: $25/month\n\n" +
-        "Confirm upgrade?"
-      );
-      if (!confirmed) return;
-
       const userId = await redditGetUserId();
       const btn = document.getElementById("reddit-home-upgrade-bundle");
       const origText = btn?.textContent;

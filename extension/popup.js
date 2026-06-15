@@ -404,7 +404,8 @@ async function refreshAccountStatus() {
   } catch {
     // Don't overwrite a valid cached label with "Free Tier" — only show offline if bar is blank
     if (!isRedditTabActive()) {
-      if (tierEl && (tierEl.textContent === "…" || tierEl.textContent === "")) {
+      const blank = ["…", "", "Loading…"];
+      if (tierEl && blank.includes(tierEl.textContent)) {
         if (tierEl) tierEl.textContent = "–";
         if (usageEl) usageEl.textContent = "Could not load · check connection";
       }
