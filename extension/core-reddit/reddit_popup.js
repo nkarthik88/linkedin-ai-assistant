@@ -753,7 +753,31 @@ function initPlatformSwitcher() {
         redditPanel.hidden = true;
         if (subheading) subheading.textContent = "AI-powered content for your LinkedIn";
         if (header) header.classList.remove("header-reddit");
-        // Restore LinkedIn account bar
+        // Immediately restore LinkedIn badge from cache before async fetch
+        chrome.storage.local.get(["userPlan", "isPro"], (cached) => {
+          const tierEl = document.getElementById("tier-label");
+          const usageEl = document.getElementById("usage-label");
+          if (!tierEl || !usageEl) return;
+          const plan = cached.userPlan || "free";
+          const isPro = cached.isPro || false;
+          if (plan === "bundle") {
+            tierEl.textContent = "Bundle"; tierEl.className = "tier-badge pro";
+            usageEl.textContent = "Unlimited LinkedIn & Reddit · 25 leads/mo";
+          } else if (plan === "linkedin_pro") {
+            tierEl.textContent = "LinkedIn Pro"; tierEl.className = "tier-badge pro";
+            usageEl.textContent = "Unlimited LinkedIn · 25 leads/mo";
+          } else if (plan === "reddit_pro") {
+            tierEl.textContent = "Reddit Pro"; tierEl.className = "tier-badge pro";
+            usageEl.textContent = "5 uses/feature · Reddit: Unlimited";
+          } else if (isPro) {
+            tierEl.textContent = "Pro Tier"; tierEl.className = "tier-badge pro";
+            usageEl.textContent = "Unlimited access · 25 leads/mo";
+          } else {
+            tierEl.textContent = "Free Tier"; tierEl.className = "tier-badge";
+            usageEl.textContent = "5 uses/feature/month";
+          }
+        });
+        // Then refresh from server
         if (typeof refreshAccountStatus === "function") refreshAccountStatus();
       }
     });
