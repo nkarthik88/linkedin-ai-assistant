@@ -384,11 +384,27 @@ async function refreshAccountStatus() {
   const tierEl = document.getElementById("tier-label");
   const usageEl = document.getElementById("usage-label");
 
-  // Only show loading state when we have no cached data to display
+  // Immediately render from cache so badge never stays on "Loading…"
   const _cached = await chrome.storage.local.get(["userPlan", "isPro"]);
-  if (!isRedditTabActive() && !_cached.userPlan && !_cached.isPro) {
-    if (tierEl) tierEl.textContent = "…";
-    if (usageEl) usageEl.textContent = "Loading…";
+  if (!isRedditTabActive() && tierEl && usageEl) {
+    const _plan = _cached.userPlan || "free";
+    const _isPro = _cached.isPro || false;
+    if (_plan === "bundle") {
+      tierEl.textContent = "Bundle"; tierEl.className = "tier-badge pro";
+      usageEl.textContent = "Unlimited LinkedIn & Reddit · 25 leads/mo";
+    } else if (_plan === "linkedin_pro") {
+      tierEl.textContent = "LinkedIn Pro"; tierEl.className = "tier-badge pro";
+      usageEl.textContent = "Unlimited LinkedIn · 25 leads/mo";
+    } else if (_plan === "reddit_pro") {
+      tierEl.textContent = "Reddit Pro"; tierEl.className = "tier-badge pro";
+      usageEl.textContent = "5 uses/feature · Reddit: Unlimited";
+    } else if (_isPro) {
+      tierEl.textContent = "Pro Tier"; tierEl.className = "tier-badge pro";
+      usageEl.textContent = "Unlimited access · 25 leads/mo";
+    } else {
+      tierEl.textContent = "Free Tier"; tierEl.className = "tier-badge";
+      usageEl.textContent = "5 uses/feature/month";
+    }
   }
 
   try {
