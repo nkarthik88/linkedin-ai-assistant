@@ -271,7 +271,7 @@ async function redditCallApi(endpoint, payload) {
   }
   const result = await r.json();
   // Refresh counters in background after every successful tracked call
-  const tracked = ["generate","from-url","reply","subreddits","viral","score"];
+  const tracked = ["generate","from-url","reply","subreddits","viral"];
   if (tracked.some(e => endpoint.startsWith(e))) refreshRedditCounters();
   return result;
 }

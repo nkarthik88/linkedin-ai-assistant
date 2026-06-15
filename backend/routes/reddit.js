@@ -218,6 +218,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const userId = validateUserId(req, res);
     if (!userId) return;
+    await consumeRedditFeatureCredit(userId, "reddit_post");
 
     const { url, subreddit } = req.body;
     if (!url) return res.status(400).json({ error: "url is required" });
@@ -401,12 +402,12 @@ Respond with JSON only:
 );
 
 /* ─── POST /api/reddit/score ─────────────────────────── */
+// Score is a free quality check — runs automatically on all generated posts, never charged
 router.post(
   "/score",
   asyncHandler(async (req, res) => {
     const userId = validateUserId(req, res);
     if (!userId) return;
-    await consumeRedditFeatureCredit(userId, "reddit_post");
 
     const { postTitle, postBody } = req.body;
     if (!postTitle || !postBody) {
