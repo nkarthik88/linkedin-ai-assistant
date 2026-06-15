@@ -885,3 +885,10 @@
   background: #fff5f2;
   color: #FF4500;
 }
+
+/* Reddit home card usage counters */
+.rhc-usage {
+  font-size: 10px;
+  margin-top: 3px;
+  font-weight: 500;
+}

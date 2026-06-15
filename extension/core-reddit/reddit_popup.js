@@ -155,6 +155,38 @@ function isRedditTabNowActive() {
   return document.querySelector(".platform-tab.active")?.dataset.platform === "reddit";
 }
 
+function renderRedditUsageCounters(featureUsage, plan) {
+  const isUnlimited = plan === "reddit_pro" || plan === "bundle";
+  const MAP = {
+    reddit_post:      "rhc-usage-reddit_post",
+    reddit_subreddit: "rhc-usage-reddit_subreddit",
+    reddit_reply:     "rhc-usage-reddit_reply",
+  };
+  for (const [feature, elId] of Object.entries(MAP)) {
+    const el = document.getElementById(elId);
+    if (!el) continue;
+    if (isUnlimited) {
+      el.textContent = "Unlimited ✓";
+      el.style.color = "#16a34a";
+      continue;
+    }
+    const info = featureUsage?.[feature];
+    if (!info) { el.textContent = ""; continue; }
+    const remaining = info.remaining ?? (info.limit - info.used);
+    const limit = info.limit;
+    if (remaining === 0) {
+      el.textContent = `${info.used}/${limit} used · Limit reached`;
+      el.style.color = "#ef4444";
+    } else if (remaining <= 2) {
+      el.textContent = `${remaining} left of ${limit} free`;
+      el.style.color = "#f97316";
+    } else {
+      el.textContent = `${remaining} left of ${limit} free`;
+      el.style.color = "#6b7280";
+    }
+  }
+}
+
 async function renderRedditAccountBar() {
   const tierEl  = document.getElementById("tier-label");
   const usageEl = document.getElementById("usage-label");
@@ -162,19 +194,25 @@ async function renderRedditAccountBar() {
 
   // Render from cache immediately — no loading flash
   const cached = await chrome.storage.local.get(["userPlan", "isPro"]);
-  // Bail if user switched to LinkedIn tab while we were awaiting storage
   if (!isRedditTabNowActive()) return;
   const cachedPlan = cached.userPlan || (cached.isPro ? "pro" : "free");
   applyRedditPlanToBar(cachedPlan, tierEl, usageEl);
 
-  // Silently refresh from network in background
-  const freshPlan = await redditGetPlan();
-  // Bail again if tab switched during network call
-  if (!isRedditTabNowActive()) return;
-  if (freshPlan !== cachedPlan) {
-    applyRedditPlanToBar(freshPlan, tierEl, usageEl);
-    await chrome.storage.local.set({ userPlan: freshPlan });
-  }
+  // Fetch fresh status including Reddit usage counters
+  try {
+    const userId = await redditGetUserId();
+    if (!userId) return;
+    const r = await fetch(`${REDDIT_API_BASE}/api/usage/status?userId=${encodeURIComponent(userId)}`);
+    if (!r.ok) return;
+    const status = await r.json();
+    if (!isRedditTabNowActive()) return;
+    const freshPlan = status.plan || "free";
+    if (freshPlan !== cachedPlan) {
+      applyRedditPlanToBar(freshPlan, tierEl, usageEl);
+      await chrome.storage.local.set({ userPlan: freshPlan, isPro: status.isPro });
+    }
+    renderRedditUsageCounters(status.feature_usage, freshPlan);
+  } catch { /* non-fatal */ }
 }
 
 /* ─── API calls ────────────────────────────────────── */
@@ -187,6 +225,14 @@ async function redditCallApi(endpoint, payload) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId, email, ...payload }),
   });
+  if (r.status === 402) {
+    // Usage limit hit — show upgrade screen
+    const data = await r.json().catch(() => ({}));
+    redditShowView("reddit-view-upgrade");
+    const descEl = document.getElementById("reddit-upgrade-desc");
+    if (descEl) descEl.innerHTML = data.error || "You've used all free Reddit uses this month.";
+    throw new Error("LIMIT_REACHED");
+  }
   if (!r.ok) {
     const txt = await r.text().catch(() => "");
     throw new Error(txt || `Server error ${r.status}`);

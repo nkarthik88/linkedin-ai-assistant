@@ -2,6 +2,7 @@ import { Router } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { config } from "../config.js";
 import { getModelForPlan } from "../constants/plans.js";
+import { consumeRedditFeatureCredit } from "../services/usage.js";
 
 const router = Router();
 
@@ -91,6 +92,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const userId = validateUserId(req, res);
     if (!userId) return;
+    await consumeRedditFeatureCredit(userId, "reddit_post");
 
     const { topic, subreddit, tone, template, isPromoting, analysisContext } = req.body;
     if (!topic) return res.status(400).json({ error: "topic is required" });
@@ -305,6 +307,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const userId = validateUserId(req, res);
     if (!userId) return;
+    await consumeRedditFeatureCredit(userId, "reddit_reply");
 
     const { commentText, postContext, persona = "mentor" } = req.body;
     if (!commentText) return res.status(400).json({ error: "commentText is required" });
@@ -358,6 +361,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const userId = validateUserId(req, res);
     if (!userId) return;
+    await consumeRedditFeatureCredit(userId, "reddit_subreddit");
 
     const { niche } = req.body;
     if (!niche) return res.status(400).json({ error: "niche is required" });
@@ -402,6 +406,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const userId = validateUserId(req, res);
     if (!userId) return;
+    await consumeRedditFeatureCredit(userId, "reddit_score");
 
     const { postTitle, postBody } = req.body;
     if (!postTitle || !postBody) {
@@ -448,6 +453,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const userId = validateUserId(req, res);
     if (!userId) return;
+    await consumeRedditFeatureCredit(userId, "reddit_viral");
 
     const { draft, subreddit } = req.body;
     if (!draft) return res.status(400).json({ error: "draft is required" });

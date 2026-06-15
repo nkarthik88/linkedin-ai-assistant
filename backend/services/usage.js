@@ -7,6 +7,8 @@ import {
   getFeatureLimitForPlan,
   normalizePlan,
   isLinkedInUnlimited,
+  isRedditUnlimited,
+  REDDIT_FREE_LIMITS,
 } from "../constants/plans.js";
 
 const OWNER_LIMIT = 999999;
@@ -208,18 +210,34 @@ export async function getAccountStatus(userId) {
 
   const remaining = Math.max(0, account.limit - account.usedThisMonth);
 
-  // Build per-feature usage summary
+  // Build per-feature usage summary (LinkedIn features)
   const featureUsage = account.featureUsage ?? {};
+  const isLinkedInPro = isLinkedInUnlimited(account.plan);
+  const isRedditPro   = isRedditUnlimited(account.plan);
+
   const TRACKED_FEATURES = ["generate_post", "personalized_dm", "reply_comment", "improve_headline", "viral_rewriter"];
   const feature_usage = {};
   for (const f of TRACKED_FEATURES) {
     const used = featureUsage[f] ?? 0;
-    const limit = isPro ? null : getFeatureLimitForPlan(f, account.plan);
+    const limit = isLinkedInPro ? null : getFeatureLimitForPlan(f, account.plan);
     feature_usage[f] = {
       used,
       limit,
       remaining: limit === null ? null : Math.max(0, limit - used),
-      unlimited: isPro,
+      unlimited: isLinkedInPro,
+    };
+  }
+
+  // Reddit feature usage (reddit_pro/bundle = unlimited; free/linkedin_pro = limited)
+  const REDDIT_FEATURES = ["reddit_post", "reddit_subreddit", "reddit_reply", "reddit_score", "reddit_viral"];
+  for (const f of REDDIT_FEATURES) {
+    const used = featureUsage[f] ?? 0;
+    const limit = isRedditPro ? null : (REDDIT_FREE_LIMITS[f] ?? null);
+    feature_usage[f] = {
+      used,
+      limit,
+      remaining: limit === null ? null : Math.max(0, limit - used),
+      unlimited: isRedditPro,
     };
   }
 
@@ -325,13 +343,64 @@ export async function consumeFeatureCredit(userId, feature) {
 
 function featureLabel(feature) {
   const labels = {
-    generate_post: "post generations",
-    personalized_dm: "DM generations",
-    reply_comment: "reply generations",
+    generate_post:    "post generations",
+    personalized_dm:  "DM generations",
+    reply_comment:    "reply generations",
     improve_headline: "headline generations",
-    viral_rewriter: "viral rewrites",
+    viral_rewriter:   "viral rewrites",
+    reddit_post:      "Reddit post generations",
+    reddit_subreddit: "subreddit searches",
+    reddit_reply:     "Reddit reply generations",
+    reddit_score:     "Reddit score checks",
+    reddit_viral:     "viral rewrites",
   };
-  return labels[feature] ?? "generations";
+  return labels[feature] ?? "uses";
+}
+
+/**
+ * Consume one Reddit feature use. reddit_pro/bundle = unlimited.
+ * linkedin_pro and free both enforce REDDIT_FREE_LIMITS.
+ */
+export async function consumeRedditFeatureCredit(userId, feature) {
+  const account = await resolveAccount(userId);
+
+  if (account.isOwner || isRedditUnlimited(account.plan)) {
+    return { ...account, featureRemaining: null };
+  }
+
+  const featureUsage = account.featureUsage ?? {};
+  const used = featureUsage[feature] ?? 0;
+  const limit = REDDIT_FREE_LIMITS[feature] ?? null;
+
+  if (limit !== null && used >= limit) {
+    const err = new Error(
+      `You've used all ${limit} free ${featureLabel(feature)} this month. Upgrade for unlimited Reddit access.`
+    );
+    err.statusCode = 402;
+    err.featureLimit = true;
+    err.feature = feature;
+    err.limit = limit;
+    throw err;
+  }
+
+  const newUsed = used + 1;
+  const updatedFeatureUsage = { ...featureUsage, [feature]: newUsed };
+
+  const { error } = await supabaseAdmin
+    .from(account.source)
+    .update({ feature_usage: updatedFeatureUsage })
+    .eq("id", userId);
+
+  if (error) throw error;
+
+  const remaining = limit === null ? null : Math.max(0, limit - newUsed);
+  return {
+    ...account,
+    featureUsage: updatedFeatureUsage,
+    featureRemaining: remaining,
+    featureUsed: newUsed,
+    featureLimit: limit,
+  };
 }
 
 /**

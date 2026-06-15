@@ -15,6 +15,15 @@ export const FEATURE_FREE_LIMITS = {
   // viral_rewriter is a sub-tool of generate_post — no separate limit
 };
 
+/** Reddit-specific per-feature monthly limits for free/linkedin_pro users. */
+export const REDDIT_FREE_LIMITS = {
+  reddit_post:       5,
+  reddit_subreddit:  3,
+  reddit_reply:      5,
+  reddit_score:     10,
+  reddit_viral:      5,
+};
+
 /**
  * Canonical plan values stored in the database.
  * "pro" and "plus" are legacy values — kept for backward compat.

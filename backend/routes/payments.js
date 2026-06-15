@@ -60,112 +60,50 @@ router.post(
   })
 );
 
-// Change plan for existing subscribers (e.g. LinkedIn Pro → Bundle, pays only difference)
+// Generate $10 Bundle Upgrade checkout for existing LinkedIn Pro / Reddit Pro subscribers
 router.post(
   "/upgrade-plan",
   asyncHandler(async (req, res) => {
     const userId = String(req.body?.userId || "").trim();
     const newPlan = req.body?.newPlan;
-    const VALID_PLANS = new Set(["reddit_pro", "bundle", "linkedin_pro"]);
-    if (!userId || !VALID_PLANS.has(newPlan)) {
-      return res.status(400).json({ error: "Missing userId or invalid newPlan" });
+    const customerEmail = String(req.body?.email || "").trim();
+
+    if (!userId || newPlan !== "bundle") {
+      return res.status(400).json({ error: "Missing userId or invalid newPlan (only bundle supported)" });
     }
 
-    // Get current subscription_id from DB
+    // Verify user actually has an eligible plan (linkedin_pro or reddit_pro)
     const { data: acct } = await supabaseAdmin
       .from("extension_accounts")
-      .select("subscription_id, plan")
+      .select("subscription_id, plan, email")
       .eq("id", userId)
       .maybeSingle();
 
-    let subscriptionId = acct?.subscription_id;
-
-    // Auto-lookup from Dodo if not stored (handles users who paid before webhook saved it)
-    if (!subscriptionId) {
-      try {
-        const apiKey = (config.dodoSecretKey || config.dodoApiKey || "").trim();
-        const apiBase = (process.env.DODO_API_BASE || "https://live.dodopayments.com").replace(/\/+$/, "");
-        const subsRes = await fetch(`${apiBase}/subscriptions?limit=20`, {
-          headers: { Authorization: `Bearer ${apiKey}` },
-        });
-        if (subsRes.ok) {
-          const subsData = await subsRes.json();
-          const items = subsData.items || subsData.data || [];
-          const activeSub = items.find(
-            (s) =>
-              (s.metadata?.user_id === userId || s.metadata?.userId === userId ||
-               s.metadata?.connector_response_reference_id === userId ||
-               s.client_reference_id === userId) &&
-              s.status === "active"
-          );
-          if (activeSub) {
-            subscriptionId = activeSub.subscription_id || activeSub.id;
-            // Save it so next call is instant
-            await supabaseAdmin
-              .from("extension_accounts")
-              .update({ subscription_id: subscriptionId })
-              .eq("id", userId);
-          }
-        }
-      } catch { /* non-fatal — fall through to no_subscription */ }
+    const currentPlan = acct?.plan || "free";
+    const eligiblePlans = new Set(["linkedin_pro", "reddit_pro", "pro", "plus"]);
+    if (!eligiblePlans.has(currentPlan)) {
+      return res.status(400).json({ error: "not_eligible", message: "No eligible plan for upgrade. Use standard Bundle checkout." });
     }
 
-    if (!subscriptionId) {
-      return res.status(404).json({ error: "no_subscription", message: "No active subscription found. Please use the standard checkout." });
+    const email = customerEmail || acct?.email || "";
+    const upgradeProductId = config.dodoProductIdBundleUpgrade;
+    if (!upgradeProductId) {
+      return res.status(500).json({ error: "Bundle upgrade product not configured" });
     }
 
-    // Map plan to Dodo product ID
-    const PLAN_PRODUCT = {
-      linkedin_pro: config.dodoProductIdLinkedIn,
-      reddit_pro:   config.dodoProductIdReddit,
-      bundle:       config.dodoProductIdBundle,
-    };
-    const newProductId = PLAN_PRODUCT[newPlan];
-    if (!newProductId) {
-      return res.status(500).json({ error: "Product ID not configured for plan: " + newPlan });
-    }
+    // Build $10 one-time checkout URL for the upgrade
+    const locale = req.body?.india ? "IN" : undefined;
+    const params = new URLSearchParams({ quantity: "1" });
+    if (email) params.set("email", email);
+    if (userId) params.set("metadata[user_id]", userId);
+    params.set("metadata[userId]", userId);
+    params.set("metadata[upgrade_from]", currentPlan);
+    params.set("metadata[upgrade_to]", "bundle");
+    params.set("client_reference_id", userId);
+    if (locale) params.set("country", locale);
 
-    const apiKey = (config.dodoSecretKey || config.dodoApiKey || "").trim();
-    const apiBase = (process.env.DODO_API_BASE || "https://live.dodopayments.com").replace(/\/+$/, "");
-
-    // Call Dodo Change Plan API
-    const r = await fetch(`${apiBase}/subscriptions/${subscriptionId}`, {
-      method: "PATCH",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        product_id: newProductId,
-        proration_billing_mode: "difference_immediately",
-      }),
-    });
-
-    if (!r.ok) {
-      const err = await r.json().catch(() => ({}));
-      console.error("[upgrade-plan] Dodo PATCH error:", err);
-      return res.status(502).json({ error: err.message || "Dodo plan change failed" });
-    }
-
-    // CRITICAL: Verify Dodo actually applied the plan change.
-    // Dodo can return HTTP 200 but silently ignore the request — we must
-    // check that product_id in the response matches what we requested.
-    const updatedSub = await r.json().catch(() => ({}));
-    console.log("[upgrade-plan] Dodo response product_id:", updatedSub.product_id, "expected:", newProductId);
-
-    if (updatedSub.product_id !== newProductId) {
-      // Dodo did not apply the change — do NOT update Supabase
-      return res.status(402).json({
-        error: "plan_change_not_applied",
-        message: "Dodo did not apply the plan change. Please use the checkout link to upgrade.",
-        fallback_checkout: true,
-      });
-    }
-
-    // Dodo confirmed the change — now safe to update Supabase
-    await supabaseAdmin
-      .from("extension_accounts")
-      .update({ plan: newPlan })
-      .eq("id", userId);
-
-    res.json({ success: true, newPlan });
+    const checkoutUrl = `https://checkout.dodopayments.com/buy/${upgradeProductId}?${params.toString()}`;
+    return res.json({ checkoutUrl, method: "upgrade_checkout" });
   })
 );
 
