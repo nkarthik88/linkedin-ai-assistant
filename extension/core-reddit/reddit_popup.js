@@ -6,6 +6,31 @@
 const REDDIT_API_BASE = "https://api.propostly.com";
 const REDDIT_FREE_LIMIT = 5;
 
+// All fetch calls go through the background service worker so the side panel's
+// renderer thread is never blocked by long-running AI generation requests.
+function bgFetch(url, options = {}) {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(
+      { type: "BG_FETCH", url, options, timeout: 20000 },
+      (response) => {
+        if (chrome.runtime.lastError) {
+          return reject(new Error(chrome.runtime.lastError.message));
+        }
+        if (!response || response.error) {
+          return reject(new Error((response && response.error) || "BG_FETCH failed"));
+        }
+        // Mimic a minimal fetch Response interface
+        resolve({
+          ok: response.ok,
+          status: response.status,
+          json: () => { try { return Promise.resolve(JSON.parse(response.text)); } catch (e) { return Promise.reject(e); } },
+          text: () => Promise.resolve(response.text),
+        });
+      }
+    );
+  });
+}
+
 /* ─── In-memory state ──────────────────────────────── */
 let _communityAnalysis   = null; // stored after Scan, used by Generate
 let _fromSubredditFinder = false; // true when Post Generator launched from Finder
@@ -29,7 +54,7 @@ async function redditGetPlan() {
   try {
     const userId = await redditGetUserId();
     if (!userId) return "free";
-    const r = await fetch(
+    const r = await bgFetch(
       `${REDDIT_API_BASE}/api/usage/status?userId=${encodeURIComponent(userId)}`
     );
     if (!r.ok) return "free";
@@ -264,7 +289,7 @@ async function renderRedditAccountBar() {
   try {
     const userId = await redditGetUserId();
     if (!userId) return;
-    const r = await fetch(`${REDDIT_API_BASE}/api/usage/status?userId=${encodeURIComponent(userId)}`);
+    const r = await bgFetch(`${REDDIT_API_BASE}/api/usage/status?userId=${encodeURIComponent(userId)}`);
     if (!r.ok) return;
     const status = await r.json();
     if (!isRedditTabNowActive()) return;
@@ -289,7 +314,7 @@ async function refreshRedditCounters() {
   try {
     const userId = await redditGetUserId();
     if (!userId) return;
-    const r = await fetch(`${REDDIT_API_BASE}/api/usage/status?userId=${encodeURIComponent(userId)}`);
+    const r = await bgFetch(`${REDDIT_API_BASE}/api/usage/status?userId=${encodeURIComponent(userId)}`);
     if (!r.ok) return;
     const status = await r.json();
     const plan = status.plan || "free";
@@ -306,7 +331,7 @@ async function refreshRedditCounters() {
 async function redditCallApi(endpoint, payload) {
   const userId = await redditGetUserId();
   const email  = await redditGetEmail();
-  const r = await fetch(`${REDDIT_API_BASE}/api/reddit/${endpoint}`, {
+  const r = await bgFetch(`${REDDIT_API_BASE}/api/reddit/${endpoint}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId, email, ...payload }),
@@ -1011,7 +1036,7 @@ function initRedditFeatureNav() {
       const locale = (typeof navigator !== "undefined" && navigator.language) || "";
       const india  = locale.toUpperCase().endsWith("-IN") ||
                      Intl.DateTimeFormat().resolvedOptions().timeZone === "Asia/Kolkata";
-      const r = await fetch(`${REDDIT_API_BASE}/api/payments/upgrade`, {
+      const r = await bgFetch(`${REDDIT_API_BASE}/api/payments/upgrade`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, email, plan, country: india ? "IN" : undefined, india }),
@@ -1177,7 +1202,7 @@ async function redditSendFingerprint() {
       ? await generateBrowserFingerprint()
       : "";
     if (!deviceFingerprint) return;
-    await fetch(`${REDDIT_API_BASE}/api/auth/register-extension`, {
+    await bgFetch(`${REDDIT_API_BASE}/api/auth/register-extension`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, email, deviceFingerprint }),
