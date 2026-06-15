@@ -99,12 +99,13 @@ async function redditCheckLimit(feature) {
 }
 
 function redditShowUpgrade(feature, fromLimit = false) {
+  // Always hide back button — user must upgrade, no escape
   const backBtn = document.getElementById("reddit-upgrade-back");
-  if (backBtn) backBtn.hidden = fromLimit; // hide back when forced by limit
+  if (backBtn) backBtn.hidden = true;
   const descEl = document.getElementById("reddit-upgrade-desc");
-  if (descEl) descEl._limitSet = false; // allow renderRedditUpgradeScreen to reset desc
+  if (descEl) descEl._limitSet = false;
   redditShowView("reddit-view-upgrade");
-  if (typeof renderRedditUpgradeScreen === "function") renderRedditUpgradeScreen();
+  if (typeof window._renderRedditUpgradeScreen === "function") window._renderRedditUpgradeScreen();
 }
 
 /* ─── Reddit account bar ───────────────────────────── */
@@ -1122,6 +1123,12 @@ function initRedditFeatureNav() {
 
   document.getElementById("reddit-home-upgrade-pro")?.addEventListener("click", () => redditHomeUpgrade("reddit_pro"));
   document.getElementById("reddit-home-upgrade-bundle")?.addEventListener("click", () => redditHomeUpgrade("bundle"));
+
+  // Expose so redditShowUpgrade() (outer scope) can call it
+  window._renderRedditUpgradeScreen = renderRedditUpgradeScreen;
+
+  // Wire upgrade screen buttons immediately on init
+  renderRedditUpgradeScreen();
 }
 
 /* ─── Form listeners ───────────────────────────────── */
