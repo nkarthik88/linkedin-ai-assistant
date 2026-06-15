@@ -86,12 +86,30 @@ async function redditIncrementUsage(feature) {
   return counts[feature];
 }
 
+// Map frontend feature names to backend feature_usage keys and their limits
+const FEATURE_LIMIT_MAP = {
+  post_generator:   { key: "reddit_post",      limit: 5 },
+  subreddit_finder: { key: "reddit_subreddit", limit: 3 },
+  comment_reply:    { key: "reddit_reply",      limit: 5 },
+};
+
 async function redditCheckLimit(feature) {
   const plan = await redditGetPlan();
   if (plan === "pro" || plan === "plus" || plan === "reddit_pro" || plan === "bundle") return true;
-  const usage = await redditGetUsage();
-  const counts = usage.counts || {};
-  if ((counts[feature] || 0) >= REDDIT_FREE_LIMIT) {
+
+  const mapping = FEATURE_LIMIT_MAP[feature];
+  if (!mapping) return true; // unknown feature — allow
+
+  // Use backend-sourced feature_usage cached by refreshRedditCounters
+  const { cachedFeatureUsage } = await chrome.storage.local.get("cachedFeatureUsage");
+  const featureUsage = cachedFeatureUsage || {};
+  const info = featureUsage[mapping.key];
+  const used = info && typeof info === "object" ? (Number(info.used) || 0) : (Number(info) || 0);
+  const remaining = info && typeof info === "object" && typeof info.remaining === "number"
+    ? info.remaining
+    : Math.max(0, mapping.limit - used);
+
+  if (remaining <= 0) {
     redditShowUpgrade(feature);
     return false;
   }
@@ -222,9 +240,14 @@ async function renderRedditAccountBar() {
     const status = await r.json();
     if (!isRedditTabNowActive()) return;
     const freshPlan = status.plan || "free";
+    // Always cache feature_usage so redditCheckLimit gate stays in sync with backend
+    await chrome.storage.local.set({
+      userPlan: freshPlan,
+      isPro: status.isPro,
+      cachedFeatureUsage: status.feature_usage || {},
+    });
     if (freshPlan !== cachedPlan) {
       applyRedditPlanToBar(freshPlan, tierEl, usageEl);
-      await chrome.storage.local.set({ userPlan: freshPlan, isPro: status.isPro });
     }
     renderRedditUsageCounters(status.feature_usage, freshPlan);
   } catch { /* non-fatal */ }
@@ -241,8 +264,12 @@ async function refreshRedditCounters() {
     if (!r.ok) return;
     const status = await r.json();
     const plan = status.plan || "free";
-    // Cache updated plan
-    await chrome.storage.local.set({ userPlan: plan, isPro: status.isPro });
+    // Cache plan AND feature_usage — redditCheckLimit reads cachedFeatureUsage as authoritative gate
+    await chrome.storage.local.set({
+      userPlan: plan,
+      isPro: status.isPro,
+      cachedFeatureUsage: status.feature_usage || {},
+    });
     renderRedditUsageCounters(status.feature_usage, plan);
   } catch { /* non-fatal */ }
 }
