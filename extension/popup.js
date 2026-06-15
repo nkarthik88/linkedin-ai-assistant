@@ -2493,6 +2493,32 @@ async function openDeepLeadSearch() {
 document.getElementById("lead-limit-back")?.addEventListener("click", () => showView("view-home"));
 document.getElementById("lead-limit-upgrade")?.addEventListener("click", (e) => startUpgrade(e.currentTarget));
 
+// ── LinkedIn tab click — immediately restore badge from cache ──────────────
+document.getElementById("platform-linkedin")?.addEventListener("click", async () => {
+  const { isPro, userPlan } = await chrome.storage.local.get(["isPro", "userPlan"]);
+  const plan = userPlan || "free";
+  const tierEl  = document.getElementById("tier-label");
+  const usageEl = document.getElementById("usage-label");
+  if (!tierEl || !usageEl) return;
+  if (plan === "bundle") {
+    tierEl.textContent = "Bundle";      tierEl.className = "tier-badge pro";
+    usageEl.textContent = "Unlimited LinkedIn & Reddit · 25 leads/mo";
+  } else if (plan === "linkedin_pro") {
+    tierEl.textContent = "LinkedIn Pro"; tierEl.className = "tier-badge pro";
+    usageEl.textContent = "Unlimited LinkedIn · 25 leads/mo";
+  } else if (plan === "reddit_pro") {
+    tierEl.textContent = "Reddit Pro";  tierEl.className = "tier-badge pro";
+    usageEl.textContent = "5 uses/feature · Reddit: Unlimited";
+  } else if (isPro) {
+    tierEl.textContent = "Pro Tier";   tierEl.className = "tier-badge pro";
+    usageEl.textContent = "Unlimited access · 25 leads/mo";
+  } else {
+    tierEl.textContent = "Free Tier";  tierEl.className = "tier-badge";
+    usageEl.textContent = "5 uses/feature/month";
+  }
+  refreshAccountStatus();
+});
+
 // ── Visibility / focus refresh ─────────────────────────────────────────────
 
 document.addEventListener("visibilitychange", () => {
