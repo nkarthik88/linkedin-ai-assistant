@@ -384,9 +384,10 @@ async function refreshAccountStatus() {
   const tierEl = document.getElementById("tier-label");
   const usageEl = document.getElementById("usage-label");
 
-  // Immediately render from cache so badge never stays on "Loading…"
+  // Immediately render from cache — but ONLY if we have an actual stored plan
+  // (avoids showing "Free Tier" flash for paid users whose cache hasn't loaded yet)
   const _cached = await chrome.storage.local.get(["userPlan", "isPro"]);
-  if (!isRedditTabActive() && tierEl && usageEl) {
+  if (!isRedditTabActive() && tierEl && usageEl && (_cached.userPlan || _cached.isPro)) {
     const _plan = _cached.userPlan || "free";
     const _isPro = _cached.isPro || false;
     if (_plan === "bundle") {
@@ -2496,6 +2497,7 @@ document.getElementById("lead-limit-upgrade")?.addEventListener("click", (e) => 
 // ── LinkedIn tab click — immediately restore badge from cache ──────────────
 document.getElementById("platform-linkedin")?.addEventListener("click", async () => {
   const { isPro, userPlan } = await chrome.storage.local.get(["isPro", "userPlan"]);
+  if (!userPlan && !isPro) { refreshAccountStatus(); return; } // no cache — let fetch decide
   const plan = userPlan || "free";
   const tierEl  = document.getElementById("tier-label");
   const usageEl = document.getElementById("usage-label");
