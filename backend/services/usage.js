@@ -397,6 +397,8 @@ export async function consumeRedditFeatureCredit(userId, feature) {
   const used = rawToUsed(featureUsage[feature]);
   const limit = REDDIT_FREE_LIMITS[feature] ?? null;
 
+  console.log(`[usage] consumeRedditFeatureCredit userId=${userId} feature=${feature} used_before=${used} limit=${limit}`);
+
   if (limit !== null && used >= limit) {
     const label = feature === "reddit_subreddit" ? "subreddit searches" : feature === "reddit_reply" ? "Reddit replies" : "Reddit posts";
     const err = new Error(
@@ -410,6 +412,7 @@ export async function consumeRedditFeatureCredit(userId, feature) {
   }
 
   const newUsed = used + 1;
+  console.log(`[usage] incrementing ${feature}: ${used} → ${newUsed} (userId=${userId})`);
   const updatedFeatureUsage = { ...featureUsage, [feature]: newUsed };
 
   const { error } = await supabaseAdmin

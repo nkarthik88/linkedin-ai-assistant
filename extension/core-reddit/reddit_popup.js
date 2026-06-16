@@ -707,15 +707,13 @@ let _generatingPost = false;
 async function handleScanGenerate(e) {
   e.preventDefault();
   if (_generatingPost) return;
-  if (!(await redditCheckLimit("post_generator"))) return;
-
-  const topic     = document.getElementById("reddit-scan-topic")?.value.trim();
-  const subreddit = document.getElementById("reddit-scan-subreddit")?.value.trim();
-  if (!topic) return;
-
   _generatingPost = true;
-  redditShowLoading("Generating posts tuned for your community…");
   try {
+    if (!(await redditCheckLimit("post_generator"))) return;
+    const topic     = document.getElementById("reddit-scan-topic")?.value.trim();
+    const subreddit = document.getElementById("reddit-scan-subreddit")?.value.trim();
+    if (!topic) return;
+    redditShowLoading("Generating posts tuned for your community…");
     const data = await redditCallApi("generate", { topic, subreddit, analysisContext: _communityAnalysis });
     renderRedditPosts(data.posts || []);
   } catch (err) {
@@ -731,15 +729,13 @@ async function handleScanGenerate(e) {
 async function handleUrlGenerate(e) {
   e.preventDefault();
   if (_generatingPost) return;
-  if (!(await redditCheckLimit("post_generator"))) return;
-
-  const url       = document.getElementById("reddit-url-input")?.value.trim();
-  const subreddit = document.getElementById("reddit-url-subreddit")?.value.trim();
-  if (!url) return;
-
   _generatingPost = true;
-  redditShowLoading("Fetching URL and generating posts…");
   try {
+    if (!(await redditCheckLimit("post_generator"))) return;
+    const url       = document.getElementById("reddit-url-input")?.value.trim();
+    const subreddit = document.getElementById("reddit-url-subreddit")?.value.trim();
+    if (!url) return;
+    redditShowLoading("Fetching URL and generating posts…");
     const data = await redditCallApi("from-url", { url, subreddit });
     renderRedditPosts(data.posts || []);
   } catch (err) {
@@ -755,16 +751,14 @@ async function handleUrlGenerate(e) {
 async function handlePostGenerator(e) {
   e.preventDefault();
   if (_generatingPost) return;
-  if (!(await redditCheckLimit("post_generator"))) return;
-
-  const topic      = document.getElementById("reddit-topic").value.trim();
-  const subreddit  = document.getElementById("reddit-subreddit").value.trim();
-  const template   = document.querySelector(".reddit-template-chip.active")?.dataset.template || "Lesson";
-  const isPromoting = document.getElementById("reddit-promo-toggle")?.dataset.promoting === "yes";
-
   _generatingPost = true;
-  redditShowLoading("Generating 3 Reddit posts…");
   try {
+    if (!(await redditCheckLimit("post_generator"))) return;
+    const topic      = document.getElementById("reddit-topic").value.trim();
+    const subreddit  = document.getElementById("reddit-subreddit").value.trim();
+    const template   = document.querySelector(".reddit-template-chip.active")?.dataset.template || "Lesson";
+    const isPromoting = document.getElementById("reddit-promo-toggle")?.dataset.promoting === "yes";
+    redditShowLoading("Generating 3 Reddit posts…");
     const data = await redditCallApi("generate", { topic, subreddit, template, isPromoting });
     renderRedditPosts(data.posts || []);
   } catch (err) {
@@ -782,12 +776,11 @@ let _findingSubreddits = false;
 async function handleSubredditFinder(e) {
   e.preventDefault();
   if (_findingSubreddits) return;
-  if (!(await redditCheckLimit("subreddit_finder"))) return;
-
-  const niche = document.getElementById("reddit-niche").value.trim();
-  _findingSubreddits = true;
-  redditShowLoading("Finding subreddits…");
+  _findingSubreddits = true; // set synchronously before the first await — prevents double-fire
   try {
+    if (!(await redditCheckLimit("subreddit_finder"))) return;
+    const niche = document.getElementById("reddit-niche").value.trim();
+    redditShowLoading("Finding subreddits…");
     const data = await redditCallApi("subreddits", { niche });
     renderSubreddits(data.subreddits || [], niche);
   } catch (err) {
@@ -805,19 +798,16 @@ let _replyingToComment = false;
 async function handleCommentReply(e) {
   e.preventDefault();
   if (_replyingToComment) return;
-  if (!(await redditCheckLimit("comment_reply"))) return;
-
-  const commentText = document.getElementById("reddit-comment-text").value.trim();
-  const postContext = document.getElementById("reddit-post-context").value.trim();
-  const persona     = document.querySelector(".reddit-persona-chip.active")?.dataset.persona || "mentor";
-
-  const loadingText = persona === "witty" ? "Crafting witty replies…"
-    : persona === "curious" ? "Generating curious replies…"
-    : "Generating helpful replies…";
-
-  _replyingToComment = true;
-  redditShowLoading(loadingText);
+  _replyingToComment = true; // set synchronously before the first await — prevents double-fire
   try {
+    if (!(await redditCheckLimit("comment_reply"))) return;
+    const commentText = document.getElementById("reddit-comment-text").value.trim();
+    const postContext = document.getElementById("reddit-post-context").value.trim();
+    const persona     = document.querySelector(".reddit-persona-chip.active")?.dataset.persona || "mentor";
+    const loadingText = persona === "witty" ? "Crafting witty replies…"
+      : persona === "curious" ? "Generating curious replies…"
+      : "Generating helpful replies…";
+    redditShowLoading(loadingText);
     const data = await redditCallApi("reply", { commentText, postContext, persona });
     const personaLabel = persona === "witty" ? "😄 Witty Replies" : persona === "curious" ? "🤔 Curious Replies" : "🎓 Mentor Replies";
     renderTextVariations(data.variations || [], personaLabel);
