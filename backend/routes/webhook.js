@@ -28,9 +28,34 @@ router.post(
     });
 
     const data = event.data || event;
-    const userId = extractUserIdFromWebhookEvent(event);
+    let userId = extractUserIdFromWebhookEvent(event);
     const plan = extractPlanFromWebhookEvent(event);
     const subscriptionId = extractSubscriptionIdFromWebhookEvent(event);
+
+    // Fallback: Dodo does not re-send metadata on cancellation events — look up
+    // the user by their stored subscription_id when metadata is missing.
+    if (!userId && subscriptionId) {
+      const { data: acctBySubId } = await supabaseAdmin
+        .from("extension_accounts")
+        .select("id")
+        .eq("subscription_id", subscriptionId)
+        .maybeSingle();
+      if (acctBySubId) userId = acctBySubId.id;
+    }
+
+    // Detect cancellation via event type OR data.status field
+    const eventType = String(event.type || event.event_type || "").toLowerCase();
+    const dataStatus = String(data.status || data.subscription?.status || "").toLowerCase();
+    const isCancellation =
+      eventType.includes("cancel") ||
+      eventType.includes("expired") ||
+      dataStatus === "cancelled" ||
+      dataStatus === "expired";
+
+    if (userId && isCancellation) {
+      await setProStatusForUser(userId, false);
+      return res.json({ received: true, userId, plan: "free", action: "cancelled" });
+    }
 
     // Handle Bundle upgrade one-time payment (upgrade_to=bundle metadata)
     const upgradeTo = data.metadata?.upgrade_to;

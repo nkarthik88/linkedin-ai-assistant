@@ -298,10 +298,12 @@ function renderAccountStatus(status) {
 
   if (!tierEl || !usageEl || !upgradeBtn) return;
 
-  // Reddit tab manages its own account bar — don't overwrite it here
+  // Reddit tab manages its own account bar — don't overwrite it here.
+  // Explicitly hide the LinkedIn upgrade button so it doesn't bleed onto the Reddit tab.
   if (isRedditTabActive()) {
     setUpgradeError("");
     renderFeatureCounters(status);
+    if (upgradeBtn) upgradeBtn.hidden = true;
     return;
   }
 
@@ -390,9 +392,10 @@ function renderFeatureCounters(status) {
     } else {
       const info = featureUsage[feature];
       const defaultLimit = FEATURE_DEFAULT_LIMIT[feature] ?? 10;
-      const used = info?.used ?? 0;
+      const rawUsed = info?.used ?? 0;
       const limit = info?.limit ?? defaultLimit;
-      const remaining = info?.remaining ?? (limit - used);
+      const used = Math.min(rawUsed, limit); // clamp display — never show more than limit
+      const remaining = Math.max(0, info?.remaining ?? (limit - used));
       const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
 
       if (remaining === 0) {
@@ -550,18 +553,23 @@ async function renderAccountPage(status) {
         if (!counterEl) return;
 
         if (feature === "deep_lead_search") {
-          const pct = leadLimit > 0 ? Math.min(100, Math.round((leadUsed / leadLimit) * 100)) : 0;
-          counterEl.textContent = `${leadUsed}/${leadLimit} · ${leadRemaining} left`;
-          counterEl.className = `fur-counter${leadRemaining === 0 ? " fur-exhausted" : ""}`;
-          updateFurBar(row, pct, leadRemaining === 0);
+          const displayUsed = Math.min(leadUsed, leadLimit);
+          const displayRemaining = Math.max(0, leadRemaining);
+          const pct = leadLimit > 0 ? Math.min(100, Math.round((displayUsed / leadLimit) * 100)) : 0;
+          counterEl.textContent = `${displayUsed}/${leadLimit} · ${displayRemaining} left`;
+          counterEl.className = `fur-counter${displayRemaining === 0 ? " fur-exhausted" : ""}`;
+          updateFurBar(row, pct, displayRemaining === 0);
         } else {
           const info = fu[feature];
           if (info) {
-            const { used, limit, remaining } = info;
-            const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
-            counterEl.textContent = `${used}/${limit} · ${remaining} left`;
-            counterEl.className = `fur-counter${remaining === 0 ? " fur-exhausted" : ""}`;
-            updateFurBar(row, pct, remaining === 0);
+            const rawUsed = info.used ?? 0;
+            const limit = info.limit ?? 5;
+            const displayUsed = Math.min(rawUsed, limit);
+            const displayRemaining = Math.max(0, info.remaining ?? (limit - displayUsed));
+            const pct = limit > 0 ? Math.min(100, Math.round((displayUsed / limit) * 100)) : 0;
+            counterEl.textContent = `${displayUsed}/${limit} · ${displayRemaining} left`;
+            counterEl.className = `fur-counter${displayRemaining === 0 ? " fur-exhausted" : ""}`;
+            updateFurBar(row, pct, displayRemaining === 0);
           } else {
             counterEl.textContent = "0/5 · 5 left";
             counterEl.className = "fur-counter";
