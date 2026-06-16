@@ -788,8 +788,10 @@ async function startUpgrade(triggerBtn = null, plan = "linkedin_pro") {
         const status = await fetchAccountStatus();
         if (status?.isPro) {
           clearInterval(pollInterval);
-          await chrome.storage.local.set({ isPro: true, pendingUpgrade: false });
+          await chrome.storage.local.set({ isPro: true, userPlan: status.plan || "linkedin_pro", pendingUpgrade: false, cachedFeatureUsage: status.feature_usage || {} });
           renderAccountStatus(status);
+          // Also refresh Reddit bar so it reflects the new plan immediately
+          if (typeof renderRedditAccountBar === "function") renderRedditAccountBar();
           if (btn) btn.textContent = "✅ Pro activated!";
           showToast("🎉 You're now Pro! Unlimited access unlocked.", "success");
           setTimeout(() => showView("view-home"), 1500);

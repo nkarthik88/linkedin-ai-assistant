@@ -901,8 +901,9 @@ function initPlatformSwitcher() {
             usageEl.textContent = "5 uses/feature/month";
           }
         });
-        // Then refresh from server
+        // Refresh from server AND re-run upgrade screen so button states are current
         if (typeof refreshAccountStatus === "function") refreshAccountStatus();
+        if (typeof renderLinkedInUpgradeScreen === "function") renderLinkedInUpgradeScreen();
       }
     });
   });
@@ -1037,16 +1038,41 @@ function initRedditFeatureNav() {
       });
       const d = await r.json();
       const url = d.checkoutUrl || d.payment_link || d.url;
-      if (url) {
-        chrome.tabs.create({ url, active: true });
-      } else {
-        const staticUrl = plan === "bundle"
-          ? "https://checkout.dodopayments.com/buy/pdt_0Nh23AJmTvBuWAXKsi2ds?quantity=1"
-          : plan === "linkedin_pro"
-          ? "https://checkout.dodopayments.com/buy/pdt_0Nh1YWHrfWoHzrfK5qEJF?quantity=1"
-          : "https://checkout.dodopayments.com/buy/pdt_0Nh1zryt8Ch4KTi9B5yVJ?quantity=1";
-        chrome.tabs.create({ url: staticUrl, active: true });
-      }
+      const checkoutUrl = url
+        || (plan === "bundle"      ? "https://checkout.dodopayments.com/buy/pdt_0Nh23AJmTvBuWAXKsi2ds?quantity=1"
+          : plan === "linkedin_pro"? "https://checkout.dodopayments.com/buy/pdt_0Nh1YWHrfWoHzrfK5qEJF?quantity=1"
+          :                          "https://checkout.dodopayments.com/buy/pdt_0Nh1zryt8Ch4KTi9B5yVJ?quantity=1");
+      chrome.tabs.create({ url: checkoutUrl, active: true });
+
+      // Poll for plan activation after checkout (up to 3 min, every 10s)
+      let pollCount = 0;
+      const pollInterval = setInterval(async () => {
+        pollCount++;
+        try {
+          const statusRes = await bgFetch(`${REDDIT_API_BASE}/api/usage/status?userId=${encodeURIComponent(userId)}`);
+          if (!statusRes.ok) return;
+          const status = await statusRes.json();
+          const newPlan = status.plan || "free";
+          const isNowUnlimited = newPlan === "reddit_pro" || newPlan === "bundle" || newPlan === "linkedin_pro";
+          if (isNowUnlimited) {
+            clearInterval(pollInterval);
+            await chrome.storage.local.set({
+              userPlan: newPlan,
+              isPro: Boolean(status.isPro),
+              cachedFeatureUsage: status.feature_usage || {},
+            });
+            // Refresh both bars
+            renderRedditAccountBar();
+            if (typeof renderLinkedInUpgradeScreen === "function") renderLinkedInUpgradeScreen();
+            if (typeof renderAccountStatus === "function" && status) renderAccountStatus(status);
+            if (typeof window._renderRedditUpgradeScreen === "function") window._renderRedditUpgradeScreen();
+            redditShowView("reddit-view-home");
+          } else if (pollCount >= 18) {
+            clearInterval(pollInterval);
+          }
+        } catch { /* ignore poll errors */ }
+      }, 10000);
+
     } catch (err) {
       if (errEl) { errEl.textContent = "Error: " + err.message; errEl.hidden = false; }
     }
