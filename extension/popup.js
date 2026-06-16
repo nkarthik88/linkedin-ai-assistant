@@ -2170,21 +2170,22 @@ function displayLeads(leads, opts = {}) {
   const warmCount = leads.filter((l) => l.quality === "warm").length;
   const coldCount = leads.filter((l) => l.quality === "cold").length;
 
-  // Show only hot + warm; if none, show a hint rather than dumping cold leads
+  // Show hot + warm; if none exist, fall back to showing cold leads so user gets something
   const qualifiedLeads = leads.filter((l) => l.quality === "hot" || l.quality === "warm");
-  const visibleLeads = qualifiedLeads;
+  const visibleLeads = qualifiedLeads.length > 0 ? qualifiedLeads : leads;
+  const showingColdFallback = qualifiedLeads.length === 0 && coldCount > 0;
 
   if (title) {
     const parts = [];
     if (hotCount > 0) parts.push(`🔥 ${hotCount} Hot`);
     if (warmCount > 0) parts.push(`⚡ ${warmCount} Warm`);
+    if (coldCount > 0 && !showingColdFallback) parts.push(`❄️ ${coldCount} Cold`);
     if (parts.length > 0) {
-      if (coldCount > 0) parts.push(`(${coldCount} others filtered out)`);
       title.textContent = parts.join("  ·  ");
+    } else if (showingColdFallback) {
+      title.textContent = `❄️ ${coldCount} results — low match for your filters`;
     } else {
-      title.textContent = coldCount > 0
-        ? `No close matches — try broader filters`
-        : "No leads found";
+      title.textContent = "No leads found";
     }
   }
   if (tsEl) {
@@ -2202,13 +2203,20 @@ function displayLeads(leads, opts = {}) {
 
   container.innerHTML = "";
 
-  // If nothing matched, show actionable hint
+  // Show cold-fallback banner so user knows results are low-confidence
+  if (showingColdFallback) {
+    const hint = document.createElement("div");
+    hint.className = "leads-empty-hint";
+    hint.style.cssText = "background:#fff8e1;border:1px solid #ffe082;color:#7a6000;margin-bottom:10px;padding:8px 10px;border-radius:6px;font-size:12px;";
+    hint.innerHTML = `⚠️ <strong>Low filter match</strong> — showing all ${coldCount} results found. For better matches try a broader title (e.g. "Engineering Manager" not "VP Engineering").`;
+    container.appendChild(hint);
+  }
+
+  // If nothing at all, show actionable hint
   if (visibleLeads.length === 0) {
     const hint = document.createElement("div");
     hint.className = "leads-empty-hint";
-    hint.innerHTML = coldCount > 0
-      ? `<strong>No close matches found.</strong><br>Try broadening your filters — use a more general title (e.g. "Engineer" not "DevOps Engineer"), remove the company filter, or use a country instead of a city.`
-      : `<strong>No profiles were found.</strong><br>Make sure you're on a LinkedIn search results page, then try again.`;
+    hint.innerHTML = `<strong>No profiles were found.</strong><br>Make sure you're on a LinkedIn search results page, then try again.`;
     container.appendChild(hint);
   }
 
@@ -2487,6 +2495,14 @@ async function addSeenUrls(urls) {
   await chrome.storage.local.set({ seenLeadUrls: merged });
 }
 
+// Strip seniority prefixes so "VP Engineering" → "Engineering" on retry
+function relaxTitle(title) {
+  if (!title) return "";
+  return title
+    .replace(/^(vp|svp|evp|chief|head of|director of?|senior|sr\.?|lead|principal|staff)\s+/i, "")
+    .trim();
+}
+
 function buildLinkedInSearchUrl(filters, page = 1) {
   const params = new URLSearchParams();
   // Only put title + company + keywords into the search box — NOT location.
@@ -2566,6 +2582,17 @@ async function runDeepLeadSearch(filters) {
       const f3 = { ...usedFilters, company: "" };
       profiles = await autoSearchProfiles(buildLinkedInSearchUrl(f3, page));
       if (profiles?.length > 0) { usedFilters = f3; broadened = true; }
+    }
+
+    // Attempt 4: relax senior title (VP/Chief/Director → base role) if still no results
+    if ((!profiles || profiles.length === 0) && filters.title) {
+      const relaxed = relaxTitle(filters.title);
+      if (relaxed && relaxed.toLowerCase() !== filters.title.toLowerCase()) {
+        setLoading("🔍 Broadening search…", `Trying "${relaxed}" instead of "${filters.title}"…`);
+        const f4 = { ...usedFilters, title: relaxed };
+        profiles = await autoSearchProfiles(buildLinkedInSearchUrl(f4, page));
+        if (profiles?.length > 0) { usedFilters = f4; broadened = true; }
+      }
     }
 
     if (broadened && profiles?.length > 0) {
