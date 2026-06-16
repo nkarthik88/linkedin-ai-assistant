@@ -2352,7 +2352,7 @@ async function qualifyAndShow(profiles, targetDescription, filters = null) {
   const userId = await getUserId();
 
   const leadsTimeout = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error("Lead search timed out. Please try again.")), 15000)
+    setTimeout(() => reject(new Error("Lead search timed out. Please try again.")), 45000)
   );
   const leadsFetch = bgFetch(API_URL_LEADS, {
     method: "POST",
