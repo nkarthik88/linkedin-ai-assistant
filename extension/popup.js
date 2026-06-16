@@ -2430,6 +2430,26 @@ async function qualifyAndShow(profiles, targetDescription, filters = null) {
     renderSearchHistory();
   }
 
+  // Location mismatch warning — LinkedIn free search ignores geo, so results
+  // may be from a completely different region than what the user specified.
+  if (filters?.location) {
+    const requestedRegion = filters.location.toLowerCase();
+    // Extract country/city keywords from the requested location
+    const locationWords = requestedRegion.split(/[\s,]+/).filter((w) => w.length > 2);
+    const matchingLocation = leads.filter((l) => {
+      const loc = (l.location || "").toLowerCase();
+      return locationWords.some((w) => loc.includes(w));
+    });
+    const matchRatio = leads.length > 0 ? matchingLocation.length / leads.length : 0;
+    if (matchRatio < 0.2) {
+      // Less than 20% of results match the requested location
+      setTimeout(() => showToast(
+        `📍 Location note: LinkedIn's free search doesn't filter by "${filters.location}" — results may be from other regions. Upgrade to LinkedIn Premium for geo-filtered results.`,
+        "default"
+      ), 1000);
+    }
+  }
+
   const ts = Date.now();
   await persistLeadResults(leads, targetDescription);
   displayLeads(leads, { ts });
