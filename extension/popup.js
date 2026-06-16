@@ -357,6 +357,37 @@ function renderFeatureCounters(status) {
   const featureUsage = status?.feature_usage || {};
   const FEATURE_NAMES = ["generate_post", "personalized_dm", "reply_comment", "improve_headline"];
 
+  // Lock / unlock the Deep Lead Search card based on lead search remaining
+  const leadBtn = document.querySelector('.feature-btn[data-feature="deep_lead_search"]');
+  if (leadBtn) {
+    const leadRemaining = status?.lead_searches_remaining ?? 1;
+    const leadUsed = status?.lead_searches_used ?? 0;
+    const leadLimit = status?.lead_searches_limit ?? 5;
+    let leadCounter = leadBtn.querySelector(".feature-usage-counter");
+    if (!leadCounter) {
+      leadCounter = document.createElement("span");
+      leadCounter.className = "feature-usage-counter";
+      const contentTarget = leadBtn.querySelector(".hc-content") || leadBtn;
+      contentTarget.appendChild(leadCounter);
+    }
+    if (isPro && leadRemaining > 0) {
+      leadCounter.textContent = `${leadUsed}/${leadLimit} used`;
+      leadCounter.className = "feature-usage-counter";
+      leadBtn.disabled = false;
+      leadBtn.classList.remove("feature-locked");
+    } else if (leadRemaining === 0) {
+      leadCounter.textContent = `${leadLimit}/${leadLimit} · 🔒 Limit reached`;
+      leadCounter.className = "feature-usage-counter exhausted";
+      leadBtn.disabled = true;
+      leadBtn.classList.add("feature-locked");
+    } else {
+      leadCounter.textContent = `${leadUsed}/${leadLimit} used · ${leadRemaining} left`;
+      leadCounter.className = "feature-usage-counter";
+      leadBtn.disabled = false;
+      leadBtn.classList.remove("feature-locked");
+    }
+  }
+
   FEATURE_NAMES.forEach((feature) => {
     const btn = document.querySelector(`.feature-btn[data-feature="${feature}"]`);
     if (!btn) return;
@@ -1808,10 +1839,7 @@ function renderLeadCounter() {
     }
   }
 
-  if (resetEl && s.resets_on) {
-    const date = formatResetDate(s.resets_on);
-    resetEl.textContent = date ? `Resets ${date}` : "";
-  }
+  if (resetEl) resetEl.hidden = true;
 }
 
 // ── Search History ────────────────────────────────────────────────────────────
@@ -1897,11 +1925,7 @@ function showLeadLimit() {
       : `You've used all ${limit} free lead searches this month. Upgrade to LinkedIn Pro or Bundle for 25 searches/month.`;
   }
 
-  const resetsOn = formatResetDate(accountStatus?.resets_on);
-  if (resetEl) {
-    resetEl.textContent = resetsOn ? `Resets on ${resetsOn}` : "";
-    resetEl.hidden = !resetsOn;
-  }
+  if (resetEl) resetEl.hidden = true;
 
   if (upBtn) upBtn.hidden = isHighLead;
 
