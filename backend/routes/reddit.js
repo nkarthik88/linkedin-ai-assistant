@@ -99,10 +99,11 @@ router.post(
   asyncHandler(async (req, res) => {
     const userId = validateUserId(req, res);
     if (!userId) return;
-    await consumeRedditFeatureCredit(userId, "reddit_post");
 
     const { topic, subreddit, tone, template, isPromoting, analysisContext } = req.body;
     if (!topic) return res.status(400).json({ error: "topic is required" });
+
+    await consumeRedditFeatureCredit(userId, "reddit_post");
 
     const model = getModelForPlan("free");
 
@@ -225,7 +226,6 @@ router.post(
   asyncHandler(async (req, res) => {
     const userId = validateUserId(req, res);
     if (!userId) return;
-    await consumeRedditFeatureCredit(userId, "reddit_post");
 
     const { url, subreddit } = req.body;
     if (!url) return res.status(400).json({ error: "url is required" });
@@ -273,6 +273,8 @@ router.post(
       return res.status(400).json({ error: "Could not extract enough content from that URL" });
     }
 
+    await consumeRedditFeatureCredit(userId, "reddit_post");
+
     const model = getModelForPlan("free");
 
     const systemPrompt = `You are a Reddit ghostwriter. Transform website or product content into 3 authentic Reddit posts (max 200 words each) that read like they were written by a real person, not a marketer.
@@ -315,10 +317,11 @@ router.post(
   asyncHandler(async (req, res) => {
     const userId = validateUserId(req, res);
     if (!userId) return;
-    await consumeRedditFeatureCredit(userId, "reddit_reply");
 
     const { commentText, postContext, persona = "mentor" } = req.body;
     if (!commentText) return res.status(400).json({ error: "commentText is required" });
+
+    await consumeRedditFeatureCredit(userId, "reddit_reply");
 
     const model = getModelForPlan("free");
 
@@ -369,10 +372,11 @@ router.post(
   asyncHandler(async (req, res) => {
     const userId = validateUserId(req, res);
     if (!userId) return;
-    await consumeRedditFeatureCredit(userId, "reddit_subreddit");
 
     const { niche } = req.body;
     if (!niche) return res.status(400).json({ error: "niche is required" });
+
+    await consumeRedditFeatureCredit(userId, "reddit_subreddit");
 
     const model = getModelForPlan("free");
 

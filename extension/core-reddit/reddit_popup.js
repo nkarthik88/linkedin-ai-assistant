@@ -800,8 +800,13 @@ async function handleCommentReply(e) {
   if (_replyingToComment) return;
   _replyingToComment = true; // set synchronously before the first await — prevents double-fire
   try {
-    if (!(await redditCheckLimit("comment_reply"))) return;
     const commentText = document.getElementById("reddit-comment-text").value.trim();
+    if (!commentText) {
+      const statusEl = document.getElementById("reddit-read-status");
+      if (statusEl) { statusEl.textContent = "⚠ Paste the comment you want to reply to first."; statusEl.hidden = false; }
+      return;
+    }
+    if (!(await redditCheckLimit("comment_reply"))) return;
     const postContext = document.getElementById("reddit-post-context").value.trim();
     const persona     = document.querySelector(".reddit-persona-chip.active")?.dataset.persona || "mentor";
     const loadingText = persona === "witty" ? "Crafting witty replies…"
