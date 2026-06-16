@@ -123,34 +123,20 @@ router.post(
 
     // Verify the caller knows the email on file — prevents strangers from
     // cancelling another user's subscription by guessing their UUID.
+    // Fail-secure: if an email is on file, the caller MUST provide a matching one.
     const callerEmail = String(req.body?.email || "").trim().toLowerCase();
-    if (callerEmail) {
-      const { data: acct } = await supabaseAdmin
-        .from("extension_accounts")
-        .select("email")
-        .eq("id", userId)
-        .maybeSingle();
-      const onFile = (acct?.email || "").trim().toLowerCase();
-      if (onFile && onFile !== callerEmail) {
-        return res.status(403).json({ error: "Email does not match account" });
-      }
+    const { data: acct } = await supabaseAdmin
+      .from("extension_accounts")
+      .select("email")
+      .eq("id", userId)
+      .maybeSingle();
+    const onFile = (acct?.email || "").trim().toLowerCase();
+    if (onFile && (!callerEmail || onFile !== callerEmail)) {
+      return res.status(403).json({ error: "Email is required to cancel a subscription" });
     }
 
-    // Get email before downgrading
-    let email = callerEmail;
-
-    if (!email) {
-      try {
-        const { data } = await supabaseAdmin
-          .from("extension_accounts")
-          .select("email")
-          .eq("id", userId)
-          .maybeSingle();
-        email = data?.email || "";
-      } catch {
-        /* non-fatal */
-      }
-    }
+    // Use the email already fetched above for the receipt
+    let email = callerEmail || onFile || "";
 
     // Cancel via Dodo API — find subscription by customer metadata
     if (config.dodoSecretKey || config.dodoApiKey) {
