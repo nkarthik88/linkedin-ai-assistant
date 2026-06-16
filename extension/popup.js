@@ -2558,8 +2558,10 @@ async function runDeepLeadSearch(filters) {
   }
 }
 
+let _leadSearchInProgress = false;
 document.getElementById("form-deep_lead_search")?.addEventListener("submit", (e) => {
   e.preventDefault();
+  if (_leadSearchInProgress) return; // block duplicate submits
   clearError("form-deep_lead_search");
   const title = document.getElementById("filter-title")?.value.trim() || "";
   const company = document.getElementById("filter-company")?.value.trim() || "";
@@ -2571,7 +2573,10 @@ document.getElementById("form-deep_lead_search")?.addEventListener("submit", (e)
     return;
   }
 
-  runDeepLeadSearch({ title, company, location, keywords });
+  _leadSearchInProgress = true;
+  runDeepLeadSearch({ title, company, location, keywords }).finally(() => {
+    _leadSearchInProgress = false;
+  });
 });
 
 // "New Search" — clear persisted results and start fresh.
@@ -2600,7 +2605,11 @@ document.getElementById("export-leads")?.addEventListener("click", exportLeadsCS
 
 function wireTemplateButtons() {
   document.querySelectorAll(".lead-template-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
+    if (btn.dataset.wired) return; // already registered — don't stack listeners
+    btn.dataset.wired = "1";
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ""; };
       setVal("filter-title",    btn.dataset.title);
       setVal("filter-company",  btn.dataset.company);
