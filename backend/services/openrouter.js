@@ -184,7 +184,7 @@ No markdown fences.`;
   if (!response.ok) {
     const text = await response.text().catch(() => "");
     const err = new Error(text || `OpenRouter request failed (${response.status})`);
-    err.statusCode = response.status >= 500 ? 502 : 400;
+    err.statusCode = response.status === 429 ? 429 : response.status >= 500 ? 502 : 400;
     throw err;
   }
 
@@ -246,7 +246,7 @@ async function callOpenRouter({ model, feature, systemInstruction, userPrompt })
     body: JSON.stringify({
       model,
       temperature: isViral ? 0.9 : 0.8,
-      max_tokens: isViral ? 1000 : 1200,
+      max_tokens: isViral ? 1500 : 1200,
       response_format: { type: "json_object" },
       messages: [
         {
@@ -275,7 +275,7 @@ Each variation must be a complete, ready-to-use string. No markdown fences.`,
   if (!response.ok) {
     const text = await response.text().catch(() => "");
     const err = new Error(text || `OpenRouter request failed (${response.status})`);
-    err.statusCode = response.status >= 500 ? 502 : 400;
+    err.statusCode = response.status === 429 ? 429 : response.status >= 500 ? 502 : 400;
     throw err;
   }
 
@@ -320,6 +320,8 @@ Each variation must be a complete, ready-to-use string. No markdown fences.`,
   return strings;
 }
 
+const RETRY_DELAY_MS = [0, 1500, 3000]; // backoff per attempt (0-indexed)
+
 export async function generateVariations({ feature, data, tone, plan }) {
   const model = getModelForPlan(plan);
   const systemInstruction =
@@ -328,12 +330,19 @@ export async function generateVariations({ feature, data, tone, plan }) {
   const userPrompt = buildUserPrompt(feature, data, tone);
 
   const isViral = feature === "viral_rewriter";
-  const MAX_ATTEMPTS = isViral ? 3 : 1;
+  // All features get 2 attempts on transient 5xx; viral gets 3 for length validation too
+  const MAX_ATTEMPTS = isViral ? 3 : 2;
 
   let strings = [];
   let lastError;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    // Exponential backoff — wait before retrying (skip on first attempt)
+    if (attempt > 1) {
+      const delay = RETRY_DELAY_MS[attempt - 1] ?? 3000;
+      await new Promise((r) => setTimeout(r, delay));
+    }
+
     try {
       strings = await callOpenRouter({ model, feature, systemInstruction, userPrompt });
 
@@ -350,8 +359,10 @@ export async function generateVariations({ feature, data, tone, plan }) {
       }
     } catch (err) {
       lastError = err;
-      if (!isViral || attempt === MAX_ATTEMPTS) throw err;
-      console.warn(`[viral_rewriter] attempt ${attempt} failed: ${err.message}`);
+      // Retry on transient server errors (5xx / 429) only
+      const isTransient = err.statusCode === 502 || err.statusCode === 429 || err.statusCode >= 500;
+      if (!isTransient || attempt === MAX_ATTEMPTS) throw err;
+      console.warn(`[${feature}] attempt ${attempt} failed (${err.statusCode}): ${err.message} — retrying`);
     }
   }
 

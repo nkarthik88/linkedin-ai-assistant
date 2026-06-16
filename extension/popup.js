@@ -1292,26 +1292,47 @@ function displayResults(feature, options) {
         const resultBox = document.getElementById(`viral-result-${i}`);
         viralAttempts++;
 
-        const attemptLabel = viralAttempts > 1 ? ` (attempt ${viralAttempts}/${MAX_VIRAL_ATTEMPTS})` : "";
-        btn.textContent = `🔥 Making it viral…${attemptLabel}`;
         btn.disabled = true;
+        btn.textContent = "🔥 Making it viral…";
         if (resultBox) {
           resultBox.hidden = false;
           resultBox.innerHTML = `<div class="viral-loading">🔥 Rewriting for maximum engagement… ⏳ May take 10–20 seconds</div>`;
         }
 
-        try {
-          const userId = await getUserId();
-          const email = await getUserEmail();
-          const viralOptions = await callApi({
-            feature: "viral_rewriter",
-            userId,
-            email: email || undefined,
-            draftPost: originalText,
-          });
-          const viralText = viralOptions[0];
+        // Silent auto-retry once on server errors before surfacing failure to user
+        const AUTO_RETRIES = 1;
+        let viralText = null;
+        let lastErr = null;
 
-          // Reset attempt counter on success so "Redo Viral" can retry fresh
+        for (let autoAttempt = 0; autoAttempt <= AUTO_RETRIES; autoAttempt++) {
+          if (autoAttempt > 0) {
+            if (resultBox) resultBox.innerHTML = `<div class="viral-loading">⏳ Server busy — retrying (${autoAttempt}/${AUTO_RETRIES})…</div>`;
+            btn.textContent = "🔥 Retrying…";
+            await new Promise((r) => setTimeout(r, 2000));
+          }
+          try {
+            const userId = await getUserId();
+            const email = await getUserEmail();
+            const viralOptions = await callApi({
+              feature: "viral_rewriter",
+              userId,
+              email: email || undefined,
+              draftPost: originalText,
+            });
+            viralText = viralOptions[0];
+            lastErr = null;
+            break; // success
+          } catch (err) {
+            if (err.message === "__LIMIT_REACHED__") { btn.disabled = false; btn.textContent = "🔥 Make it Viral"; return; }
+            lastErr = err;
+            // Only auto-retry on server errors — not on limit/auth errors
+            const isServerError = !err.message.includes("402") && !err.message.includes("403");
+            if (!isServerError) break;
+          }
+        }
+
+        if (viralText) {
+          // Success — reset counter so "Redo Viral" always starts fresh
           viralAttempts = 0;
 
           resultBox.innerHTML = `
@@ -1321,7 +1342,6 @@ function displayResults(feature, options) {
               <button type="button" class="copy-viral-btn">📋 Copy Viral</button>
             </div>
           `;
-
           resultBox.querySelector(".copy-viral-btn").addEventListener("click", async (e) => {
             const copyBtn = e.currentTarget;
             try { await navigator.clipboard.writeText(viralText); } catch {
@@ -1339,31 +1359,23 @@ function displayResults(feature, options) {
           btn.disabled = false;
           showToast("🔥 Viral version ready!", "success");
 
-        } catch (err) {
-          if (err.message === "__LIMIT_REACHED__") return;
-
+        } else {
+          // All attempts failed
+          refreshAccountStatus(); // sync UI state after any failure
           if (viralAttempts < MAX_VIRAL_ATTEMPTS) {
-            // Show retry option
             const retryLabel = viralAttempts === MAX_VIRAL_ATTEMPTS - 1 ? "🔄 Retry (last attempt)" : "🔄 Retry Viral";
             btn.textContent = retryLabel;
             btn.disabled = false;
-            if (resultBox) {
-              resultBox.hidden = false;
-              resultBox.innerHTML = `<div class="viral-error">❌ Failed to make viral — click Retry to try again</div>`;
-            }
-            showToast("❌ Viral generation failed — tap Retry", "default");
+            if (resultBox) resultBox.innerHTML = `<div class="viral-error">❌ Failed to make viral — click Retry to try again</div>`;
+            showToast("❌ Viral failed — tap Retry", "default");
           } else {
-            // 3 failures — show fallback
             btn.textContent = "Use original instead";
             btn.disabled = true;
-            if (resultBox) {
-              resultBox.hidden = false;
-              resultBox.innerHTML = `
-                <div class="viral-error viral-fallback">
-                  ❌ Couldn't generate viral version after 3 attempts.<br>
-                  No worries — the original post above is great! 📋 Copy it and post.
-                </div>`;
-            }
+            if (resultBox) resultBox.innerHTML = `
+              <div class="viral-error viral-fallback">
+                ❌ Couldn't generate viral version after ${MAX_VIRAL_ATTEMPTS} attempts.<br>
+                The original post above is great — 📋 copy and post it directly.
+              </div>`;
             showToast("Viral failed 3× — use the original post", "default");
           }
         }
