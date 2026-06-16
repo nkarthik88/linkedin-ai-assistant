@@ -9,33 +9,40 @@ const router = Router();
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const HUMAN_REDDIT_RULES = `Write using casual conversational Reddit language. Use short paragraphs. Natural friendly tone. Minor imperfections ok. Variable sentence lengths. NO marketing jargon. NO promotional buzzwords. NO polished sales copy. Add genuine value first.`;
+const HUMAN_REDDIT_RULES = `Write like a real person texting a friend who happens to be on Reddit. Casual, direct, imperfect. Use contractions (it's, don't, can't, I've). Take a clear stance — never be neutral. Admit a mistake or struggle somewhere in the post. Vulnerability earns karma. No sales pitches, no community contribution theater. Just a real person sharing something real.`;
 
 const HUMAN_WRITING_RULES = `
 HUMAN WRITING RULES — apply to every post without exception:
 1. Vary sentence length aggressively. Short punch. Then a longer sentence with real detail and context. Short again.
-2. Use emotional, subjective words: annoying, honestly, weird, refreshing, surprisingly, genuinely, frustrated, relieved, confused
-3. Add natural self-corrections mid-post: "Actually, scratch that — the real issue was..." or "Wait, I should back up here..."
-4. State opinions directly: "Here's the thing, it doesn't work" — NOT "I think it might not work"
-5. Include imperfect anecdotes: "spent 3 hours on this and honestly results were mediocre but here's what I learned anyway"
-6. Use commas, not em-dashes — em-dashes are a known AI writing tell
-7. Keep paragraphs to 1-3 sentences maximum
-8. Peer voice only: sharing experience as an equal, never expert presenting findings to an audience`;
+2. Use contractions everywhere: it's, don't, can't, I've, you're, that's, wasn't, didn't.
+3. Be opinionated. Take a stance and defend it. "This approach is wrong and here's why" beats "there are pros and cons."
+4. Include one genuine struggle, mistake, or moment of vulnerability. "I wasted two weeks on this before realising the obvious thing."
+5. Use emotional, subjective words: annoying, honestly, weird, refreshing, surprisingly, genuinely, frustrated, relieved, confused, baffled.
+6. Add natural self-corrections: "Actually wait, that's not quite right —" or "scratch that, the real issue was..."
+7. Use commas, not em-dashes. Em-dashes are a known AI writing tell.
+8. Keep paragraphs to 2-3 sentences maximum. Hard cap: 200 words total for the body.
+9. End every post with a simple, genuine question or request for advice. Make it easy to reply — one sentence, not a list of questions.
+10. Peer voice only: sharing experience as an equal, never an expert presenting findings to an audience.`;
 
 const BANNED_WORDS = `
-BANNED WORDS — never use these, replace with plain natural language:
-game-changer, revolutionary, unleash, leverage, synergy, guaranteed, life-changing, secrets,
-Click here, Act now, Exclusive, groundbreaking, cutting-edge, disruptive, innovative,
-Delve, landscape, pivotal, testament, Moreover, In conclusion, It is important,
-10x, supercharge, streamline, 100% free, best price, Wait until you see`;
+BANNED WORDS — never use these under any circumstances, rewrite the sentence if needed:
+unleash, comprehensive, game-changer, game changer, delve, navigating, in conclusion, to summarize,
+revolutionary, leverage, synergy, guaranteed, life-changing, secrets, holistic, robust, scalable,
+Click here, Act now, Exclusive, groundbreaking, cutting-edge, disruptive, innovative, transformative,
+landscape, pivotal, testament, Moreover, Furthermore, Additionally, It is important, It is worth noting,
+10x, supercharge, streamline, 100% free, best price, Wait until you see, I'm excited to share,
+as an AI, I cannot, I'd be happy to, Certainly, Absolutely, Of course`;
 
 const SELF_REVIEW = `
-SELF-REVIEW PASS before finalizing — check every post:
-1. Does it sound promotional? Rewrite completely.
-2. Are there any em-dashes? Replace every one with a comma or period.
-3. Any banned words in the list above? Replace them.
-4. Does it feel like a peer sharing a real experience? If not, rewrite.
-5. Would a real Redditor actually post this? If no, rewrite.`;
+SELF-REVIEW PASS — check every post before finalizing:
+1. Promotional tone? Rewrite completely. The post must deliver value even if the reader ignores whatever is being promoted.
+2. Any em-dashes? Replace every single one with a comma or period.
+3. Any banned words? Replace them with plain language.
+4. Any neutral, fence-sitting language? Pick a side.
+5. Is there a moment of struggle or vulnerability? If not, add one.
+6. Does it end with a genuine single question? If not, add one.
+7. Over 200 words in the body? Cut until it's under.
+8. Would a real Redditor actually post this without editing? If no, rewrite.`;
 
 async function callOpenRouter(model, systemPrompt, userPrompt, jsonMode = true) {
   const body = {
@@ -125,12 +132,12 @@ ${analysisContext.summary || ''}
 IMPORTANT: Match this community's exact writing style and preferences above all else.\n`
       : '';
 
-    const systemPrompt = `You are a Reddit ghostwriter. Generate 3 distinct Reddit post options.
+    const systemPrompt = `You are a Reddit ghostwriter. Generate 3 distinct Reddit post options. Each must read like it was written by a real person, not polished content.
 ${communitySection}
 ${HUMAN_WRITING_RULES}
 ${BANNED_WORDS}
 ${promoSection}${templateSection}
-Each post must have a TITLE and a BODY. Also score anti-ban risk (0-100) for each:
+Each post must have a TITLE and a BODY (max 200 words). Also score anti-ban risk (0-100) for each:
 - 0-30: Safe (human voice, genuine value, no promo feel)
 - 31-60: Risky (borderline promotional or AI-sounding)
 - 61-100: Do not post (promotional, spammy, or AI-generated)
@@ -268,18 +275,18 @@ router.post(
 
     const model = getModelForPlan("free");
 
-    const systemPrompt = `You are a Reddit ghostwriter. Transform website or product content into 3 authentic Reddit posts that provide genuine value.
+    const systemPrompt = `You are a Reddit ghostwriter. Transform website or product content into 3 authentic Reddit posts (max 200 words each) that read like they were written by a real person, not a marketer.
 ${HUMAN_WRITING_RULES}
 ${BANNED_WORDS}
 
-CRITICAL FRAMING RULE — the post must NEVER read like an advertisement. Use exactly one of these frames:
-1. Personal experience: "I was struggling with X, tried Y, here is what happened."
-2. Lesson learned: "Spent N weeks dealing with X. Here are the things I figured out."
-3. Community question: "Working on X and ran into Y. How do others deal with this?"
+CRITICAL FRAMING RULE — the post must NEVER read like an advertisement. Pick exactly one frame:
+1. Personal experience: "I was struggling with X, tried Y, here's what actually happened."
+2. Lesson learned: "Spent 3 weeks on X. Honest results below."
+3. Community question: "Working on X, hit Y problem. How do you all deal with this?"
 
-Structure: Problem the author faced → Journey/struggle → What they discovered → (Product or service mentioned in ONE natural sentence at the end only, as part of "what helped")
-The post must provide real value even if the reader never clicks any link.
-${subreddit ? `\nWriting for ${subreddit}. Match that community's tone and style.` : ""}
+Structure: Problem → struggle/journey → what they discovered → (if promoting: ONE natural sentence at the very end, never in the opening)
+The post must be worth reading even if the reader ignores whatever is being promoted.
+${subreddit ? `\nWriting for ${subreddit}. Match that community's exact tone and style.` : ""}
 ${SELF_REVIEW}
 Respond with JSON only:
 {"posts":[{"title":"...","body":"...","antiBanScore":15},{"title":"...","body":"...","antiBanScore":22},{"title":"...","body":"...","antiBanScore":35}]}`;
@@ -461,22 +468,24 @@ router.post(
 
     const model = getModelForPlan("free");
 
-    const systemPrompt = `You are a Reddit viral ghostwriter. Transform the draft into ONE viral Reddit post${subreddit ? ` specifically for ${subreddit}` : ""}.${subreddit ? ` Follow that subreddit's culture and norms.` : ""}
+    const systemPrompt = `You are a Reddit viral ghostwriter. Transform the draft into ONE viral Reddit post${subreddit ? ` specifically for ${subreddit}` : ""}.${subreddit ? ` Follow that subreddit's culture and norms exactly.` : ""}
 
 ${HUMAN_REDDIT_RULES}
+${BANNED_WORDS}
 
 THE REDDIT VIRAL FORMULA — write ALL 5 sections, separated by blank lines:
 
-1. HOOK (1 line): Surprising statement, relatable moment, or a number. Makes people stop scrolling.
-2. CONFLICT (2-3 lines): What went wrong, what was the challenge, what did you struggle with?
-3. INSIGHT (2-3 lines): The key realization or lesson. The "aha" moment.
-4. PROOF (2-3 lines): Specific result, before/after, or evidence. Real details beat vague claims.
-5. CTA (1-2 lines): Question that invites comments. No marketing speak.
+1. HOOK (1 line): Surprising statement, a relatable screw-up, or a specific number. Makes people stop scrolling.
+2. CONFLICT (2-3 lines): What went wrong, what was hard, what did you struggle with? Be specific and vulnerable.
+3. INSIGHT (2-3 lines): The key realization or lesson. State it directly and with an opinion.
+4. PROOF (2-3 lines): Specific result, before/after, or real detail. Vague claims get ignored.
+5. CTA (1 sentence): One genuine question that invites replies. Not a list. No marketing tone.
 
-RULES:
-- Minimum 400 characters total
-- Short paragraphs (1-3 lines max)
-- Sounds like a real person sharing a genuine experience
+HARD RULES:
+- Use contractions throughout (it's, don't, wasn't, I've, can't)
+- Short paragraphs — 2-3 sentences max per section
+- Total body under 200 words
+- Sounds like a real person, not a content creator
 - NO buzzwords, NO "I'm excited to share", NO corporate tone
 - Anti-ban score must be under 30
 
