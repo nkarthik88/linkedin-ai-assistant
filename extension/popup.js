@@ -2,6 +2,57 @@ const API_BASE = "https://api.propostly.com";
 const API_URL = `${API_BASE}/api/generate`;
 const API_URL_LEADS = `${API_BASE}/api/generate/leads`;
 
+// Proxy all network calls through the background service worker so the
+// side-panel renderer thread never blocks on I/O (avoids "Page Unresponsive").
+//
+// Retry logic handles the MV3 race condition where Chrome wakes the service
+// worker but the onMessage listener isn't registered yet when sendMessage
+// fires — retrying 100-200 ms later hits a live listener every time.
+function _bgFetchOnce(url, options, timeout) {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({ type: "BG_FETCH", url, options, timeout }, (result) => {
+      if (chrome.runtime.lastError) {
+        return reject(new Error(chrome.runtime.lastError.message));
+      }
+      if (!result) return reject(new Error("No response from background worker."));
+      if (result.error) return reject(new Error(result.error));
+      const rawText = result.text;
+      resolve({
+        ok: result.ok,
+        status: result.status,
+        text: () => Promise.resolve(rawText),
+        json: () => {
+          try { return Promise.resolve(JSON.parse(rawText)); }
+          catch { return Promise.reject(new Error("Invalid JSON response")); }
+        },
+      });
+    });
+  });
+}
+
+async function bgFetch(url, options = {}, timeout = 15000) {
+  const CONNECTION_ERRORS = [
+    "Could not establish connection",
+    "Receiving end does not exist",
+    "Extension context invalidated",
+  ];
+  const isConnectionError = (err) => CONNECTION_ERRORS.some((s) => err?.message?.includes(s));
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await _bgFetchOnce(url, options, timeout);
+    } catch (err) {
+      if (!isConnectionError(err) || attempt === 2) {
+        if (isConnectionError(err)) {
+          throw new Error("Extension background worker is not responding. Please reload the extension (right-click the icon → Manage Extension → Reload).");
+        }
+        throw err;
+      }
+      await new Promise((r) => setTimeout(r, 150 * (attempt + 1)));
+    }
+  }
+}
+
 let accountStatus = null;
 
 const FEATURE_LABELS = {
@@ -124,7 +175,7 @@ async function generateBrowserFingerprint() {
 async function registerWithBackend(userId, email, name) {
   try {
     const deviceFingerprint = await generateBrowserFingerprint();
-    const res = await fetch(`${API_BASE}/api/auth/register-extension`, {
+    const res = await bgFetch(`${API_BASE}/api/auth/register-extension`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, email, name: name || undefined, deviceFingerprint: deviceFingerprint || undefined }),
@@ -372,7 +423,7 @@ async function fetchAccountStatus() {
   const deadline = new Promise((_, reject) =>
     setTimeout(() => reject(new Error("timeout")), 5000)
   );
-  const request = fetch(
+  const request = bgFetch(
     `${API_BASE}/api/usage/status?userId=${encodeURIComponent(userId)}`
   ).then(async (res) => {
     if (!res.ok) {
@@ -604,7 +655,7 @@ document.getElementById("cancel-subscription-btn")?.addEventListener("click", as
     const userId = await getUserId();
     const email = await getUserEmail();
 
-    const res = await fetch(`${API_BASE}/api/payments/cancel`, {
+    const res = await bgFetch(`${API_BASE}/api/payments/cancel`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, email: email || undefined }),
@@ -692,7 +743,7 @@ async function startUpgrade(triggerBtn = null, plan = "linkedin_pro") {
       locale.toUpperCase() === "IN" ||
       Intl.DateTimeFormat().resolvedOptions().timeZone === "Asia/Kolkata";
 
-    const res = await fetch(`${API_BASE}/api/payments/upgrade`, {
+    const res = await bgFetch(`${API_BASE}/api/payments/upgrade`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -817,7 +868,7 @@ async function captureAndStoreLinkedInId(userId) {
     if (!tab) return;
     const response = await chrome.tabs.sendMessage(tab.id, { type: "GET_MY_LINKEDIN_ID" });
     if (!response?.linkedinId) return;
-    const res = await fetch(`${API_BASE}/api/auth/link-linkedin`, {
+    const res = await bgFetch(`${API_BASE}/api/auth/link-linkedin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, linkedinId: response.linkedinId }),
@@ -962,7 +1013,7 @@ function escapeHtml(str) {
 // ── API call ───────────────────────────────────────────────────────────────
 
 async function callApi(body) {
-  const res = await fetch(API_URL, {
+  const res = await bgFetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -2271,7 +2322,7 @@ async function qualifyAndShow(profiles, targetDescription, filters = null) {
   const leadsTimeout = new Promise((_, reject) =>
     setTimeout(() => reject(new Error("Lead search timed out. Please try again.")), 15000)
   );
-  const leadsFetch = fetch(API_URL_LEADS, {
+  const leadsFetch = bgFetch(API_URL_LEADS, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId, profiles, targetDescription, filters }),
