@@ -593,80 +593,42 @@ const COMMENT_BOX_SELECTORS = [
   'div[contenteditable="true"][aria-label*="eply"]',
 ];
 
-// Track the post container the user most recently clicked a reply/comment button in
-let _lastClickedPostContainer = null;
-
-(function trackReplyClicks() {
-  const POST_CONTAINER_SELECTORS = [
-    ".feed-shared-update-v2",
-    "[data-id]",
-    "article[data-urn]",
-    ".scaffold-finite-scroll__content > div > div",
-  ];
-
-  document.addEventListener("click", (e) => {
-    const btn = e.target.closest(
-      'button[aria-label*="omment"], button[aria-label*="eply"], ' +
-      '.comments-comment-box__submit-button, ' +
-      '.comment-button, .reply-button, ' +
-      '[data-control-name="comment"], [data-control-name="reply"]'
-    );
-    if (!btn) return;
-    for (const sel of POST_CONTAINER_SELECTORS) {
-      const container = btn.closest(sel);
-      if (container) {
-        _lastClickedPostContainer = container;
-        return;
-      }
-    }
-  }, true);
-
-  // Also track when user focuses a comment/reply editor — capture its post container
-  document.addEventListener("focusin", (e) => {
-    const el = e.target;
-    if (el.contentEditable !== "true") return;
-    const inCommentArea = el.closest(
-      ".comments-comment-box, .comments-reply-box, .feed-shared-update-v2__comments-container, .comments-comment-texteditor"
-    );
-    if (!inCommentArea) return;
-    for (const sel of [
-      ".feed-shared-update-v2", "[data-id]", "article[data-urn]",
-    ]) {
-      const container = el.closest(sel);
-      if (container) {
-        _lastClickedPostContainer = container;
-        return;
-      }
-    }
-  }, true);
-})();
-
 function findCommentBox() {
-  // Prefer the currently focused editor inside a comment area
+  const COMMENT_AREA = ".comments-comment-box, .comments-reply-box, .feed-shared-update-v2__comments-container, .comments-comment-texteditor";
+
+  // 1. Prefer the currently focused editor inside a comment area
   const active = document.activeElement;
-  if (active && active.contentEditable === "true") {
-    const inCommentArea = active.closest(
-      ".comments-comment-box, .comments-reply-box, .feed-shared-update-v2__comments-container, .comments-comment-texteditor"
-    );
-    if (inCommentArea) return active;
+  if (active && active.contentEditable === "true" && active.closest(COMMENT_AREA)) {
+    return active;
   }
 
-  // Scope search to the post container the user last interacted with
-  const scope = _lastClickedPostContainer || document;
+  // 2. Collect ALL comment editors currently in the DOM
+  const all = [];
   for (const sel of COMMENT_BOX_SELECTORS) {
-    const el = scope.querySelector(sel);
-    if (el) return el;
-  }
-
-  // Fallback: global search (only if scoped search found nothing)
-  if (scope !== document) {
-    for (const sel of COMMENT_BOX_SELECTORS) {
-      const el = document.querySelector(sel);
-      if (el) return el;
+    for (const el of document.querySelectorAll(sel)) {
+      if (!all.includes(el)) all.push(el);
     }
   }
+  if (all.length === 0) return null;
+  if (all.length === 1) return all[0];
 
-  return null;
+  // 3. Among multiple editors, pick the one whose bounding box is closest to
+  //    the vertical center of the current viewport — this matches what the user
+  //    is actually looking at when they generated the reply in the side panel.
+  const viewportCenter = window.scrollY + window.innerHeight / 2;
+  let best = null;
+  let bestDist = Infinity;
+  for (const el of all) {
+    const rect = el.getBoundingClientRect();
+    const absTop = rect.top + window.scrollY;
+    const elCenter = absTop + rect.height / 2;
+    const dist = Math.abs(elCenter - viewportCenter);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = el;
+    }
+  }
+  return best;
 }
 
 // Selectors for reading existing comment text (not the input box, the comment body)
