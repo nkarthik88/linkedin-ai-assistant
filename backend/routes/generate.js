@@ -5,6 +5,7 @@ import {
   consumeFeatureCredit,
   consumeLeadSearch,
   logLeadSearchEvent,
+  resolveAccount,
 } from "../services/usage.js";
 import { sendWelcomeEmail, sendUsageWarningEmail } from "../services/email.js";
 
@@ -35,13 +36,22 @@ router.post(
     }
 
     const data = buildDataPayload(req.body);
-    const account = await consumeFeatureCredit(userId, feature);
+
+    // Resolve plan without consuming credit — credit only charges after AI succeeds
+    const preAccount = await resolveAccount(userId);
     const variations = await generateVariations({
       feature,
       data,
       tone,
-      plan: account.plan,
+      plan: preAccount.plan,
     });
+
+    if (!variations || variations.length === 0) {
+      return res.status(502).json({ error: "AI returned no variations — please try again" });
+    }
+
+    // Credit consumed only after real AI results confirmed
+    const account = await consumeFeatureCredit(userId, feature);
 
     // Fire-and-forget emails (never block the response)
     const email = req.body.email || req.body.customerEmail || account.email || null;
@@ -81,10 +91,16 @@ router.post(
       });
     }
 
-    const leadAccount = await consumeLeadSearch(userId);
-    const plan = leadAccount.plan;
+    // Resolve plan without consuming so AI failure doesn't cost a search
+    const preLeadAccount = await resolveAccount(userId);
+    const leads = await qualifyLeads({ profiles, targetDescription, filters, plan: preLeadAccount.plan });
 
-    const leads = await qualifyLeads({ profiles, targetDescription, filters, plan });
+    if (!leads || leads.length === 0) {
+      return res.status(502).json({ error: "AI returned no results — please try again" });
+    }
+
+    // Consume lead search credit only after AI returns results
+    const leadAccount = await consumeLeadSearch(userId);
 
     // Fire-and-forget analytics (never blocks the response).
     logLeadSearchEvent({

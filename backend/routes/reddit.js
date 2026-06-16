@@ -103,8 +103,6 @@ router.post(
     const { topic, subreddit, tone, template, isPromoting, analysisContext } = req.body;
     if (!topic) return res.status(400).json({ error: "topic is required" });
 
-    await consumeRedditFeatureCredit(userId, "reddit_post");
-
     const model = getModelForPlan("free");
 
     const TEMPLATE_FORMATS = {
@@ -164,7 +162,18 @@ Generate 3 Reddit posts.`;
       antiBanScore: Math.min(100, Math.max(0, parseInt(p.antiBanScore) || 0)),
     }));
 
-    res.json({ posts });
+    if (!posts.length || !posts[0].title) {
+      return res.status(502).json({ error: "AI returned no posts — please try again" });
+    }
+
+    // Consume credit only after we have real results
+    const creditResult = await consumeRedditFeatureCredit(userId, "reddit_post");
+    res.json({
+      posts,
+      featureUsed: creditResult.featureUsed,
+      featureLimit: creditResult.featureLimit,
+      featureRemaining: creditResult.featureRemaining,
+    });
   })
 );
 
@@ -273,8 +282,6 @@ router.post(
       return res.status(400).json({ error: "Could not extract enough content from that URL" });
     }
 
-    await consumeRedditFeatureCredit(userId, "reddit_post");
-
     const model = getModelForPlan("free");
 
     const systemPrompt = `You are a Reddit ghostwriter. Transform website or product content into 3 authentic Reddit posts (max 200 words each) that read like they were written by a real person, not a marketer.
@@ -307,7 +314,17 @@ Respond with JSON only:
       antiBanScore: Math.min(100, Math.max(0, parseInt(p.antiBanScore) || 0)),
     }));
 
-    res.json({ posts });
+    if (!posts.length || !posts[0].title) {
+      return res.status(502).json({ error: "AI returned no posts — please try again" });
+    }
+
+    const creditResult = await consumeRedditFeatureCredit(userId, "reddit_post");
+    res.json({
+      posts,
+      featureUsed: creditResult.featureUsed,
+      featureLimit: creditResult.featureLimit,
+      featureRemaining: creditResult.featureRemaining,
+    });
   })
 );
 
@@ -320,8 +337,6 @@ router.post(
 
     const { commentText, postContext, persona = "mentor" } = req.body;
     if (!commentText) return res.status(400).json({ error: "commentText is required" });
-
-    await consumeRedditFeatureCredit(userId, "reddit_reply");
 
     const model = getModelForPlan("free");
 
@@ -357,12 +372,21 @@ Respond with JSON only:
       return res.status(502).json({ error: "Failed to parse AI response" });
     }
 
-    const variations = (parsed.variations || []).slice(0, 3).map((v) => String(v).trim());
-    while (variations.length < 3 && variations.length > 0) {
+    const variations = (parsed.variations || []).slice(0, 3).map((v) => String(v).trim()).filter(Boolean);
+    if (!variations.length) {
+      return res.status(502).json({ error: "AI returned no replies — please try again" });
+    }
+    while (variations.length < 3) {
       variations.push(variations[variations.length - 1]);
     }
 
-    res.json({ variations });
+    const creditResult = await consumeRedditFeatureCredit(userId, "reddit_reply");
+    res.json({
+      variations,
+      featureUsed: creditResult.featureUsed,
+      featureLimit: creditResult.featureLimit,
+      featureRemaining: creditResult.featureRemaining,
+    });
   })
 );
 
@@ -375,8 +399,6 @@ router.post(
 
     const { niche } = req.body;
     if (!niche) return res.status(400).json({ error: "niche is required" });
-
-    await consumeRedditFeatureCredit(userId, "reddit_subreddit");
 
     const model = getModelForPlan("free");
 
@@ -406,9 +428,19 @@ Respond with JSON only:
       promoAllowed: ["YES", "NO", "Rules"].includes(s.promoAllowed) ? s.promoAllowed : "Rules",
       bestTime: String(s.bestTime || "").trim(),
       vibe: String(s.vibe || "").trim(),
-    }));
+    })).filter((s) => s.name);
 
-    res.json({ subreddits });
+    if (!subreddits.length) {
+      return res.status(502).json({ error: "AI returned no subreddits — please try again" });
+    }
+
+    const creditResult = await consumeRedditFeatureCredit(userId, "reddit_subreddit");
+    res.json({
+      subreddits,
+      featureUsed: creditResult.featureUsed,
+      featureLimit: creditResult.featureLimit,
+      featureRemaining: creditResult.featureRemaining,
+    });
   })
 );
 

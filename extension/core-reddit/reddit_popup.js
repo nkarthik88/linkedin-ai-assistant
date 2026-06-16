@@ -101,16 +101,6 @@ async function redditGetUsage() {
   return redditUsage;
 }
 
-async function redditIncrementUsage(feature) {
-  const now = new Date();
-  const key = `${now.getFullYear()}-${now.getMonth()}`;
-  const current = await redditGetUsage();
-  const counts = current.counts || {};
-  counts[feature] = (counts[feature] || 0) + 1;
-  await chrome.storage.local.set({ redditUsage: { monthKey: key, counts } });
-  return counts[feature];
-}
-
 // Map frontend feature names to backend feature_usage keys and their limits
 const FEATURE_LIMIT_MAP = {
   post_generator:   { key: "reddit_post",      limit: 5 },
@@ -709,10 +699,10 @@ async function handleScanGenerate(e) {
   if (_generatingPost) return;
   _generatingPost = true;
   try {
-    if (!(await redditCheckLimit("post_generator"))) return;
     const topic     = document.getElementById("reddit-scan-topic")?.value.trim();
     const subreddit = document.getElementById("reddit-scan-subreddit")?.value.trim();
     if (!topic) return;
+    if (!(await redditCheckLimit("post_generator"))) return;
     redditShowLoading("Generating posts tuned for your community…");
     const data = await redditCallApi("generate", { topic, subreddit, analysisContext: _communityAnalysis });
     renderRedditPosts(data.posts || []);
@@ -731,10 +721,10 @@ async function handleUrlGenerate(e) {
   if (_generatingPost) return;
   _generatingPost = true;
   try {
-    if (!(await redditCheckLimit("post_generator"))) return;
     const url       = document.getElementById("reddit-url-input")?.value.trim();
     const subreddit = document.getElementById("reddit-url-subreddit")?.value.trim();
     if (!url) return;
+    if (!(await redditCheckLimit("post_generator"))) return;
     redditShowLoading("Fetching URL and generating posts…");
     const data = await redditCallApi("from-url", { url, subreddit });
     renderRedditPosts(data.posts || []);
@@ -753,9 +743,10 @@ async function handlePostGenerator(e) {
   if (_generatingPost) return;
   _generatingPost = true;
   try {
-    if (!(await redditCheckLimit("post_generator"))) return;
     const topic      = document.getElementById("reddit-topic").value.trim();
     const subreddit  = document.getElementById("reddit-subreddit").value.trim();
+    if (!topic) return;
+    if (!(await redditCheckLimit("post_generator"))) return;
     const template   = document.querySelector(".reddit-template-chip.active")?.dataset.template || "Lesson";
     const isPromoting = document.getElementById("reddit-promo-toggle")?.dataset.promoting === "yes";
     redditShowLoading("Generating 3 Reddit posts…");
@@ -778,8 +769,9 @@ async function handleSubredditFinder(e) {
   if (_findingSubreddits) return;
   _findingSubreddits = true; // set synchronously before the first await — prevents double-fire
   try {
-    if (!(await redditCheckLimit("subreddit_finder"))) return;
     const niche = document.getElementById("reddit-niche").value.trim();
+    if (!niche) return;
+    if (!(await redditCheckLimit("subreddit_finder"))) return;
     redditShowLoading("Finding subreddits…");
     const data = await redditCallApi("subreddits", { niche });
     renderSubreddits(data.subreddits || [], niche);
