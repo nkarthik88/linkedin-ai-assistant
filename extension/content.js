@@ -593,8 +593,56 @@ const COMMENT_BOX_SELECTORS = [
   'div[contenteditable="true"][aria-label*="eply"]',
 ];
 
+// Track the post container the user most recently clicked a reply/comment button in
+let _lastClickedPostContainer = null;
+
+(function trackReplyClicks() {
+  const POST_CONTAINER_SELECTORS = [
+    ".feed-shared-update-v2",
+    "[data-id]",
+    "article[data-urn]",
+    ".scaffold-finite-scroll__content > div > div",
+  ];
+
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(
+      'button[aria-label*="omment"], button[aria-label*="eply"], ' +
+      '.comments-comment-box__submit-button, ' +
+      '.comment-button, .reply-button, ' +
+      '[data-control-name="comment"], [data-control-name="reply"]'
+    );
+    if (!btn) return;
+    for (const sel of POST_CONTAINER_SELECTORS) {
+      const container = btn.closest(sel);
+      if (container) {
+        _lastClickedPostContainer = container;
+        return;
+      }
+    }
+  }, true);
+
+  // Also track when user focuses a comment/reply editor — capture its post container
+  document.addEventListener("focusin", (e) => {
+    const el = e.target;
+    if (el.contentEditable !== "true") return;
+    const inCommentArea = el.closest(
+      ".comments-comment-box, .comments-reply-box, .feed-shared-update-v2__comments-container, .comments-comment-texteditor"
+    );
+    if (!inCommentArea) return;
+    for (const sel of [
+      ".feed-shared-update-v2", "[data-id]", "article[data-urn]",
+    ]) {
+      const container = el.closest(sel);
+      if (container) {
+        _lastClickedPostContainer = container;
+        return;
+      }
+    }
+  }, true);
+})();
+
 function findCommentBox() {
-  // Prefer whichever contenteditable box is already focused inside a comment area
+  // Prefer the currently focused editor inside a comment area
   const active = document.activeElement;
   if (active && active.contentEditable === "true") {
     const inCommentArea = active.closest(
@@ -603,10 +651,21 @@ function findCommentBox() {
     if (inCommentArea) return active;
   }
 
+  // Scope search to the post container the user last interacted with
+  const scope = _lastClickedPostContainer || document;
   for (const sel of COMMENT_BOX_SELECTORS) {
-    const el = document.querySelector(sel);
+    const el = scope.querySelector(sel);
     if (el) return el;
   }
+
+  // Fallback: global search (only if scoped search found nothing)
+  if (scope !== document) {
+    for (const sel of COMMENT_BOX_SELECTORS) {
+      const el = document.querySelector(sel);
+      if (el) return el;
+    }
+  }
+
   return null;
 }
 
