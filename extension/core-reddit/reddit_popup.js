@@ -717,7 +717,6 @@ async function handleScanGenerate(e) {
   redditShowLoading("Generating posts tuned for your community…");
   try {
     const data = await redditCallApi("generate", { topic, subreddit, analysisContext: _communityAnalysis });
-    await redditIncrementUsage("post_generator");
     renderRedditPosts(data.posts || []);
   } catch (err) {
     redditShowView("reddit-view-post_generator");
@@ -742,7 +741,6 @@ async function handleUrlGenerate(e) {
   redditShowLoading("Fetching URL and generating posts…");
   try {
     const data = await redditCallApi("from-url", { url, subreddit });
-    await redditIncrementUsage("post_generator");
     renderRedditPosts(data.posts || []);
   } catch (err) {
     redditShowView("reddit-view-post_generator");
@@ -768,7 +766,6 @@ async function handlePostGenerator(e) {
   redditShowLoading("Generating 3 Reddit posts…");
   try {
     const data = await redditCallApi("generate", { topic, subreddit, template, isPromoting });
-    await redditIncrementUsage("post_generator");
     renderRedditPosts(data.posts || []);
   } catch (err) {
     redditShowView("reddit-view-post_generator");
@@ -780,26 +777,34 @@ async function handlePostGenerator(e) {
 
 /* ─── Subreddit Finder ─────────────────────────────── */
 
+let _findingSubreddits = false;
+
 async function handleSubredditFinder(e) {
   e.preventDefault();
+  if (_findingSubreddits) return;
   if (!(await redditCheckLimit("subreddit_finder"))) return;
 
   const niche = document.getElementById("reddit-niche").value.trim();
+  _findingSubreddits = true;
   redditShowLoading("Finding subreddits…");
   try {
     const data = await redditCallApi("subreddits", { niche });
-    await redditIncrementUsage("subreddit_finder");
     renderSubreddits(data.subreddits || [], niche);
   } catch (err) {
     redditShowView("reddit-view-subreddit_finder");
     alert("Error: " + err.message);
+  } finally {
+    _findingSubreddits = false;
   }
 }
 
 /* ─── Comment Reply ────────────────────────────────── */
 
+let _replyingToComment = false;
+
 async function handleCommentReply(e) {
   e.preventDefault();
+  if (_replyingToComment) return;
   if (!(await redditCheckLimit("comment_reply"))) return;
 
   const commentText = document.getElementById("reddit-comment-text").value.trim();
@@ -810,15 +815,17 @@ async function handleCommentReply(e) {
     : persona === "curious" ? "Generating curious replies…"
     : "Generating helpful replies…";
 
+  _replyingToComment = true;
   redditShowLoading(loadingText);
   try {
     const data = await redditCallApi("reply", { commentText, postContext, persona });
-    await redditIncrementUsage("comment_reply");
     const personaLabel = persona === "witty" ? "😄 Witty Replies" : persona === "curious" ? "🤔 Curious Replies" : "🎓 Mentor Replies";
     renderTextVariations(data.variations || [], personaLabel);
   } catch (err) {
     redditShowView("reddit-view-comment_reply");
     alert("Error: " + err.message);
+  } finally {
+    _replyingToComment = false;
   }
 }
 
