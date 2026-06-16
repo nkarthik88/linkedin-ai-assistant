@@ -2112,11 +2112,20 @@ async function renderSavedLeads() {
 
 // ── Background-tab auto search ────────────────────────────────────────────────
 
+let _searchTabId = null; // track the last opened search tab for cleanup
+
 async function autoSearchProfiles(searchUrl) {
+  // Close any previous search tab before opening a new one
+  if (_searchTabId !== null) {
+    try { await chrome.tabs.remove(_searchTabId); } catch { /* already closed */ }
+    _searchTabId = null;
+  }
+
   // Open a background tab. content.js is declared in manifest content_scripts
   // so it auto-injects — we never call executeScript() which would steal focus.
   const tab = await chrome.tabs.create({ url: searchUrl, active: false });
   const tabId = tab.id;
+  _searchTabId = tabId;
 
   try {
     const deadline = Date.now() + 28000;
@@ -2144,6 +2153,7 @@ async function autoSearchProfiles(searchUrl) {
     } catch {
       /* tab already closed */
     }
+    if (_searchTabId === tabId) _searchTabId = null;
   }
 }
 
@@ -2458,10 +2468,11 @@ async function addSeenUrls(urls) {
 }
 
 function buildLinkedInSearchUrl(filters, page = 1) {
-  const parts = [filters.title, filters.company, filters.keywords, filters.location].filter(Boolean);
-  const keywords = parts.join(" ");
   const params = new URLSearchParams();
-  if (keywords) params.set("keywords", keywords);
+  // Only put title + company + keywords into the search box — NOT location.
+  // LinkedIn does not text-match location in the keywords field; it kills results.
+  const parts = [filters.title, filters.company, filters.keywords].filter(Boolean);
+  if (parts.length) params.set("keywords", parts.join(" "));
   if (filters.title) params.set("title", filters.title);
   if (page > 1) params.set("page", String(page));
   return `https://www.linkedin.com/search/results/people/?${params.toString()}`;
@@ -2505,42 +2516,52 @@ async function runDeepLeadSearch(filters) {
   try {
     let profiles = [];
     let usedFilters = filters;
+    let broadened = false;
 
     // Advance to next LinkedIn results page so repeat searches return fresh people
     const page = await advanceSearchPage(filters);
     const seenUrls = await getSeenUrls();
 
-    // First attempt: full filters on the current page
+    // Attempt 1: full filters
     profiles = await autoSearchProfiles(buildLinkedInSearchUrl(filters, page));
 
     // Filter out profiles the user has already seen
     if (seenUrls.length > 0) {
       const seenSet = new Set(seenUrls);
       const fresh = profiles.filter((p) => !p.url || !seenSet.has(p.url));
-      // Only apply dedup if we still have enough leads; otherwise show all
       if (fresh.length >= 3) profiles = fresh;
     }
 
-    // If no results AND keywords were set, auto-retry without keywords (free — no credit consumed)
+    // Attempt 2: drop keywords if no results
     if ((!profiles || profiles.length === 0) && filters.keywords) {
-      setLoading("🔍 Broadening search…", "Trying without keyword filter");
-      const broaderFilters = { ...filters, keywords: "" };
-      profiles = await autoSearchProfiles(buildLinkedInSearchUrl(broaderFilters, page));
-      if (profiles?.length > 0) {
-        usedFilters = broaderFilters;
-      }
+      setLoading("🔍 Broadening search…", "Trying without keyword filter…");
+      const f2 = { ...filters, keywords: "" };
+      profiles = await autoSearchProfiles(buildLinkedInSearchUrl(f2, page));
+      if (profiles?.length > 0) { usedFilters = f2; broadened = true; }
+    }
+
+    // Attempt 3: drop company if still no results
+    if ((!profiles || profiles.length === 0) && filters.company) {
+      setLoading("🔍 Broadening search…", "Trying without company filter…");
+      const f3 = { ...usedFilters, company: "" };
+      profiles = await autoSearchProfiles(buildLinkedInSearchUrl(f3, page));
+      if (profiles?.length > 0) { usedFilters = f3; broadened = true; }
+    }
+
+    if (broadened && profiles?.length > 0) {
+      showToast("Search broadened to find results — some filters were relaxed", "info");
     }
 
     if (!profiles || profiles.length === 0) {
       const suggestions = buildNoResultsSuggestions(filters);
-      // Show structured error using the lead search error element directly
       showView("view-deep_lead_search");
       renderLeadCounter();
       const container = document.getElementById("form-deep_lead_search");
       let err = container?.querySelector(".error-msg");
       if (!err && container) { err = document.createElement("div"); err.className = "error-msg"; container.prepend(err); }
       if (err) {
-        err.innerHTML = `<strong>No leads found.</strong> LinkedIn may have updated their layout. Please try again or contact support at <a href="https://x.com/Karthik23n" target="_blank" rel="noopener">@Karthik23n</a>.<br><br>Other things to try:<ol style="margin:6px 0 0 16px;padding:0">${suggestions.map(s => `<li style="margin-bottom:4px">${escapeHtml(s)}</li>`).join("")}</ol>`;
+        const narrowFilter = filters.keywords && filters.location ? "Location + Keyword combo" : filters.location ? "Location" : "filters";
+        err.innerHTML = `<strong>No leads found</strong> — the <em>${narrowFilter}</em> may be too narrow.<br><br>Things to try:<ol style="margin:6px 0 0 16px;padding:0">${suggestions.map(s => `<li style="margin-bottom:4px">${escapeHtml(s)}</li>`).join("")}</ol>`;
         err.hidden = false;
       }
       return;
