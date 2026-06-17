@@ -631,8 +631,10 @@ function updateFurBar(row, pct, exhausted) {
 
 document.getElementById("account-tab-btn")?.addEventListener("click", async () => {
   showView("view-account");
+  // Render immediately with cached global so page never shows all-zeros
+  if (accountStatus) await renderAccountPage(accountStatus);
   const status = await refreshAccountStatus();
-  await renderAccountPage(status);
+  await renderAccountPage(status || accountStatus);
 });
 
 // Email save
