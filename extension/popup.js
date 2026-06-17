@@ -188,7 +188,16 @@ async function registerWithBackend(userId, email, name) {
       if (Object.keys(updates).length) await chrome.storage.local.set(updates);
       return data.userId || userId;
     }
-  } catch { /* non-fatal */ }
+    // Surface backend errors (disposable email, device flood) to callers
+    const errData = await res.json().catch(() => ({}));
+    const err = new Error(errData.error || "Registration failed. Please try again.");
+    err.status = res.status;
+    err.blocked = errData.blocked || false;
+    throw err;
+  } catch (e) {
+    if (e.status) throw e; // re-throw structured errors
+    /* network failure — non-fatal, proceed offline */
+  }
   return userId;
 }
 
@@ -213,7 +222,7 @@ function setOnboardingPlatformContext() {
     ? "Your AI copilot for Reddit"
     : "Your AI copilot for LinkedIn & Reddit";
   if (usageText) usageText.textContent = "5 uses per feature/month";
-  if (leadText)  leadText.textContent  = "5 lead searches/month";
+  if (leadText)  leadText.textContent  = "1 lead search/month (free)";
   // Lead search bullet is LinkedIn-specific — hide it on Reddit
   if (leadBullet) leadBullet.hidden = isReddit;
 }
@@ -244,7 +253,15 @@ document.getElementById("onboarding-start")?.addEventListener("click", async () 
   if (errorEl) errorEl.hidden = true;
 
   const localUserId = await getUserId();
-  const canonicalUserId = await registerWithBackend(localUserId, email, "");
+  let canonicalUserId = localUserId;
+  try {
+    canonicalUserId = await registerWithBackend(localUserId, email, "");
+  } catch (err) {
+    // Disposable email / device flood — show error and stop onboarding
+    if (errorEl) { errorEl.textContent = err.message; errorEl.hidden = false; }
+    if (btn) { btn.disabled = false; btn.textContent = "Get Started Free →"; }
+    return;
+  }
 
   await chrome.storage.local.set({
     onboardingDone: true,
