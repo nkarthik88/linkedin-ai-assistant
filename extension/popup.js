@@ -316,6 +316,7 @@ function renderAccountStatus(status) {
   const fu = status?.feature_usage || {};
   const entries = Object.values(fu);
   const anyExhausted = entries.some((f) => f.remaining === 0);
+  const allExhausted = entries.length > 0 && entries.every((f) => f.remaining === 0);
   const leadExhausted = (status?.lead_searches_remaining ?? 1) === 0;
   const limitHit = anyExhausted || leadExhausted;
 
@@ -341,7 +342,7 @@ function renderAccountStatus(status) {
     usageEl.textContent = "Unlimited access · 25 leads/mo";
     upgradeBtn.hidden = true;
   } else {
-    usageEl.textContent = limitHit ? "⚠️ Some features at limit" : "5 uses/feature · 5 lead searches/mo";
+    usageEl.textContent = allExhausted ? "🔒 Monthly limit reached — upgrade to continue" : limitHit ? "⚠️ Some features at limit" : "5 uses/feature · 5 lead searches/mo";
     usageEl.style.color = limitHit ? "var(--error)" : "";
     upgradeBtn.hidden = !limitHit;
   }
@@ -587,7 +588,7 @@ async function renderAccountPage(status) {
           const displayUsed = Math.min(leadUsed, leadLimit);
           const displayRemaining = Math.max(0, leadRemaining);
           const pct = leadLimit > 0 ? Math.min(100, Math.round((displayUsed / leadLimit) * 100)) : 0;
-          counterEl.textContent = `${displayUsed}/${leadLimit} · ${displayRemaining} left`;
+          counterEl.textContent = displayRemaining === 0 ? `${displayUsed}/${leadLimit} · 🔒 Limit reached` : `${displayUsed}/${leadLimit} · ${displayRemaining} left`;
           counterEl.className = `fur-counter${displayRemaining === 0 ? " fur-exhausted" : ""}`;
           updateFurBar(row, pct, displayRemaining === 0);
         } else {
@@ -598,7 +599,7 @@ async function renderAccountPage(status) {
             const displayUsed = Math.min(rawUsed, limit);
             const displayRemaining = Math.max(0, info.remaining ?? (limit - displayUsed));
             const pct = limit > 0 ? Math.min(100, Math.round((displayUsed / limit) * 100)) : 0;
-            counterEl.textContent = `${displayUsed}/${limit} · ${displayRemaining} left`;
+            counterEl.textContent = displayRemaining === 0 ? `${displayUsed}/${limit} · 🔒 Limit reached` : `${displayUsed}/${limit} · ${displayRemaining} left`;
             counterEl.className = `fur-counter${displayRemaining === 0 ? " fur-exhausted" : ""}`;
             updateFurBar(row, pct, displayRemaining === 0);
           } else {
