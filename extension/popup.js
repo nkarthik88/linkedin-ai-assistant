@@ -450,19 +450,38 @@ function renderFeatureCounters(status) {
 }
 
 async function fetchAccountStatus() {
-  const userId = await getUserId();
+  let userId = await getUserId();
   const deadline = new Promise((_, reject) =>
     setTimeout(() => reject(new Error("timeout")), 5000)
   );
-  const request = bgFetch(
-    `${API_BASE}/api/usage/status?userId=${encodeURIComponent(userId)}`
-  ).then(async (res) => {
+
+  const fetchOnce = async (uid) => {
+    const res = await bgFetch(
+      `${API_BASE}/api/usage/status?userId=${encodeURIComponent(uid)}`
+    );
+    return res;
+  };
+
+  const request = (async () => {
+    let res = await fetchOnce(userId);
+    // Auto-recovery: stale local userId → re-register and refetch with canonical
+    if (res.status === 404) {
+      const email = await getUserEmail();
+      if (email) {
+        const canonical = await registerWithBackend(userId, email, "");
+        if (canonical && canonical !== userId) {
+          userId = canonical;
+          res = await fetchOnce(userId);
+        }
+      }
+    }
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       throw new Error(text || `Status ${res.status}`);
     }
     return res.json();
-  });
+  })();
+
   return Promise.race([request, deadline]);
 }
 
@@ -1052,12 +1071,24 @@ function escapeHtml(str) {
 
 // ── API call ───────────────────────────────────────────────────────────────
 
-async function callApi(body) {
+async function callApi(body, _retried = false) {
   const res = await bgFetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+
+  // Auto-recovery: local userId out of sync with canonical → re-register and retry once
+  if (res.status === 404 && !_retried) {
+    const email = await getUserEmail();
+    if (email) {
+      const localUserId = await getUserId();
+      const canonical = await registerWithBackend(localUserId, email, "");
+      if (canonical && canonical !== body.userId) {
+        return callApi({ ...body, userId: canonical }, true);
+      }
+    }
+  }
 
   if (res.status === 402) {
     // Usage limit reached — show upgrade prompt with context

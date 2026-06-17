@@ -196,7 +196,7 @@ export async function resolveAccount(userId) {
   if (!ext) {
     // Never auto-create a row without an email — that produces NULL-email rows.
     // Only /api/auth/register-extension (which requires email) may create rows.
-    const err = new Error("Account not found. Please complete onboarding first.");
+    const err = new Error("Session expired. Please re-open the extension to continue.");
     err.statusCode = 404;
     err.notRegistered = true;
     throw err;
