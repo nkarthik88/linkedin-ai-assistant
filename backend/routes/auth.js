@@ -197,13 +197,13 @@ router.post(
       return res.json({ ok: true, userId: authUser.id, canonicalEmail });
     }
 
-    // 4b. Fingerprint flood guard — if this device already has 2+ accounts this month, block
+    // 4b. Fingerprint flood guard — if this device already has any account, block new ones
     if (deviceFingerprint) {
       const { count } = await supabaseAdmin
         .from("extension_accounts")
         .select("id", { count: "exact", head: true })
         .eq("device_fingerprint", deviceFingerprint);
-      if (count >= 2) {
+      if (count >= 1) {
         return res.status(429).json({
           error: "Too many accounts created from this device. Please upgrade your existing account to continue.",
           blocked: true,
