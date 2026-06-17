@@ -717,7 +717,7 @@ async function handleScanGenerate(e) {
     renderRedditPosts(data.posts || []);
   } catch (err) {
     redditShowView("reddit-view-post_generator");
-    if (err.message !== "LIMIT_REACHED") alert("Error: " + err.message);
+    if (err.message !== "LIMIT_REACHED") console.error("[Reddit] scan generate:", err.message);
   } finally {
     _generatingPost = false;
   }
@@ -739,7 +739,7 @@ async function handleUrlGenerate(e) {
     renderRedditPosts(data.posts || []);
   } catch (err) {
     redditShowView("reddit-view-post_generator");
-    if (err.message !== "LIMIT_REACHED") alert("Error: " + err.message);
+    if (err.message !== "LIMIT_REACHED") console.error("[Reddit] url generate:", err.message);
   } finally {
     _generatingPost = false;
   }
@@ -763,7 +763,7 @@ async function handlePostGenerator(e) {
     renderRedditPosts(data.posts || []);
   } catch (err) {
     redditShowView("reddit-view-post_generator");
-    if (err.message !== "LIMIT_REACHED") alert("Error: " + err.message);
+    if (err.message !== "LIMIT_REACHED") console.error("[Reddit] quick generate:", err.message);
   } finally {
     _generatingPost = false;
   }
@@ -786,7 +786,7 @@ async function handleSubredditFinder(e) {
     renderSubreddits(data.subreddits || [], niche);
   } catch (err) {
     redditShowView("reddit-view-subreddit_finder");
-    alert("Error: " + err.message);
+    console.error("[Reddit] subreddit finder:", err.message);
   } finally {
     _findingSubreddits = false;
   }
@@ -819,7 +819,7 @@ async function handleCommentReply(e) {
     renderTextVariations(data.variations || [], personaLabel);
   } catch (err) {
     redditShowView("reddit-view-comment_reply");
-    alert("Error: " + err.message);
+    console.error("[Reddit] comment reply:", err.message);
   } finally {
     _replyingToComment = false;
   }
