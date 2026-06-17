@@ -40,6 +40,7 @@ router.post(
 
     // Resolve plan without consuming credit — credit only charges after AI succeeds
     const preAccount = await resolveAccount(userId);
+
     const variations = await generateVariations({
       feature,
       data,

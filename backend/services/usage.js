@@ -202,6 +202,7 @@ export async function resolveAccount(userId) {
     throw err;
   }
   if (ext.blocked_reason) {
+    logFunnelEvent({ userId, event: "limit_reached", plan: "free", meta: { blocked_reason: ext.blocked_reason } }).catch(() => {});
     const err = new Error(
       "Your free trial has ended. Please upgrade to continue — choose a plan that fits your needs."
     );
@@ -354,6 +355,7 @@ export async function consumeFeatureCredit(userId, feature) {
   const limit = getFeatureLimitForPlan(feature, account.plan);
 
   if (limit !== null && used >= limit) {
+    logFunnelEvent({ userId, event: "limit_reached", feature, plan: account.plan, meta: { used, limit } }).catch(() => {});
     const err = new Error(
       `You've used all ${limit} free ${featureLabel(feature)} this month. Upgrade to Pro for unlimited.`
     );
@@ -425,6 +427,7 @@ export async function consumeRedditFeatureCredit(userId, feature) {
   console.log(`[usage] consumeRedditFeatureCredit userId=${userId} feature=${feature} used_before=${used} limit=${limit}`);
 
   if (limit !== null && used >= limit) {
+    logFunnelEvent({ userId, event: "limit_reached", feature, plan: account.plan, meta: { used, limit } }).catch(() => {});
     const label = feature === "reddit_subreddit" ? "subreddit searches" : feature === "reddit_reply" ? "Reddit replies" : "Reddit posts";
     const err = new Error(
       `You've used all ${limit} free ${label} this month. Upgrade for unlimited Reddit access.`
