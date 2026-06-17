@@ -13,6 +13,22 @@ import {
 
 const OWNER_LIMIT = 999999;
 
+/**
+ * Fire-and-forget funnel event logger. Never throws — analytics must never block a response.
+ * Events: onboarded | feature_used | limit_hit | upgrade_initiated | payment_completed
+ */
+export async function logFunnelEvent({ userId, event, feature = null, plan = null, meta = null }) {
+  try {
+    await supabaseAdmin.from("funnel_events").insert({
+      user_id: String(userId),
+      event,
+      feature: feature ?? null,
+      plan: plan ?? null,
+      meta: meta ?? null,
+    });
+  } catch { /* non-critical */ }
+}
+
 function isOwnerEmail(email) {
   if (!email) return false;
   return config.ownerEmails.includes(String(email).trim().toLowerCase());
@@ -132,7 +148,7 @@ async function getAuthUserRow(userId) {
 async function getExtensionAccount(userId) {
   const { data, error } = await supabaseAdmin
     .from("extension_accounts")
-    .select("id, plan, email, usage_this_month, usage_limit, quota_reset_at, feature_usage")
+    .select("id, plan, email, usage_this_month, usage_limit, quota_reset_at, feature_usage, blocked_reason")
     .eq("id", userId)
     .maybeSingle();
 
@@ -183,6 +199,15 @@ export async function resolveAccount(userId) {
     const err = new Error("Account not found. Please complete onboarding first.");
     err.statusCode = 404;
     err.notRegistered = true;
+    throw err;
+  }
+  if (ext.blocked_reason) {
+    const err = new Error(
+      "Your free trial has ended. Please upgrade to continue — choose a plan that fits your needs."
+    );
+    err.statusCode = 402;
+    err.blocked = true;
+    err.blockedReason = ext.blocked_reason;
     throw err;
   }
   ext = await maybeResetUsage(ext, "extension_accounts");

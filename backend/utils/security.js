@@ -67,6 +67,16 @@ const DISPOSABLE_DOMAINS = new Set([
   "gowikifilms.com", "gowikigames.com", "gowikimusic.com", "gowikinetwork.com",
   "gowikitravel.com", "gowikitv.com", "grandmamail.com", "grandmasmail.com",
   "great-host.in", "greensloth.com", "gsrv.co.uk", "guerrillamail.biz",
+  // Apple Hide My Email relay — random generated addresses that forward mail
+  "privaterelay.appleid.com",
+  // Privacy / anonymous relay services (SimpleLogin, AnonAddy, Firefox Relay, DuckDuckGo)
+  "simplelogin.co", "simplelogin.com", "aleeas.com", "slmail.me",
+  "anonaddy.com", "anonaddy.me", "anonaddy.org",
+  "relay.firefox.com", "mozmail.com",
+  "duck.com",
+  // Catch-all forwarding / sub-domain disposables
+  "inboxkitten.com", "inboxbear.com", "inbox.lv",
+  "codeproject.com", "notmailinator.com",
 ]);
 
 export class AntiScamShield {

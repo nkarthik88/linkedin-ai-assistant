@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { createUpgradeCheckoutUrl } from "../services/dodoCheckout.js";
-import { setProStatusForUser } from "../services/usage.js";
+import { setProStatusForUser, logFunnelEvent } from "../services/usage.js";
 import { sendCancellationEmail } from "../services/email.js";
 import { config } from "../config.js";
 import { supabaseAdmin } from "../services/supabase.js";
@@ -56,6 +56,7 @@ router.post(
       plan,
     });
 
+    logFunnelEvent({ userId, event: "upgrade_initiated", plan, meta: { method } }).catch(() => {});
     res.json({ checkoutUrl, method });
   })
 );

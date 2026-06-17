@@ -5,6 +5,7 @@ import {
   consumeFeatureCredit,
   consumeLeadSearch,
   logLeadSearchEvent,
+  logFunnelEvent,
   resolveAccount,
 } from "../services/usage.js";
 import { sendWelcomeEmail, sendUsageWarningEmail } from "../services/email.js";
@@ -52,6 +53,12 @@ router.post(
 
     // Credit consumed only after real AI results confirmed
     const account = await consumeFeatureCredit(userId, feature);
+
+    // Fire-and-forget funnel tracking
+    logFunnelEvent({ userId, event: "feature_used", feature, plan: account.plan, meta: { remaining: account.featureRemaining } }).catch(() => {});
+    if (account.featureRemaining === 0) {
+      logFunnelEvent({ userId, event: "limit_hit", feature, plan: account.plan }).catch(() => {});
+    }
 
     // Fire-and-forget emails (never block the response)
     const email = req.body.email || req.body.customerEmail || account.email || null;

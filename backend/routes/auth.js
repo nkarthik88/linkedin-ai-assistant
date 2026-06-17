@@ -2,6 +2,7 @@ import { Router } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { supabaseAdmin } from "../services/supabase.js";
 import { antiScamShield } from "../utils/security.js";
+import { logFunnelEvent } from "../services/usage.js";
 
 const router = Router();
 
@@ -196,6 +197,20 @@ router.post(
       return res.json({ ok: true, userId: authUser.id, canonicalEmail });
     }
 
+    // 4b. Fingerprint flood guard — if this device already has 2+ accounts this month, block
+    if (deviceFingerprint) {
+      const { count } = await supabaseAdmin
+        .from("extension_accounts")
+        .select("id", { count: "exact", head: true })
+        .eq("device_fingerprint", deviceFingerprint);
+      if (count >= 2) {
+        return res.status(429).json({
+          error: "Too many accounts created from this device. Please upgrade your existing account to continue.",
+          blocked: true,
+        });
+      }
+    }
+
     // 5. New user — create account with canonical email for future dedup
     const fields = {
       id: userId,
@@ -219,6 +234,7 @@ router.post(
         .then(() => {}).catch(() => {});
     }
 
+    logFunnelEvent({ userId, event: "onboarded", plan: "free", meta: { email: canonicalEmail } }).catch(() => {});
     res.json({ ok: true, userId, canonicalEmail });
   })
 );
@@ -244,8 +260,14 @@ router.post(
       .maybeSingle();
 
     if (existingExt) {
-      // Same LinkedIn user, different local UUID — return canonical account
-      return res.json({ ok: true, canonicalUserId: existingExt.id });
+      // Same LinkedIn profile, different account — block the newer account from using features
+      await supabaseAdmin
+        .from("extension_accounts")
+        .update({ blocked_reason: "linkedin_id_conflict" })
+        .eq("id", userId)
+        .then(() => {}).catch(() => {});
+      logFunnelEvent({ userId, event: "blocked", meta: { reason: "linkedin_id_conflict", canonical: existingExt.id } }).catch(() => {});
+      return res.json({ ok: true, canonicalUserId: existingExt.id, blocked: true });
     }
 
     // Check users table too
@@ -257,7 +279,13 @@ router.post(
       .maybeSingle();
 
     if (existingUser) {
-      return res.json({ ok: true, canonicalUserId: existingUser.id });
+      await supabaseAdmin
+        .from("extension_accounts")
+        .update({ blocked_reason: "linkedin_id_conflict" })
+        .eq("id", userId)
+        .then(() => {}).catch(() => {});
+      logFunnelEvent({ userId, event: "blocked", meta: { reason: "linkedin_id_conflict", canonical: existingUser.id } }).catch(() => {});
+      return res.json({ ok: true, canonicalUserId: existingUser.id, blocked: true });
     }
 
     // No conflict — store LinkedIn ID on this account (best-effort, column may not exist yet)

@@ -6,7 +6,7 @@ import {
   extractUserIdFromWebhookEvent,
   extractSubscriptionIdFromWebhookEvent,
 } from "../services/dodo.js";
-import { setProStatusForUser } from "../services/usage.js";
+import { setProStatusForUser, logFunnelEvent } from "../services/usage.js";
 import { sendPaymentReceiptEmail } from "../services/email.js";
 import { supabaseAdmin } from "../services/supabase.js";
 import { config } from "../config.js";
@@ -96,6 +96,7 @@ router.post(
         sendPaymentReceiptEmail(email, { userId }).catch(() => {});
       }
 
+      logFunnelEvent({ userId, event: "payment_completed", plan: "bundle" }).catch(() => {});
       return res.json({ received: true, userId, plan: "bundle", upgrade: true });
     }
 
@@ -129,6 +130,7 @@ router.post(
 
           sendPaymentReceiptEmail(email, { userId }).catch(() => {});
         }
+        logFunnelEvent({ userId, event: "payment_completed", plan }).catch(() => {});
       }
     }
 

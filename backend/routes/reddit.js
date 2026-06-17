@@ -2,7 +2,7 @@ import { Router } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { config } from "../config.js";
 import { getModelForPlan } from "../constants/plans.js";
-import { consumeRedditFeatureCredit } from "../services/usage.js";
+import { consumeRedditFeatureCredit, logFunnelEvent } from "../services/usage.js";
 
 const router = Router();
 
@@ -168,6 +168,8 @@ Generate 3 Reddit posts.`;
 
     // Consume credit only after we have real results
     const creditResult = await consumeRedditFeatureCredit(userId, "reddit_post");
+    logFunnelEvent({ userId, event: "feature_used", feature: "reddit_post", plan: creditResult.plan, meta: { remaining: creditResult.featureRemaining } }).catch(() => {});
+    if (creditResult.featureRemaining === 0) logFunnelEvent({ userId, event: "limit_hit", feature: "reddit_post", plan: creditResult.plan }).catch(() => {});
     res.json({
       posts,
       featureUsed: creditResult.featureUsed,
@@ -319,6 +321,8 @@ Respond with JSON only:
     }
 
     const creditResult = await consumeRedditFeatureCredit(userId, "reddit_post");
+    logFunnelEvent({ userId, event: "feature_used", feature: "reddit_post", plan: creditResult.plan, meta: { remaining: creditResult.featureRemaining } }).catch(() => {});
+    if (creditResult.featureRemaining === 0) logFunnelEvent({ userId, event: "limit_hit", feature: "reddit_post", plan: creditResult.plan }).catch(() => {});
     res.json({
       posts,
       featureUsed: creditResult.featureUsed,
@@ -381,6 +385,8 @@ Respond with JSON only:
     }
 
     const creditResult = await consumeRedditFeatureCredit(userId, "reddit_reply");
+    logFunnelEvent({ userId, event: "feature_used", feature: "reddit_reply", plan: creditResult.plan, meta: { remaining: creditResult.featureRemaining } }).catch(() => {});
+    if (creditResult.featureRemaining === 0) logFunnelEvent({ userId, event: "limit_hit", feature: "reddit_reply", plan: creditResult.plan }).catch(() => {});
     res.json({
       variations,
       featureUsed: creditResult.featureUsed,
@@ -435,6 +441,8 @@ Respond with JSON only:
     }
 
     const creditResult = await consumeRedditFeatureCredit(userId, "reddit_subreddit");
+    logFunnelEvent({ userId, event: "feature_used", feature: "reddit_subreddit", plan: creditResult.plan, meta: { remaining: creditResult.featureRemaining } }).catch(() => {});
+    if (creditResult.featureRemaining === 0) logFunnelEvent({ userId, event: "limit_hit", feature: "reddit_subreddit", plan: creditResult.plan }).catch(() => {});
     res.json({
       subreddits,
       featureUsed: creditResult.featureUsed,
