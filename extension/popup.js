@@ -692,19 +692,14 @@ document.getElementById("account-email-save")?.addEventListener("click", async (
 });
 
 // Cancel subscription
-document.getElementById("cancel-subscription-btn")?.addEventListener("click", async () => {
+async function executeCancelSubscription() {
   const btn = document.getElementById("cancel-subscription-btn");
+  const confirmRow = document.getElementById("cancel-confirm-row");
   const errorEl = document.getElementById("cancel-error");
   const successEl = document.getElementById("cancel-success");
 
-  if (!confirm("Are you sure you want to cancel your Pro subscription? You'll be moved back to the free plan immediately.")) {
-    return;
-  }
-
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = "Cancelling…";
-  }
+  if (confirmRow) confirmRow.hidden = true;
+  if (btn) { btn.disabled = true; btn.textContent = "Cancelling…"; }
   if (errorEl) errorEl.hidden = true;
   if (successEl) successEl.hidden = true;
 
@@ -727,22 +722,29 @@ document.getElementById("cancel-subscription-btn")?.addEventListener("click", as
     if (successEl) successEl.hidden = false;
     if (btn) btn.hidden = true;
 
-    // Refresh account bar
     const status = await refreshAccountStatus();
     await renderAccountPage(status);
-
     showToast("Subscription cancelled", "default");
   } catch (err) {
-    if (errorEl) {
-      errorEl.textContent = err.message;
-      errorEl.hidden = false;
-    }
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = "Cancel Subscription";
-    }
+    if (errorEl) { errorEl.textContent = err.message; errorEl.hidden = false; }
+    if (btn) { btn.disabled = false; btn.textContent = "Cancel Subscription"; }
+  }
+}
+
+document.getElementById("cancel-subscription-btn")?.addEventListener("click", () => {
+  const confirmRow = document.getElementById("cancel-confirm-row");
+  if (confirmRow) {
+    confirmRow.hidden = false;
+    confirmRow.style.display = "flex";
   }
 });
+
+document.getElementById("cancel-confirm-no")?.addEventListener("click", () => {
+  const confirmRow = document.getElementById("cancel-confirm-row");
+  if (confirmRow) confirmRow.hidden = true;
+});
+
+document.getElementById("cancel-confirm-yes")?.addEventListener("click", executeCancelSubscription);
 
 // Account page upgrade button
 document.getElementById("account-upgrade-btn")?.addEventListener("click", (e) => {
@@ -775,24 +777,7 @@ async function startUpgrade(triggerBtn = null, plan = "linkedin_pro") {
     let customerEmail = await getUserEmail();
     let customerName = await getUserName();
 
-    if (!customerEmail) {
-      const prompted = window.prompt(
-        "Enter your email for the receipt (optional — also used for upgrade alerts):",
-        ""
-      );
-      if (prompted && prompted.includes("@")) {
-        customerEmail = prompted.trim();
-        await chrome.storage.local.set({ upgradeEmail: customerEmail });
-      }
-    }
-
-    if (!customerName) {
-      const prompted = window.prompt("Enter your full name for the checkout form (optional):", "");
-      if (prompted && prompted.trim()) {
-        customerName = prompted.trim();
-        await chrome.storage.local.set({ upgradeName: customerName });
-      }
-    }
+    // No native prompt — use stored email/name silently; checkout form collects them if missing
 
     const locale = (typeof navigator !== "undefined" && navigator.language) || "";
     const india =
@@ -825,6 +810,14 @@ async function startUpgrade(triggerBtn = null, plan = "linkedin_pro") {
     if (!checkoutUrl) throw new Error("No checkout URL returned from server.");
 
     await chrome.storage.local.set({ pendingUpgrade: true });
+
+    // Log upgrade_initiated funnel event (best-effort)
+    bgFetch(`${API_BASE}/api/usage/funnel`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: String(userId), event: "upgrade_initiated", plan }),
+    }).catch(() => {});
+
     chrome.tabs.create({ url: checkoutUrl, active: true });
 
     if (btn) btn.textContent = "Waiting for payment…";

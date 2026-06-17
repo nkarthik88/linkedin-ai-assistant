@@ -2,7 +2,7 @@ import { Router } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { requireAuth } from "../middleware/auth.js";
 import { FREE_TIER_LIMIT, LEAD_FREE_LIMIT, FEATURE_FREE_LIMITS } from "../constants/plans.js";
-import { getUsageSummary, getAccountStatus } from "../services/usage.js";
+import { getUsageSummary, getAccountStatus, logFunnelEvent } from "../services/usage.js";
 
 const router = Router();
 
@@ -58,6 +58,19 @@ router.get(
   asyncHandler(async (req, res) => {
     const summary = await getUsageSummary(req.user.id);
     res.json(summary);
+  })
+);
+
+// Funnel event from extension (upgrade_initiated etc.)
+router.post(
+  "/funnel",
+  asyncHandler(async (req, res) => {
+    const userId = String(req.body?.userId || "").trim();
+    const event  = String(req.body?.event  || "").trim();
+    const plan   = String(req.body?.plan   || "").trim() || null;
+    if (!userId || !event) return res.status(400).json({ error: "userId and event required" });
+    logFunnelEvent({ userId, event, plan }).catch(() => {});
+    res.json({ ok: true });
   })
 );
 
