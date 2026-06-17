@@ -129,7 +129,9 @@ async function getUserName() {
 }
 
 // Returns the canonical userId from the backend (may differ from local UUID on reinstall).
+let _cachedFingerprint = null;
 async function generateBrowserFingerprint() {
+  if (_cachedFingerprint) return _cachedFingerprint;
   try {
     const parts = [];
 
@@ -172,7 +174,8 @@ async function generateBrowserFingerprint() {
 
     const raw = parts.join("|");
     const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
-    return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+    _cachedFingerprint = Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+    return _cachedFingerprint;
   } catch {
     return "";
   }
@@ -2823,20 +2826,23 @@ document.getElementById("linkedin-upgrade-reddit-btn")?.addEventListener("click"
 document.getElementById("linkedin-upgrade-bundle-btn")?.addEventListener("click", (e) => startUpgrade(e.currentTarget, "bundle"));
 
 // ── Visibility / focus refresh ─────────────────────────────────────────────
+// Debounced so focus + visibilitychange firing together only triggers one call
 
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") {
+let _refreshDebounceTimer = null;
+function debouncedRefresh() {
+  clearTimeout(_refreshDebounceTimer);
+  _refreshDebounceTimer = setTimeout(() => {
     chrome.storage.local.get("onboardingDone").then(({ onboardingDone }) => {
       if (onboardingDone) refreshAccountStatus();
     });
-  }
+  }, 300);
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") debouncedRefresh();
 });
 
-window.addEventListener("focus", () => {
-  chrome.storage.local.get("onboardingDone").then(({ onboardingDone }) => {
-    if (onboardingDone) refreshAccountStatus();
-  });
-});
+window.addEventListener("focus", debouncedRefresh);
 
 // ── Init ───────────────────────────────────────────────────────────────────
 
