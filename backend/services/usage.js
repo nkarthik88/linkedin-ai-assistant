@@ -502,6 +502,43 @@ export async function consumeLeadSearch(userId) {
 }
 
 /**
+ * Returns a Set of profile URLs previously returned to this user (cross-search dedup).
+ * Best-effort: returns empty Set on any error.
+ */
+export async function getReturnedLeadUrls(userId, source = "extension_accounts") {
+  try {
+    const table = source === "users" ? "users" : "extension_accounts";
+    const { data } = await supabaseAdmin
+      .from(table)
+      .select("returned_lead_urls")
+      .eq("id", userId)
+      .maybeSingle();
+    const arr = Array.isArray(data?.returned_lead_urls) ? data.returned_lead_urls : [];
+    return new Set(arr);
+  } catch {
+    return new Set();
+  }
+}
+
+/**
+ * Append newly returned profile URLs to the stored dedup set. Best-effort: never throws.
+ */
+export async function appendReturnedLeadUrls(userId, source = "extension_accounts", urls) {
+  if (!urls || urls.length === 0) return;
+  try {
+    const table = source === "users" ? "users" : "extension_accounts";
+    const existing = await getReturnedLeadUrls(userId, source);
+    urls.forEach((u) => existing.add(u));
+    await supabaseAdmin
+      .from(table)
+      .update({ returned_lead_urls: [...existing] })
+      .eq("id", userId);
+  } catch {
+    // silently ignore — dedup is best-effort
+  }
+}
+
+/**
  * Record one Find Leads search for analytics. Best-effort: never throws, so a
  * missing table or insert error can't break the lead response.
  */

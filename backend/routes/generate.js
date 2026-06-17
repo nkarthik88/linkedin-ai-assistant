@@ -7,6 +7,8 @@ import {
   logLeadSearchEvent,
   logFunnelEvent,
   resolveAccount,
+  getReturnedLeadUrls,
+  appendReturnedLeadUrls,
 } from "../services/usage.js";
 import { sendWelcomeEmail, sendUsageWarningEmail } from "../services/email.js";
 
@@ -101,7 +103,15 @@ router.post(
 
     // Resolve plan without consuming so AI failure doesn't cost a search
     const preLeadAccount = await resolveAccount(userId);
-    const leads = await qualifyLeads({ profiles, targetDescription, filters, plan: preLeadAccount.plan });
+
+    // Cross-search deduplication: filter out profiles already returned to this user
+    const seenUrls = await getReturnedLeadUrls(userId, preLeadAccount.source);
+    const freshProfiles = seenUrls.size > 0
+      ? profiles.filter((p) => !seenUrls.has(p.url || ""))
+      : profiles;
+    const profilesToQualify = freshProfiles.length > 0 ? freshProfiles : profiles;
+
+    const leads = await qualifyLeads({ profiles: profilesToQualify, targetDescription, filters, plan: preLeadAccount.plan });
 
     if (!leads || leads.length === 0) {
       return res.status(502).json({ error: "AI returned no results — please try again" });
@@ -109,6 +119,10 @@ router.post(
 
     // Consume lead search credit only after AI returns results
     const leadAccount = await consumeLeadSearch(userId);
+
+    // Persist returned profile URLs for cross-search deduplication (best-effort)
+    const returnedUrls = leads.map((l) => l.url).filter(Boolean);
+    appendReturnedLeadUrls(userId, preLeadAccount.source, returnedUrls).catch(() => {});
 
     // Fire-and-forget analytics (never blocks the response).
     logLeadSearchEvent({

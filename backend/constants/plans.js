@@ -2,7 +2,7 @@
 export const FREE_TIER_LIMIT = 10;
 
 /** Monthly "Find Leads" search caps — tracked separately from generations. */
-export const LEAD_FREE_LIMIT = 5;
+export const LEAD_FREE_LIMIT = 1;
 export const LEAD_PRO_LIMIT  = 25;  // linkedin_pro and bundle
 export const LEAD_PLUS_LIMIT = 25;  // kept for legacy "plus" rows
 
