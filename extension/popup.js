@@ -144,19 +144,25 @@ async function generateBrowserFingerprint() {
       }
     }
 
-    // Canvas fingerprint
+    // Canvas fingerprint (Brave strict mode randomises canvas — add a salt so it's still device-unique per session)
     const c2d = document.createElement("canvas");
     c2d.width = 200; c2d.height = 40;
     const ctx = c2d.getContext("2d");
-    ctx.textBaseline = "top";
-    ctx.font = "14px 'Arial'";
-    ctx.fillStyle = "#f60";
-    ctx.fillRect(125, 1, 62, 20);
-    ctx.fillStyle = "#069";
-    ctx.fillText("ProPostly🟠", 2, 15);
-    ctx.fillStyle = "rgba(102,204,0,0.7)";
-    ctx.fillText("ProPostly🟠", 4, 17);
-    parts.push(c2d.toDataURL());
+    if (ctx) {
+      ctx.textBaseline = "top";
+      ctx.font = "14px 'Arial'";
+      ctx.fillStyle = "#f60";
+      ctx.fillRect(125, 1, 62, 20);
+      ctx.fillStyle = "#069";
+      ctx.fillText("ProPostly🟠", 2, 15);
+      ctx.fillStyle = "rgba(102,204,0,0.7)";
+      ctx.fillText("ProPostly🟠", 4, 17);
+      parts.push(c2d.toDataURL());
+    }
+
+    // Extra entropy for Brave strict mode (WebGL + canvas both randomised)
+    parts.push(String(navigator.deviceMemory || ""));
+    parts.push(navigator.platform || "");
 
     // Screen + timezone
     parts.push(`${screen.width}x${screen.height}x${screen.colorDepth}`);

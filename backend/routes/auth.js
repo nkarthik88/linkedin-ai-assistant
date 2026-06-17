@@ -148,7 +148,7 @@ router.post(
     // 2. Raw email match — legacy rows without canonical_email yet
     const { data: existingByEmail } = await supabaseAdmin
       .from("extension_accounts")
-      .select("id, device_fingerprint")
+      .select("id, device_fingerprint, canonical_email")
       .eq("email", email)
       .maybeSingle();
 
@@ -176,12 +176,14 @@ router.post(
         .maybeSingle();
 
       if (existingByFp) {
-        // Same device, possibly updated email — update email + canonical and return canonical account
-        await supabaseAdmin
-          .from("extension_accounts")
-          .update({ email, canonical_email: canonicalEmail })
-          .eq("id", existingByFp.id)
-          .then(() => {}).catch(() => {});
+        // Same device, possibly updated email — only update if the new email passes validation
+        if (shield.ok) {
+          await supabaseAdmin
+            .from("extension_accounts")
+            .update({ email, canonical_email: canonicalEmail })
+            .eq("id", existingByFp.id)
+            .then(() => {}).catch(() => {});
+        }
         return res.json({ ok: true, userId: existingByFp.id, canonicalEmail });
       }
     }

@@ -472,6 +472,7 @@ export async function consumeLeadSearch(userId) {
 
   if (account.leadTrackable && used >= limit) {
     const isHighLeadPlan = isLinkedInUnlimited(account.plan);
+    logFunnelEvent({ userId, event: "limit_hit", feature: "lead_search", plan: account.plan }).catch(() => {});
     const err = new Error(
       isHighLeadPlan
         ? `You've used all ${limit} lead searches this month. Resets next month.`
@@ -584,7 +585,7 @@ export async function setProStatusForUser(userId, isPro) {
   // On upgrade to Pro, reset per-feature usage so the user starts fresh.
   const resetFields = pro
     ? { feature_usage: {}, lead_searches_this_month: 0, usage_this_month: 0 }
-    : {};
+    : { feature_usage: {}, lead_searches_this_month: 0, usage_this_month: 0, quota_reset_at: nextQuotaReset() };
 
   const { data: authUser } = await supabaseAdmin
     .from("users")
