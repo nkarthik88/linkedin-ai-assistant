@@ -46,8 +46,8 @@ async function redditGetUserId() {
 }
 
 async function redditGetEmail() {
-  const { upgradeEmail } = await chrome.storage.local.get("upgradeEmail");
-  return upgradeEmail || "";
+  const { canonicalEmail, upgradeEmail } = await chrome.storage.local.get(["canonicalEmail", "upgradeEmail"]);
+  return canonicalEmail || upgradeEmail || "";
 }
 
 async function redditGetPlan() {

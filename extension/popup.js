@@ -119,8 +119,8 @@ async function getUserId() {
 }
 
 async function getUserEmail() {
-  const { upgradeEmail } = await chrome.storage.local.get("upgradeEmail");
-  return upgradeEmail || "";
+  const { canonicalEmail, upgradeEmail } = await chrome.storage.local.get(["canonicalEmail", "upgradeEmail"]);
+  return canonicalEmail || upgradeEmail || "";
 }
 
 async function getUserName() {
@@ -182,11 +182,10 @@ async function registerWithBackend(userId, email, name) {
     });
     if (res.ok) {
       const data = await res.json();
-      // If backend returns a different userId (reinstall — existing account found),
-      // overwrite local storage so this device uses the canonical account.
-      if (data.userId && data.userId !== userId) {
-        await chrome.storage.local.set({ userId: data.userId });
-      }
+      const updates = {};
+      if (data.userId && data.userId !== userId) updates.userId = data.userId;
+      if (data.canonicalEmail) updates.canonicalEmail = data.canonicalEmail;
+      if (Object.keys(updates).length) await chrome.storage.local.set(updates);
       return data.userId || userId;
     }
   } catch { /* non-fatal */ }

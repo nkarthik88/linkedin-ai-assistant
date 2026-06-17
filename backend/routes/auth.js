@@ -141,7 +141,7 @@ router.post(
           .eq("id", existingByCanonical.id)
           .then(() => {}).catch(() => {});
       }
-      return res.json({ ok: true, userId: existingByCanonical.id });
+      return res.json({ ok: true, userId: existingByCanonical.id, canonicalEmail });
     }
 
     // 2. Raw email match — legacy rows without canonical_email yet
@@ -163,7 +163,7 @@ router.post(
           .eq("id", existingByEmail.id)
           .then(() => {}).catch(() => {});
       }
-      return res.json({ ok: true, userId: existingByEmail.id });
+      return res.json({ ok: true, userId: existingByEmail.id, canonicalEmail });
     }
 
     // 3. Fingerprint match — secondary reinstall recovery (new email entered after reinstall)
@@ -181,7 +181,7 @@ router.post(
           .update({ email, canonical_email: canonicalEmail })
           .eq("id", existingByFp.id)
           .then(() => {}).catch(() => {});
-        return res.json({ ok: true, userId: existingByFp.id });
+        return res.json({ ok: true, userId: existingByFp.id, canonicalEmail });
       }
     }
 
@@ -193,7 +193,7 @@ router.post(
       .maybeSingle();
 
     if (authUser) {
-      return res.json({ ok: true, userId: authUser.id });
+      return res.json({ ok: true, userId: authUser.id, canonicalEmail });
     }
 
     // 5. New user — create account with canonical email for future dedup
@@ -219,7 +219,7 @@ router.post(
         .then(() => {}).catch(() => {});
     }
 
-    res.json({ ok: true, userId });
+    res.json({ ok: true, userId, canonicalEmail });
   })
 );
 
