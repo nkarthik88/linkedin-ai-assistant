@@ -199,14 +199,19 @@ router.post(
 
     // 4b. Fingerprint flood guard — if this device already has any account, block new ones
     if (deviceFingerprint) {
-      const { count } = await supabaseAdmin
+      const { data: existingDevice } = await supabaseAdmin
         .from("extension_accounts")
-        .select("id", { count: "exact", head: true })
-        .eq("device_fingerprint", deviceFingerprint);
-      if (count >= 1) {
+        .select("id, email")
+        .eq("device_fingerprint", deviceFingerprint)
+        .maybeSingle();
+      if (existingDevice) {
+        const hint = existingDevice.email
+          ? ` Sign in with ${existingDevice.email} to continue, or upgrade that account.`
+          : " Please sign in with your original email and upgrade to continue.";
         return res.status(429).json({
-          error: "Too many accounts created from this device. Please upgrade your existing account to continue.",
+          error: `You already have a free account on this device.${hint}`,
           blocked: true,
+          originalEmail: existingDevice.email || null,
         });
       }
     }

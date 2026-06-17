@@ -193,6 +193,7 @@ async function registerWithBackend(userId, email, name) {
     const err = new Error(errData.error || "Registration failed. Please try again.");
     err.status = res.status;
     err.blocked = errData.blocked || false;
+    err.originalEmail = errData.originalEmail || null;
     throw err;
   } catch (e) {
     if (e.status) throw e; // re-throw structured errors
@@ -258,8 +259,18 @@ document.getElementById("onboarding-start")?.addEventListener("click", async () 
     canonicalUserId = await registerWithBackend(localUserId, email, "");
   } catch (err) {
     // Disposable email / device flood — show error and stop onboarding
-    if (errorEl) { errorEl.textContent = err.message; errorEl.hidden = false; }
-    if (btn) { btn.disabled = false; btn.textContent = "Get Started Free →"; }
+    if (errorEl) {
+      errorEl.textContent = err.message;
+      errorEl.hidden = false;
+    }
+    // If backend knows their original email, pre-fill it and update the button
+    if (err.originalEmail && emailInput) {
+      emailInput.value = err.originalEmail;
+      if (btn) btn.textContent = "Sign In with Original Email →";
+    } else if (btn) {
+      btn.textContent = "Get Started Free →";
+    }
+    if (btn) btn.disabled = false;
     return;
   }
 
