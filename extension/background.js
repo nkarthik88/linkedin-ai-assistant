@@ -65,24 +65,25 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
  * Brave, Opera, and Vivaldi when the user isn't logged into a Google account.
  */
 async function getStableUserId() {
-  // 1. Try sync storage first (survives reinstall on same profile)
+  // 1. Local storage is authoritative — the backend may have returned a canonical
+  //    userId during onboarding that differs from the original generated UUID.
+  //    Never overwrite it with the sync value.
+  const local = await chrome.storage.local.get("userId");
+  if (local.userId) {
+    // Keep sync in step so future reinstalls on the same profile recover the right ID
+    chrome.storage.sync.set({ stableUserId: local.userId }).catch(() => {});
+    return local.userId;
+  }
+
+  // 2. No local ID yet — check sync (survives reinstall on same profile)
   try {
     const synced = await chrome.storage.sync.get("stableUserId");
     if (synced.stableUserId) {
-      // Mirror to local so it's available without a sync round-trip next time
       chrome.storage.local.set({ userId: synced.stableUserId }).catch(() => {});
       return synced.stableUserId;
     }
   } catch {
-    // sync storage unavailable — fall through to local
-  }
-
-  // 2. Check local storage (pre-existing installs)
-  const local = await chrome.storage.local.get("userId");
-  if (local.userId) {
-    // Promote to sync so future reinstalls on the same profile recover it
-    chrome.storage.sync.set({ stableUserId: local.userId }).catch(() => {});
-    return local.userId;
+    // sync storage unavailable — fall through
   }
 
   // 3. First install — generate a new UUID and persist to both stores
