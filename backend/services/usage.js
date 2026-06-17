@@ -196,7 +196,7 @@ export async function resolveAccount(userId) {
   if (!ext) {
     // Never auto-create a row without an email — that produces NULL-email rows.
     // Only /api/auth/register-extension (which requires email) may create rows.
-    const err = new Error("Session expired. Please re-open the extension to continue.");
+    const err = new Error("Free trial limit reached on this device. Please sign in with the email you originally used, or upgrade to continue.");
     err.statusCode = 404;
     err.notRegistered = true;
     throw err;
