@@ -168,8 +168,17 @@ function applyRedditPlanToBar(plan, tierEl, usageEl) {
   // Show upgrade nudge on home screen for non-Reddit-unlimited users
   if (upgradeEl) upgradeEl.style.display = isRedditUnlimited ? "none" : "block";
 
-  // Update Bundle button text for LinkedIn Pro users — they pay $10 difference, not $25
   const isLinkedInPro = plan === "linkedin_pro" || plan === "pro" || plan === "plus";
+
+  // LinkedIn Pro button — hide for users who already have it
+  const linkedinWrap = document.getElementById("reddit-home-upgrade-linkedin-wrap");
+  if (linkedinWrap) linkedinWrap.hidden = isLinkedInPro;
+
+  // Save $5 note — hide for LinkedIn Pro users (they show the $10 note instead)
+  const saveEl = document.getElementById("reddit-home-upgrade-save");
+  if (saveEl) saveEl.hidden = isLinkedInPro;
+
+  // Bundle note for LinkedIn Pro: pay $10 difference
   const noteEl = document.getElementById("reddit-home-upgrade-note");
   if (noteEl) noteEl.hidden = !isLinkedInPro || isRedditUnlimited;
 
@@ -1136,8 +1145,9 @@ function initRedditFeatureNav() {
 
   // Home screen upgrade nudge buttons
   const STATIC_URLS = {
-    reddit_pro: "https://checkout.dodopayments.com/buy/pdt_0Nh1zryt8Ch4KTi9B5yVJ?quantity=1",
-    bundle:     "https://checkout.dodopayments.com/buy/pdt_0Nh23AJmTvBuWAXKsi2ds?quantity=1",
+    linkedin_pro: "https://checkout.dodopayments.com/buy/pdt_0Nh1YWHrfWoHzrfK5qEJF?quantity=1",
+    reddit_pro:   "https://checkout.dodopayments.com/buy/pdt_0Nh1zryt8Ch4KTi9B5yVJ?quantity=1",
+    bundle:       "https://checkout.dodopayments.com/buy/pdt_0Nh23AJmTvBuWAXKsi2ds?quantity=1",
   };
 
   async function redditHomeUpgrade(plan) {
@@ -1167,6 +1177,7 @@ function initRedditFeatureNav() {
     chrome.tabs.create({ url: STATIC_URLS[plan] || STATIC_URLS.bundle, active: true });
   }
 
+  document.getElementById("reddit-home-upgrade-linkedin")?.addEventListener("click", () => redditHomeUpgrade("linkedin_pro"));
   document.getElementById("reddit-home-upgrade-pro")?.addEventListener("click", () => redditHomeUpgrade("reddit_pro"));
   document.getElementById("reddit-home-upgrade-bundle")?.addEventListener("click", () => redditHomeUpgrade("bundle"));
 
