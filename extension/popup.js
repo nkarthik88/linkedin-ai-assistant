@@ -857,7 +857,7 @@ async function startBundleUpgradeFromExisting(fromPlan) {
   }
   params.set("metadata[upgrade_from]", fromPlan);
   params.set("metadata[upgrade_to]", "bundle");
-  chrome.tabs.create({ url: `https://checkout.dodopayments.com/buy/pdt_0Nh513vWBknhkf541Vkd2?${params.toString()}`, active: true });
+  chrome.tabs.create({ url: `https://checkout.dodopayments.com/buy/pdt_0NfglmAMcUzd4GiVlnt0H?${params.toString()}`, active: true });
 }
 
 // Adjust LinkedIn upgrade screen buttons based on current plan

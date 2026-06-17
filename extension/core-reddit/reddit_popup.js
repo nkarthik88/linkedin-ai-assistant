@@ -1032,7 +1032,7 @@ function initRedditFeatureNav() {
         }
         params.set("metadata[upgrade_from]", fromPlan);
         params.set("metadata[upgrade_to]", "bundle");
-        chrome.tabs.create({ url: `https://checkout.dodopayments.com/buy/pdt_0Nh513vWBknhkf541Vkd2?${params.toString()}`, active: true });
+        chrome.tabs.create({ url: `https://checkout.dodopayments.com/buy/pdt_0NfglmAMcUzd4GiVlnt0H?${params.toString()}`, active: true });
         return;
       }
 
@@ -1049,7 +1049,7 @@ function initRedditFeatureNav() {
       const url = d.checkoutUrl || d.payment_link || d.url;
       const checkoutUrl = url
         || (plan === "bundle"      ? "https://checkout.dodopayments.com/buy/pdt_0Nh23AJmTvBuWAXKsi2ds?quantity=1"
-          : plan === "linkedin_pro"? "https://checkout.dodopayments.com/buy/pdt_0Nh513vWBknhkf541Vkd2?quantity=1"
+          : plan === "linkedin_pro"? "https://checkout.dodopayments.com/buy/pdt_0NfglmAMcUzd4GiVlnt0H?quantity=1"
           :                          "https://checkout.dodopayments.com/buy/pdt_0Nh1zryt8Ch4KTi9B5yVJ?quantity=1");
       chrome.tabs.create({ url: checkoutUrl, active: true });
 
@@ -1145,7 +1145,7 @@ function initRedditFeatureNav() {
 
   // Home screen upgrade nudge buttons
   const STATIC_URLS = {
-    linkedin_pro: "https://checkout.dodopayments.com/buy/pdt_0Nh513vWBknhkf541Vkd2?quantity=1",
+    linkedin_pro: "https://checkout.dodopayments.com/buy/pdt_0NfglmAMcUzd4GiVlnt0H?quantity=1",
     reddit_pro:   "https://checkout.dodopayments.com/buy/pdt_0Nh1zryt8Ch4KTi9B5yVJ?quantity=1",
     bundle:       "https://checkout.dodopayments.com/buy/pdt_0Nh23AJmTvBuWAXKsi2ds?quantity=1",
   };
@@ -1168,7 +1168,7 @@ function initRedditFeatureNav() {
       }
       params.set("metadata[upgrade_from]", currentPlan);
       params.set("metadata[upgrade_to]", "bundle");
-      const checkoutUrl = `https://checkout.dodopayments.com/buy/pdt_0Nh513vWBknhkf541Vkd2?${params.toString()}`;
+      const checkoutUrl = `https://checkout.dodopayments.com/buy/pdt_0NfglmAMcUzd4GiVlnt0H?${params.toString()}`;
       chrome.tabs.create({ url: checkoutUrl, active: true });
       return;
     }
