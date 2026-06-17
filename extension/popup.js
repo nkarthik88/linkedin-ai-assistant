@@ -294,16 +294,15 @@ function renderAccountStatus(status) {
 
   const tierEl = document.getElementById("tier-label");
   const usageEl = document.getElementById("usage-label");
-  const upgradeBtn = document.getElementById("upgrade-btn");
+  const upgradeSection = document.getElementById("linkedin-home-upgrade");
 
-  if (!tierEl || !usageEl || !upgradeBtn) return;
+  if (!tierEl || !usageEl) return;
 
-  // Reddit tab manages its own account bar — don't overwrite it here.
-  // Explicitly hide the LinkedIn upgrade button so it doesn't bleed onto the Reddit tab.
+  // Reddit tab manages its own account bar — hide LinkedIn upgrade section.
   if (isRedditTabActive()) {
     setUpgradeError("");
     renderFeatureCounters(status);
-    if (upgradeBtn) upgradeBtn.hidden = true;
+    if (upgradeSection) upgradeSection.style.display = "none";
     return;
   }
 
@@ -328,23 +327,21 @@ function renderAccountStatus(status) {
   usageEl.style.color = "";
   if (isBundle) {
     usageEl.textContent = "Unlimited LinkedIn & Reddit · 25 leads/mo";
-    upgradeBtn.hidden = true;
+    if (upgradeSection) upgradeSection.style.display = "none";
   } else if (isLinkedInPro) {
     usageEl.textContent = leadExhausted ? "⚠️ Lead limit reached (25/mo)" : "Unlimited LinkedIn · 25 leads/mo";
     usageEl.style.color = leadExhausted ? "var(--error)" : "";
-    upgradeBtn.hidden = !leadExhausted;
-  } else if (isRedditPro) {
-    usageEl.textContent = limitHit ? "⚠️ LinkedIn features at limit" : "5 uses/feature · 5 leads · Reddit: Unlimited";
-    usageEl.style.color = limitHit ? "var(--error)" : "";
-    upgradeBtn.hidden = !limitHit;
+    if (upgradeSection) upgradeSection.style.display = leadExhausted ? "block" : "none";
   } else if (isPro) {
-    // legacy "pro"/"plus" rows
     usageEl.textContent = "Unlimited access · 25 leads/mo";
-    upgradeBtn.hidden = true;
+    if (upgradeSection) upgradeSection.style.display = "none";
   } else {
     usageEl.textContent = allExhausted ? "🔒 Monthly limit reached — upgrade to continue" : limitHit ? "⚠️ Some features at limit" : "5 uses/feature · 5 lead searches/mo";
     usageEl.style.color = limitHit ? "var(--error)" : "";
-    upgradeBtn.hidden = !limitHit;
+    if (upgradeSection) upgradeSection.style.display = limitHit ? "block" : "none";
+    // Hide LinkedIn Pro button if already linkedin_pro (reddit_pro users still see it)
+    const upgradeBtn = document.getElementById("upgrade-btn");
+    if (upgradeBtn) upgradeBtn.style.display = isRedditPro ? "none" : "";
   }
 
   setUpgradeError("");
@@ -2758,9 +2755,13 @@ document.getElementById("platform-linkedin")?.addEventListener("click", async ()
 });
 
 document.getElementById("platform-reddit")?.addEventListener("click", () => {
-  const upgradeBtn = document.getElementById("upgrade-btn");
-  if (upgradeBtn) upgradeBtn.hidden = true;
+  const upgradeSection = document.getElementById("linkedin-home-upgrade");
+  if (upgradeSection) upgradeSection.style.display = "none";
 });
+
+// LinkedIn tab upgrade section buttons
+document.getElementById("linkedin-upgrade-reddit-btn")?.addEventListener("click", (e) => startUpgrade(e.currentTarget, "reddit_pro"));
+document.getElementById("linkedin-upgrade-bundle-btn")?.addEventListener("click", (e) => startUpgrade(e.currentTarget, "bundle"));
 
 // ── Visibility / focus refresh ─────────────────────────────────────────────
 
