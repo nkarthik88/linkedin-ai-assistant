@@ -148,7 +148,7 @@ async function getAuthUserRow(userId) {
 async function getExtensionAccount(userId) {
   const { data, error } = await supabaseAdmin
     .from("extension_accounts")
-    .select("id, plan, email, usage_this_month, usage_limit, quota_reset_at, feature_usage, blocked_reason")
+    .select("id, plan, email, canonical_email, usage_this_month, usage_limit, quota_reset_at, feature_usage, blocked_reason")
     .eq("id", userId)
     .maybeSingle();
 
