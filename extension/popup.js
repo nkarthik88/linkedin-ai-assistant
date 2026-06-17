@@ -2757,6 +2757,11 @@ document.getElementById("platform-linkedin")?.addEventListener("click", async ()
   refreshAccountStatus();
 });
 
+document.getElementById("platform-reddit")?.addEventListener("click", () => {
+  const upgradeBtn = document.getElementById("upgrade-btn");
+  if (upgradeBtn) upgradeBtn.hidden = true;
+});
+
 // ── Visibility / focus refresh ─────────────────────────────────────────────
 
 document.addEventListener("visibilitychange", () => {
