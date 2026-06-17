@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { supabaseAdmin } from "../services/supabase.js";
+import { antiScamShield } from "../utils/security.js";
 
 const router = Router();
 
@@ -15,6 +16,22 @@ router.post(
 
     if (password.length < 6) {
       return res.status(400).json({ error: "password must be at least 6 characters" });
+    }
+
+    // Anti-scam: validate, strip disposables, canonicalize
+    const shield = antiScamShield.validateRegistration(email);
+    if (!shield.ok) {
+      return res.status(400).json({ error: shield.error });
+    }
+
+    // Block duplicate canonical emails (catches Gmail dot/plus tricks)
+    const { data: existingCanonical } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("canonical_email", shield.canonical)
+      .maybeSingle();
+    if (existingCanonical) {
+      return res.status(400).json({ error: "An account with this email already exists." });
     }
 
     const { data, error } = await supabaseAdmin.auth.signUp({
@@ -35,6 +52,7 @@ router.post(
       {
         id: user.id,
         email: user.email,
+        canonical_email: shield.canonical,
         plan: "free",
         usage_this_month: 0,
       },
@@ -100,12 +118,33 @@ router.post(
     if (!userId || !uuidRe.test(userId)) {
       return res.status(400).json({ error: "Invalid userId" });
     }
-    const emailRe = /^[^\s@,]+@[^\s@,]+\.[^\s@,]+$/;
-    if (!email || !emailRe.test(email)) {
-      return res.status(400).json({ error: "Invalid email address. Example: name@gmail.com" });
+
+    // Anti-scam: validate email, block disposables, get canonical form
+    const shield = antiScamShield.validateRegistration(email);
+    if (!shield.ok) {
+      return res.status(400).json({ error: shield.error });
+    }
+    const canonicalEmail = shield.canonical;
+
+    // 1. Canonical email match — catches Gmail dot/plus alias bypass attempts
+    const { data: existingByCanonical } = await supabaseAdmin
+      .from("extension_accounts")
+      .select("id, device_fingerprint")
+      .eq("canonical_email", canonicalEmail)
+      .maybeSingle();
+
+    if (existingByCanonical) {
+      if (deviceFingerprint && !existingByCanonical.device_fingerprint) {
+        await supabaseAdmin
+          .from("extension_accounts")
+          .update({ device_fingerprint: deviceFingerprint })
+          .eq("id", existingByCanonical.id)
+          .then(() => {}).catch(() => {});
+      }
+      return res.json({ ok: true, userId: existingByCanonical.id });
     }
 
-    // 1. Email match — primary reinstall recovery
+    // 2. Raw email match — legacy rows without canonical_email yet
     const { data: existingByEmail } = await supabaseAdmin
       .from("extension_accounts")
       .select("id, device_fingerprint")
@@ -113,18 +152,21 @@ router.post(
       .maybeSingle();
 
     if (existingByEmail) {
-      // Update fingerprint if we now have one and the row doesn't yet
-      if (deviceFingerprint && !existingByEmail.device_fingerprint) {
+      // Backfill canonical_email on legacy rows + update fingerprint
+      const updates = {};
+      if (!existingByEmail.canonical_email) updates.canonical_email = canonicalEmail;
+      if (deviceFingerprint && !existingByEmail.device_fingerprint) updates.device_fingerprint = deviceFingerprint;
+      if (Object.keys(updates).length) {
         await supabaseAdmin
           .from("extension_accounts")
-          .update({ device_fingerprint: deviceFingerprint })
+          .update(updates)
           .eq("id", existingByEmail.id)
           .then(() => {}).catch(() => {});
       }
       return res.json({ ok: true, userId: existingByEmail.id });
     }
 
-    // 2. Fingerprint match — secondary reinstall recovery (new email entered after reinstall)
+    // 3. Fingerprint match — secondary reinstall recovery (new email entered after reinstall)
     if (deviceFingerprint) {
       const { data: existingByFp } = await supabaseAdmin
         .from("extension_accounts")
@@ -133,31 +175,32 @@ router.post(
         .maybeSingle();
 
       if (existingByFp) {
-        // Same device, possibly updated email — update email and return canonical account
+        // Same device, possibly updated email — update email + canonical and return canonical account
         await supabaseAdmin
           .from("extension_accounts")
-          .update({ email })
+          .update({ email, canonical_email: canonicalEmail })
           .eq("id", existingByFp.id)
           .then(() => {}).catch(() => {});
         return res.json({ ok: true, userId: existingByFp.id });
       }
     }
 
-    // 3. Check users table (paid/auth users who reinstalled)
+    // 4. Check users table (paid/auth users who reinstalled)
     const { data: authUser } = await supabaseAdmin
       .from("users")
       .select("id")
-      .eq("email", email)
+      .eq("canonical_email", canonicalEmail)
       .maybeSingle();
 
     if (authUser) {
       return res.json({ ok: true, userId: authUser.id });
     }
 
-    // 4. New user — create account
+    // 5. New user — create account with canonical email for future dedup
     const fields = {
       id: userId,
       email,
+      canonical_email: canonicalEmail,
       ...(deviceFingerprint ? { device_fingerprint: deviceFingerprint } : {}),
     };
     const { error } = await supabaseAdmin
