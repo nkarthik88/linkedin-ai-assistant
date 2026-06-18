@@ -51,7 +51,6 @@ const plans = [
     ctaStyle: 'reddit',
     features: [
       'Unlimited all 3 Reddit features',
-      'Anti-ban protection on every post',
       '⬆️ Grow karma via Post Generator & Comment Reply',
       'LinkedIn stays at free limits',
     ],

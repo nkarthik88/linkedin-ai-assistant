@@ -218,10 +218,10 @@ const REDDIT_STEPS = [
   {
     feature: 'Post Generator',
     icon: '📝',
-    tag: '🛡️ Anti-ban · Sounds Human · ⬆️ Karma',
+    tag: '🧠 Sounds Human · ⬆️ Karma',
     url: 'reddit.com/r/entrepreneur',
     PageBg: RedditPostPage,
-    output: '🛡️ Anti-ban check passed! Sounds 100% human. Draft: "6 months ago I had $0 and no network. Here\'s the exact cold outreach template that got me my first 50 B2B customers (steal it)..." — Upvotes incoming 🚀',
+    output: '✅ Sounds 100% human! Draft: "6 months ago I had $0 and no network. Here\'s the exact cold outreach template that got me my first 50 B2B customers (steal it)..." — Upvotes incoming 🚀',
   },
   {
     feature: 'Subreddit Finder',
