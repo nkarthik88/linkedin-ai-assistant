@@ -17,7 +17,9 @@ export default function CTASection() {
             No credit card. No setup. Just install and start.
           </p>
           <a
-            href="#"
+            href="https://chromewebstore.google.com/detail/hggehcjcbnfpdglbildpaiidhigfcnbb"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 bg-[#0a66c2] hover:bg-[#004182] text-white font-bold text-base px-8 py-4 rounded-xl transition-colors shadow-md"
           >
             Install Free on Chrome →

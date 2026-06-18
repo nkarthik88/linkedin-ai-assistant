@@ -46,8 +46,11 @@ export default function Hero() {
 
             {/* Headline */}
             <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 leading-tight mb-4">
-              Grow on LinkedIn &amp; Reddit with AI that{' '}
-              <span className="text-[#0a66c2]">writes like you</span>
+              Write less. Grow more.
+              <br />
+              <span className="text-[#0a66c2]">AI that posts like a human</span>
+              <br />
+              on LinkedIn and Reddit
             </h1>
 
             {/* Subtext */}
@@ -58,7 +61,9 @@ export default function Hero() {
             {/* CTAs */}
             <div className="flex flex-wrap gap-3 mb-8">
               <a
-                href="#"
+                href="https://chromewebstore.google.com/detail/hggehcjcbnfpdglbildpaiidhigfcnbb"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-[#0a66c2] hover:bg-[#004182] text-white font-semibold px-6 py-3 rounded-xl transition-colors text-sm shadow-sm"
               >
                 Install Free on Chrome →
@@ -115,7 +120,13 @@ export default function Hero() {
             </div>
 
             {/* Mockup card */}
-            <div className="w-full max-w-sm bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden">
+            <div
+              className="w-full max-w-sm bg-white border border-gray-200 rounded-2xl overflow-hidden"
+              style={{
+                transform: 'perspective(1000px) rotateY(-15deg) rotateX(5deg)',
+                boxShadow: '20px 20px 60px rgba(0,0,0,0.15), 0 4px 16px rgba(0,0,0,0.08)',
+              }}
+            >
               {/* Browser bar */}
               <div className="bg-gray-50 border-b border-gray-200 px-4 py-3 flex items-center gap-2">
                 <div className="flex gap-1.5">

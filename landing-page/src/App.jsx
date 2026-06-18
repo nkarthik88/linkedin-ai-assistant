@@ -1,5 +1,7 @@
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
+import VideoSection from './components/VideoSection'
+import HowItWorks from './components/HowItWorks'
 import Features from './components/Features'
 import Pricing from './components/Pricing'
 import FAQ from './components/FAQ'
@@ -11,6 +13,8 @@ export default function App() {
     <div className="bg-white text-gray-900 font-sans">
       <Navbar />
       <Hero />
+      <VideoSection />
+      <HowItWorks />
       <Features />
       <Pricing />
       <FAQ />

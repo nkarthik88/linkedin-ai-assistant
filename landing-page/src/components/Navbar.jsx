@@ -48,7 +48,9 @@ export default function Navbar() {
           {/* CTA */}
           <div className="hidden md:block">
             <a
-              href="#"
+              href="https://chromewebstore.google.com/detail/hggehcjcbnfpdglbildpaiidhigfcnbb"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-1 bg-[#0a66c2] hover:bg-[#004182] text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
             >
               Install Free →
@@ -91,7 +93,9 @@ export default function Navbar() {
               </a>
             ))}
             <a
-              href="#"
+              href="https://chromewebstore.google.com/detail/hggehcjcbnfpdglbildpaiidhigfcnbb"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-1 bg-[#0a66c2] hover:bg-[#004182] text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
             >
               Install Free →

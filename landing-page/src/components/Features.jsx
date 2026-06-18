@@ -70,15 +70,15 @@ function FeatureCard({ feature, index }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.4, delay: index * 0.08 }}
-      className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow"
+      className="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-lg transition-shadow"
     >
       <div
-        className="inline-flex items-center justify-center w-11 h-11 rounded-xl text-xl mb-4"
+        className="inline-flex items-center justify-center w-14 h-14 rounded-2xl text-2xl mb-5"
         style={{ backgroundColor: feature.bg }}
       >
         {feature.icon}
       </div>
-      <h3 className="text-base font-semibold text-gray-900 mb-2">{feature.title}</h3>
+      <h3 className="text-lg font-bold text-gray-900 mb-2">{feature.title}</h3>
       <p className="text-sm text-gray-500 leading-relaxed">{feature.desc}</p>
     </motion.div>
   )
