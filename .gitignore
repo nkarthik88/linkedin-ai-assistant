@@ -15,3 +15,5 @@ node_modules/
 
 # Supabase CLI local scratch
 supabase/.temp/
+.mcp.json
+extension.zip

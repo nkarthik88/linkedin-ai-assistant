@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const faqs = [
-  { q: 'Is ProPostly really free?', a: 'Yes. The free plan includes 5 uses per feature per month with no credit card required. Install and start immediately.' },
+  { q: 'Is ProPostly really free?', a: 'Yes. The free plan includes 5 uses per LinkedIn and Reddit feature per month. No credit card required. Install and start immediately.' },
   { q: 'Which browsers does it work on?', a: 'Chrome, Brave, Opera, and Vivaldi — any Chromium-based browser.' },
   { q: 'Does it work on both LinkedIn and Reddit?', a: 'Yes. LinkedIn and Reddit features are completely separate. Upgrade one or both independently.' },
+  { q: 'What is the Bundle plan?', a: 'Unlimited LinkedIn + Reddit for $25/month. Save $5 vs buying both separately ($30 total). Includes all 5 LinkedIn features and all 3 Reddit features, unlimited.' },
   { q: 'Is my data safe?', a: 'ProPostly only reads the LinkedIn or Reddit page you are actively viewing. No data is stored or sold.' },
   { q: 'What is Deep Lead Search?', a: 'Scans LinkedIn people search results, rates each profile as Hot or Warm based on your target, and writes a personalized DM for each lead.' },
-  { q: 'What is the anti-ban protection?', a: 'Every Reddit post goes through an automatic check to flag content that could trigger Reddit spam filters before you post.' },
   { q: 'Can I cancel anytime?', a: 'Yes. Cancel from inside the extension at any time. No contracts, no fees.' },
 ]
 

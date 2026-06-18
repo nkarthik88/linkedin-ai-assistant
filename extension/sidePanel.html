@@ -554,6 +554,7 @@
                 <form id="reddit-form-scan-generate">
                   <label for="reddit-scan-topic">Your topic or idea</label>
                   <textarea id="reddit-scan-topic" placeholder="e.g. I built a tool that saved my startup 10 hours a week..." required rows="3"></textarea>
+                  <p id="reddit-scan-generate-error" class="read-from-page-status" hidden></p>
                   <button type="submit" class="submit-btn reddit-submit-btn">⚡ Generate 3 Posts</button>
                 </form>
               </div>
@@ -567,6 +568,7 @@
                 <input type="url" id="reddit-url-input" placeholder="https://yourproduct.com" required />
                 <label for="reddit-url-subreddit">Target subreddit (optional)</label>
                 <input type="text" id="reddit-url-subreddit" placeholder="r/entrepreneur" />
+                <p id="reddit-url-generate-error" class="read-from-page-status" hidden></p>
                 <button type="submit" class="submit-btn reddit-submit-btn">⚡ Generate 3 Posts</button>
               </form>
             </div>
@@ -591,6 +593,7 @@
                   <span class="reddit-promo-label">Promoting something?</span>
                   <button type="button" id="reddit-promo-toggle" class="reddit-promo-btn" data-promoting="no">NO</button>
                 </div>
+                <p id="reddit-quick-generate-error" class="read-from-page-status" hidden></p>
                 <button type="submit" class="submit-btn reddit-submit-btn">⚡ Generate 3 Posts</button>
               </form>
             </div>
@@ -607,6 +610,7 @@
             <form id="reddit-form-subreddit_finder">
               <label for="reddit-niche">Your niche or product</label>
               <textarea id="reddit-niche" name="niche" placeholder="e.g. I run a B2B SaaS for freelancers to automate invoicing..." required rows="3"></textarea>
+              <p id="reddit-subreddit-finder-error" class="read-from-page-status" hidden></p>
               <button type="submit" class="submit-btn reddit-submit-btn">🔍 Find Subreddits</button>
             </form>
             <div id="reddit-sub-history" class="reddit-sub-history" hidden>
@@ -635,6 +639,7 @@
               <textarea id="reddit-comment-text" name="commentText" placeholder="Paste the Reddit comment here..." required rows="4"></textarea>
               <label for="reddit-post-context">Post context (optional)</label>
               <textarea id="reddit-post-context" name="postContext" placeholder="What is the post about?" rows="2"></textarea>
+              <p id="reddit-comment-reply-error" class="read-from-page-status" hidden></p>
               <button type="submit" class="submit-btn reddit-submit-btn">⚡ Generate 3 Replies</button>
             </form>
           </div>

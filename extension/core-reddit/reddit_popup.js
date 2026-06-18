@@ -132,9 +132,11 @@ async function redditCheckLimit(feature) {
 }
 
 function redditShowUpgrade(feature, fromLimit = false) {
-  // Always hide back button — user must upgrade, no escape
   const backBtn = document.getElementById("reddit-upgrade-back");
-  if (backBtn) backBtn.hidden = true;
+  if (backBtn) {
+    backBtn.hidden = false;
+    backBtn.textContent = "← Back";
+  }
   const descEl = document.getElementById("reddit-upgrade-desc");
   if (descEl) descEl._limitSet = false;
   redditShowView("reddit-view-upgrade");
@@ -510,13 +512,14 @@ async function renderSubreddits(subs, niche) {
   container.innerHTML = "";
 
   // Check post limit upfront to show correct hint on all cards
+  const plan = await redditGetPlan();
+  const isUnlimited = plan === "reddit_pro" || plan === "bundle";
   const { cachedFeatureUsage } = await chrome.storage.local.get("cachedFeatureUsage");
   const postInfo = (cachedFeatureUsage || {})["reddit_post"];
   const postUsed = postInfo && typeof postInfo === "object" ? (Number(postInfo.used) || 0) : (Number(postInfo) || 0);
   const postRemaining = postInfo && typeof postInfo === "object" && typeof postInfo.remaining === "number"
     ? postInfo.remaining : Math.max(0, 5 - postUsed);
-  const plan = await redditGetPlan();
-  const postLocked = !(plan === "reddit_pro" || plan === "bundle") && postRemaining <= 0;
+  const postLocked = !isUnlimited && postRemaining <= 0;
 
   subs.forEach((sub) => {
     const promoClass = sub.promoAllowed === "YES" ? "sub-badge-promo-yes"
@@ -537,23 +540,9 @@ async function renderSubreddits(subs, niche) {
       <div class="sub-click-hint" style="${postLocked ? "color:#ef4444;font-weight:600;" : ""}">${postLocked ? "🔒 Post limit reached — upgrade to generate" : "Click to use in Post Generator →"}</div>
     `;
     card.addEventListener("click", async () => {
-      // If post generation limit is hit, show blocked message on the card — no popup
-      const { cachedFeatureUsage } = await chrome.storage.local.get("cachedFeatureUsage");
-      const postInfo = (cachedFeatureUsage || {})["reddit_post"];
-      const postUsed = postInfo && typeof postInfo === "object" ? (Number(postInfo.used) || 0) : (Number(postInfo) || 0);
-      const postRemaining = postInfo && typeof postInfo === "object" && typeof postInfo.remaining === "number"
-        ? postInfo.remaining : Math.max(0, 5 - postUsed);
-      const plan = await redditGetPlan();
-      const isUnlimited = plan === "reddit_pro" || plan === "bundle";
-      if (!isUnlimited && postRemaining <= 0) {
-        const hint = card.querySelector(".sub-click-hint");
-        if (hint) {
-          hint.textContent = "🔒 Post limit reached — upgrade to use";
-          hint.style.color = "#ef4444";
-          hint.style.fontWeight = "600";
-        }
-        return;
-      }
+      // Use the same limit check as the generate button — handles stale cache correctly
+      const allowed = await redditCheckLimit("post_generator");
+      if (!allowed) return; // redditCheckLimit shows upgrade screen if limit hit
 
       // Fill subreddit in Quick tab
       const subInput = document.getElementById("reddit-subreddit");
@@ -711,13 +700,19 @@ async function handleScanGenerate(e) {
   if (!topic) return;
   if (!(await redditCheckLimit("post_generator"))) return;
   _generatingPost = true;
+  const errEl1 = document.getElementById("reddit-scan-generate-error");
+  if (errEl1) errEl1.hidden = true;
   try {
     redditShowLoading("Generating posts tuned for your community…");
     const data = await redditCallApi("generate", { topic, subreddit, analysisContext: _communityAnalysis });
     renderRedditPosts(data.posts || []);
   } catch (err) {
     redditShowView("reddit-view-post_generator");
-    if (err.message !== "LIMIT_REACHED") console.error("[Reddit] scan generate:", err.message);
+    if (err.message !== "LIMIT_REACHED") {
+      console.error("[Reddit] scan generate:", err.message);
+      const el = document.getElementById("reddit-scan-generate-error");
+      if (el) { el.textContent = "⚠ Generation failed — please try again."; el.hidden = false; }
+    }
   } finally {
     _generatingPost = false;
   }
@@ -733,13 +728,19 @@ async function handleUrlGenerate(e) {
   if (!url) return;
   if (!(await redditCheckLimit("post_generator"))) return;
   _generatingPost = true;
+  const errEl2 = document.getElementById("reddit-url-generate-error");
+  if (errEl2) errEl2.hidden = true;
   try {
     redditShowLoading("Fetching URL and generating posts…");
     const data = await redditCallApi("from-url", { url, subreddit });
     renderRedditPosts(data.posts || []);
   } catch (err) {
     redditShowView("reddit-view-post_generator");
-    if (err.message !== "LIMIT_REACHED") console.error("[Reddit] url generate:", err.message);
+    if (err.message !== "LIMIT_REACHED") {
+      console.error("[Reddit] url generate:", err.message);
+      const el = document.getElementById("reddit-url-generate-error");
+      if (el) { el.textContent = "⚠ Generation failed — please try again."; el.hidden = false; }
+    }
   } finally {
     _generatingPost = false;
   }
@@ -755,6 +756,8 @@ async function handlePostGenerator(e) {
   if (!topic) return;
   if (!(await redditCheckLimit("post_generator"))) return;
   _generatingPost = true;
+  const errEl3 = document.getElementById("reddit-quick-generate-error");
+  if (errEl3) errEl3.hidden = true;
   try {
     const template   = document.querySelector(".reddit-template-chip.active")?.dataset.template || "Lesson";
     const isPromoting = document.getElementById("reddit-promo-toggle")?.dataset.promoting === "yes";
@@ -763,7 +766,11 @@ async function handlePostGenerator(e) {
     renderRedditPosts(data.posts || []);
   } catch (err) {
     redditShowView("reddit-view-post_generator");
-    if (err.message !== "LIMIT_REACHED") console.error("[Reddit] quick generate:", err.message);
+    if (err.message !== "LIMIT_REACHED") {
+      console.error("[Reddit] quick generate:", err.message);
+      const el = document.getElementById("reddit-quick-generate-error");
+      if (el) { el.textContent = "⚠ Generation failed — please try again."; el.hidden = false; }
+    }
   } finally {
     _generatingPost = false;
   }
@@ -787,6 +794,8 @@ async function handleSubredditFinder(e) {
   } catch (err) {
     redditShowView("reddit-view-subreddit_finder");
     console.error("[Reddit] subreddit finder:", err.message);
+    const el = document.getElementById("reddit-subreddit-finder-error");
+    if (el) { el.textContent = "⚠ Search failed — please try again."; el.hidden = false; }
   } finally {
     _findingSubreddits = false;
   }
@@ -820,6 +829,8 @@ async function handleCommentReply(e) {
   } catch (err) {
     redditShowView("reddit-view-comment_reply");
     console.error("[Reddit] comment reply:", err.message);
+    const el = document.getElementById("reddit-comment-reply-error");
+    if (el) { el.textContent = "⚠ Generation failed — please try again."; el.hidden = false; }
   } finally {
     _replyingToComment = false;
   }

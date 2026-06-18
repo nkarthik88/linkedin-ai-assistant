@@ -9,6 +9,7 @@ const router = Router();
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const REDDIT_MODEL = "google/gemini-2.5-flash-lite";
+const REDDIT_FALLBACK_MODEL = "google/gemini-2.5-flash";
 
 const HUMAN_REDDIT_RULES = `Write like a real person texting a friend who happens to be on Reddit. Casual, direct, imperfect. Use contractions (it's, don't, can't, I've). Take a clear stance — never be neutral. Admit a mistake or struggle somewhere in the post. Vulnerability earns karma. No sales pitches, no community contribution theater. Just a real person sharing something real.`;
 
@@ -45,7 +46,7 @@ SELF-REVIEW PASS — check every post before finalizing:
 7. Over 200 words in the body? Cut until it's under.
 8. Would a real Redditor actually post this without editing? If no, rewrite.`;
 
-async function callOpenRouter(model, systemPrompt, userPrompt, jsonMode = true) {
+async function callOpenRouterOnce(model, systemPrompt, userPrompt, jsonMode = true) {
   const body = {
     model,
     temperature: 0.85,
@@ -85,14 +86,36 @@ async function callOpenRouter(model, systemPrompt, userPrompt, jsonMode = true) 
   return content;
 }
 
+async function callOpenRouter(model, systemPrompt, userPrompt, jsonMode = true) {
+  try {
+    return await callOpenRouterOnce(model, systemPrompt, userPrompt, jsonMode);
+  } catch (primaryErr) {
+    console.warn(`[Reddit] Primary model failed (${model}): ${primaryErr.message} — retrying with fallback`);
+    try {
+      return await callOpenRouterOnce(REDDIT_FALLBACK_MODEL, systemPrompt, userPrompt, jsonMode);
+    } catch (fallbackErr) {
+      console.error(`[Reddit] Fallback model also failed: ${fallbackErr.message}`);
+      throw primaryErr;
+    }
+  }
+}
+
 function safeParseJSON(content) {
   // Strip markdown code fences
   let cleaned = content.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
   // Try direct parse first
-  try { return JSON.parse(cleaned); } catch {}
+  try {
+    const result = JSON.parse(cleaned);
+    // If model returned array instead of {posts:[...]}, wrap it
+    if (Array.isArray(result)) return { posts: result };
+    return result;
+  } catch {}
   // Extract first {...} block from anywhere in the response
-  const match = cleaned.match(/\{[\s\S]*\}/);
-  if (match) return JSON.parse(match[0]);
+  const objMatch = cleaned.match(/\{[\s\S]*\}/);
+  if (objMatch) return JSON.parse(objMatch[0]);
+  // Extract first [...] array block
+  const arrMatch = cleaned.match(/\[[\s\S]*\]/);
+  if (arrMatch) return { posts: JSON.parse(arrMatch[0]) };
   throw new Error("No JSON found in response");
 }
 
@@ -233,13 +256,17 @@ Analyze the writing patterns, content types, and community preferences.`;
       return res.status(502).json({ error: "Failed to parse AI response" });
     }
 
-    res.json({
-      likes:   Array.isArray(parsed.likes)  ? parsed.likes.slice(0, 5)  : [],
-      avoid:   Array.isArray(parsed.avoid)  ? parsed.avoid.slice(0, 5)  : [],
-      tone:    String(parsed.tone   || "").trim(),
-      rules:   Array.isArray(parsed.rules)  ? parsed.rules.slice(0, 4)  : [],
+    const analysis = {
+      likes:   Array.isArray(parsed.likes)   ? parsed.likes.slice(0, 5)  : [],
+      avoid:   Array.isArray(parsed.avoid)   ? parsed.avoid.slice(0, 5)  : [],
+      tone:    String(parsed.tone    || "").trim(),
+      rules:   Array.isArray(parsed.rules)   ? parsed.rules.slice(0, 4)  : [],
       summary: String(parsed.summary || "").trim(),
-    });
+    };
+    if (!analysis.likes.length && !analysis.tone && !analysis.summary) {
+      return res.status(502).json({ error: "AI returned no analysis — please try again" });
+    }
+    res.json(analysis);
   })
 );
 
@@ -388,7 +415,9 @@ Respond with JSON only:
       return res.status(502).json({ error: "Failed to parse AI response" });
     }
 
-    const variations = (parsed.variations || []).slice(0, 3).map((v) => String(v).trim()).filter(Boolean);
+    // Handle array response (model returns [...] instead of {"variations":[...]})
+    const rawVariations = parsed.variations || parsed.posts || (Array.isArray(parsed) ? parsed : []);
+    const variations = rawVariations.slice(0, 3).map((v) => String(v).trim()).filter(Boolean);
     if (!variations.length) {
       return res.status(502).json({ error: "AI returned no replies — please try again" });
     }
@@ -440,7 +469,9 @@ Respond with JSON only:
       return res.status(502).json({ error: "Failed to parse AI response" });
     }
 
-    const subreddits = (parsed.subreddits || []).slice(0, 15).map((s) => ({
+    // Handle array response (model returns [...] instead of {"subreddits":[...]})
+    const rawSubreddits = parsed.subreddits || parsed.posts || (Array.isArray(parsed) ? parsed : []);
+    const subreddits = rawSubreddits.slice(0, 15).map((s) => ({
       name: String(s.name || "").trim(),
       members: String(s.members || "").trim(),
       promoAllowed: ["YES", "NO", "Rules"].includes(s.promoAllowed) ? s.promoAllowed : "Rules",
@@ -556,7 +587,12 @@ Respond with JSON only:
       return res.status(502).json({ error: "Failed to parse AI response" });
     }
 
-    res.json({ post: String(parsed.post || "").trim() });
+    // Handle alternate key names the model sometimes uses
+    const viralPost = parsed.post || parsed.content || parsed.viral_post || parsed.viral || "";
+    if (!viralPost) {
+      return res.status(502).json({ error: "AI returned no viral post — please try again" });
+    }
+    res.json({ post: String(viralPost).trim() });
   })
 );
 
