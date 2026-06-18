@@ -85,6 +85,12 @@ async function callOpenRouter(model, systemPrompt, userPrompt, jsonMode = true) 
   return content;
 }
 
+function safeParseJSON(content) {
+  // Strip markdown code fences Gemini sometimes wraps responses in
+  const cleaned = content.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+  return JSON.parse(cleaned);
+}
+
 function validateUserId(req, res) {
   const userId = String(req.body?.userId || "").trim();
   if (!userId || !UUID_RE.test(userId)) {
@@ -153,7 +159,7 @@ Generate 3 Reddit posts.`;
 
     const content = await callOpenRouter(model, systemPrompt, userPrompt);
     let parsed;
-    try { parsed = JSON.parse(content); } catch {
+    try { parsed = safeParseJSON(content); } catch {
       return res.status(502).json({ error: "Failed to parse AI response" });
     }
 
@@ -218,7 +224,7 @@ Analyze the writing patterns, content types, and community preferences.`;
 
     const content = await callOpenRouter(model, systemPrompt, userPrompt);
     let parsed;
-    try { parsed = JSON.parse(content); } catch {
+    try { parsed = safeParseJSON(content); } catch {
       return res.status(502).json({ error: "Failed to parse AI response" });
     }
 
@@ -307,7 +313,7 @@ Respond with JSON only:
 
     const content = await callOpenRouter(model, systemPrompt, userPrompt);
     let parsed;
-    try { parsed = JSON.parse(content); } catch {
+    try { parsed = safeParseJSON(content); } catch {
       return res.status(502).json({ error: "Failed to parse AI response" });
     }
 
@@ -373,7 +379,7 @@ Respond with JSON only:
 
     const content = await callOpenRouter(model, systemPrompt, userPrompt);
     let parsed;
-    try { parsed = JSON.parse(content); } catch {
+    try { parsed = safeParseJSON(content); } catch {
       return res.status(502).json({ error: "Failed to parse AI response" });
     }
 
@@ -425,7 +431,7 @@ Respond with JSON only:
 
     const content = await callOpenRouter(model, systemPrompt, userPrompt);
     let parsed;
-    try { parsed = JSON.parse(content); } catch {
+    try { parsed = safeParseJSON(content); } catch {
       return res.status(502).json({ error: "Failed to parse AI response" });
     }
 
@@ -486,7 +492,7 @@ Respond with JSON only:
 
     const content = await callOpenRouter(model, systemPrompt, userPrompt);
     let parsed;
-    try { parsed = JSON.parse(content); } catch {
+    try { parsed = safeParseJSON(content); } catch {
       return res.status(502).json({ error: "Failed to parse AI response" });
     }
 
@@ -541,7 +547,7 @@ Respond with JSON only:
 
     const content = await callOpenRouter(model, systemPrompt, userPrompt);
     let parsed;
-    try { parsed = JSON.parse(content); } catch {
+    try { parsed = safeParseJSON(content); } catch {
       return res.status(502).json({ error: "Failed to parse AI response" });
     }
 
