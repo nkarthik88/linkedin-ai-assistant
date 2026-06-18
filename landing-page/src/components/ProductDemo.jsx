@@ -296,7 +296,7 @@ export default function ProductDemo() {
         </motion.div>
 
         {/* Platform toggle */}
-        <div className="flex justify-center mb-12">
+        <div className="flex justify-center mb-4">
           <div className="flex bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
             {[
               { key: 'linkedin', label: '💼 LinkedIn', c: '#0a66c2' },
@@ -313,6 +313,24 @@ export default function ProductDemo() {
             ))}
           </div>
         </div>
+
+        {/* Reddit karma tagline */}
+        <AnimatePresence mode="wait">
+          {platform === 'reddit' && (
+            <motion.div
+              key="reddit-tagline"
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.25 }}
+              className="flex justify-center mb-6"
+            >
+              <span className="inline-flex items-center gap-2 bg-orange-50 border border-orange-200 text-orange-700 text-sm font-semibold px-4 py-2 rounded-full">
+                ⬆️ Write posts &amp; comments that sound human — and grow your Reddit karma
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Feature pill row */}
         <div className="flex flex-wrap justify-center gap-2 mb-10">
