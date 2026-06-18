@@ -281,11 +281,11 @@ export default function ProductDemo() {
     return () => clearTimeout(t)
   }, [phase, step.output, steps.length])
 
-  // 3D mouse tilt
-  const mouseX = useMotionValue(0)
-  const mouseY = useMotionValue(0)
-  const rotateY = useSpring(useTransform(mouseX, [-200, 200], [12, -12]), { stiffness: 100, damping: 20 })
-  const rotateX = useSpring(useTransform(mouseY, [-200, 200], [-8, 8]), { stiffness: 100, damping: 20 })
+  // 3D mouse tilt — default resting angle so it always looks 3D
+  const mouseX = useMotionValue(-60)   // resting at offset = slightly right
+  const mouseY = useMotionValue(-40)
+  const rotateY = useSpring(useTransform(mouseX, [-200, 200], [18, -18]), { stiffness: 80, damping: 18 })
+  const rotateX = useSpring(useTransform(mouseY, [-200, 200], [-12, 12]), { stiffness: 80, damping: 18 })
 
   const handleMouseMove = (e) => {
     if (!cardRef.current) return
@@ -293,7 +293,8 @@ export default function ProductDemo() {
     mouseX.set(e.clientX - (rect.left + rect.width / 2))
     mouseY.set(e.clientY - (rect.top + rect.height / 2))
   }
-  const handleMouseLeave = () => { mouseX.set(0); mouseY.set(0) }
+  // Return to default resting angle on leave
+  const handleMouseLeave = () => { mouseX.set(-60); mouseY.set(-40) }
 
   const PageBg = step.PageBg
 
@@ -354,22 +355,19 @@ export default function ProductDemo() {
           style={{ perspective: '1400px' }}
           className="max-w-4xl mx-auto"
         >
-          <motion.div style={{ rotateY, rotateX, transformStyle: 'preserve-3d' }}>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={platform}
-                initial={{ opacity: 0, rotateY: -20 }}
-                animate={{ opacity: 1, rotateY: 0 }}
-                exit={{ opacity: 0, rotateY: 20 }}
-                transition={{ duration: 0.4 }}
-                className="rounded-2xl overflow-hidden"
-                style={{
-                  background: '#fff',
-                  border: `1px solid ${color}25`,
-                  boxShadow: `0 40px 100px rgba(0,0,0,0.12), 0 0 0 1px ${color}10, 30px 30px 60px rgba(0,0,0,0.08)`,
-                  transformStyle: 'preserve-3d',
-                }}
-              >
+          <motion.div
+            style={{
+              rotateY,
+              rotateX,
+              transformStyle: 'preserve-3d',
+              borderRadius: '1rem',
+              overflow: 'hidden',
+              background: '#fff',
+              border: `1px solid ${color}25`,
+              boxShadow: `0 50px 120px rgba(0,0,0,0.18), 0 0 0 1px ${color}10, 24px 24px 50px rgba(0,0,0,0.1)`,
+            }}
+          >
+            <div>
                 {/* Browser chrome */}
                 <div className="bg-gray-100 border-b border-gray-200 px-4 py-2.5 flex items-center gap-3">
                   <div className="flex gap-1.5">
@@ -498,8 +496,7 @@ export default function ProductDemo() {
                     </div>
                   </div>
                 </div>
-              </motion.div>
-            </AnimatePresence>
+            </div>
           </motion.div>
         </div>
 
