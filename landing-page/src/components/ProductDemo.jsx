@@ -336,12 +336,17 @@ export default function ProductDemo() {
           className="max-w-4xl mx-auto"
         >
           <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
             style={{
+              transform: 'perspective(1200px) rotateX(4deg) rotateY(-8deg) scale(1.02)',
               borderRadius: '1rem',
               overflow: 'hidden',
               background: '#fff',
               border: `1px solid ${color}25`,
-              boxShadow: `0 50px 120px rgba(0,0,0,0.18), 0 0 0 1px ${color}10, 24px 24px 50px rgba(0,0,0,0.1)`,
+              boxShadow: `0 60px 140px rgba(0,0,0,0.2), 24px 24px 60px rgba(0,0,0,0.12), 0 0 0 1px ${color}15`,
             }}
           >
             <div>
