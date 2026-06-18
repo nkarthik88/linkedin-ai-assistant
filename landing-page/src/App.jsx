@@ -13,9 +13,9 @@ export default function App() {
     <div className="bg-white text-gray-900 font-sans">
       <Navbar />
       <Hero />
+      <Features />
       <VideoSection />
       <HowItWorks />
-      <Features />
       <Pricing />
       <FAQ />
       <CTASection />
