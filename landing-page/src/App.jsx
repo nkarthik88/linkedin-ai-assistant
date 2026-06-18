@@ -1,6 +1,6 @@
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
-import FeaturesShowcase from './components/FeaturesShowcase'
+import ProductDemo from './components/ProductDemo'
 import VideoSection from './components/VideoSection'
 import HowItWorks from './components/HowItWorks'
 import Pricing from './components/Pricing'
@@ -13,7 +13,7 @@ export default function App() {
     <div className="bg-white text-gray-900 font-sans">
       <Navbar />
       <Hero />
-      <FeaturesShowcase />
+      <ProductDemo />
       <VideoSection />
       <HowItWorks />
       <Pricing />
