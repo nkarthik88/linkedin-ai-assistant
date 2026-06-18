@@ -30,7 +30,7 @@ const plans = [
     badge: null,
     savings: null,
     cta: 'Get LinkedIn Pro',
-    ctaHref: 'https://checkout.dodopayments.com/buy/pdt_0NfglmAMcUzd4GiVlnt0H',
+    ctaHref: 'https://chromewebstore.google.com/detail/hggehcjcbnfpdglbildpaiidhigfcnbb',
     ctaStyle: 'linkedin',
     features: [
       'Unlimited all 5 LinkedIn features',
@@ -47,11 +47,12 @@ const plans = [
     badge: null,
     savings: null,
     cta: 'Get Reddit Pro',
-    ctaHref: 'https://checkout.dodopayments.com/buy/pdt_0Nh1zryt8Ch4KTi9B5yVJ',
+    ctaHref: 'https://chromewebstore.google.com/detail/hggehcjcbnfpdglbildpaiidhigfcnbb',
     ctaStyle: 'reddit',
     features: [
       'Unlimited all 3 Reddit features',
       'Anti-ban protection on every post',
+      'Increase karma using Comment Reply',
       'LinkedIn stays at free limits',
     ],
   },
@@ -64,7 +65,7 @@ const plans = [
     badge: 'Best Value',
     savings: 'SAVE $5/month',
     cta: 'Get Bundle',
-    ctaHref: 'https://checkout.dodopayments.com/buy/pdt_0Nh23AJmTvBuWAXKsi2ds',
+    ctaHref: 'https://chromewebstore.google.com/detail/hggehcjcbnfpdglbildpaiidhigfcnbb',
     ctaStyle: 'bundle',
     features: [
       'Unlimited EVERYTHING',
