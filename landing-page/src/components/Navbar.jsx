@@ -24,23 +24,18 @@ export default function Navbar() {
       initial={{ y: -60, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
-      className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
-      style={{
-        background: scrolled ? 'rgba(10,15,30,0.95)' : 'rgba(10,15,30,0.8)',
-        backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-      }}
+      className={`fixed top-0 left-0 right-0 z-50 bg-white transition-shadow duration-300 ${scrolled ? 'shadow-md' : 'border-b border-gray-100'}`}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <a href="#" className="flex items-center gap-2 text-xl font-bold text-white">
+          <a href="#" className="flex items-center gap-2 text-xl font-bold text-gray-900">
             <span>🟠</span>
             <span>ProPostly</span>
           </a>
 
           <div className="hidden md:flex items-center gap-8">
             {links.map((l) => (
-              <a key={l.label} href={l.href} className="text-sm font-medium text-slate-400 hover:text-white transition-colors">
+              <a key={l.label} href={l.href} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
                 {l.label}
               </a>
             ))}
@@ -51,43 +46,25 @@ export default function Navbar() {
               href={CHROME_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm font-semibold px-4 py-2 rounded-lg transition-all"
-              style={{ background: '#22d3ee', color: '#0a0f1e' }}
+              className="inline-flex items-center gap-1 bg-[#0a66c2] hover:bg-[#004182] text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
             >
               Install Free →
             </a>
           </div>
 
-          <button
-            className="md:hidden p-2 rounded-md text-slate-400 hover:text-white transition-colors"
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Toggle menu"
-          >
-            {menuOpen ? (
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            )}
+          <button className="md:hidden p-2 rounded-md text-gray-600" onClick={() => setMenuOpen(!menuOpen)}>
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={menuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'} />
+            </svg>
           </button>
         </div>
 
         {menuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="md:hidden border-t py-4 space-y-3"
-            style={{ borderColor: 'rgba(255,255,255,0.06)' }}
-          >
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="md:hidden border-t border-gray-100 py-4 space-y-3">
             {links.map((l) => (
-              <a key={l.label} href={l.href} className="block text-sm font-medium text-slate-400 hover:text-white py-1 transition-colors" onClick={() => setMenuOpen(false)}>
-                {l.label}
-              </a>
+              <a key={l.label} href={l.href} className="block text-sm font-medium text-gray-600 py-1" onClick={() => setMenuOpen(false)}>{l.label}</a>
             ))}
-            <a href={CHROME_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm font-semibold px-4 py-2 rounded-lg" style={{ background: '#22d3ee', color: '#0a0f1e' }}>
+            <a href={CHROME_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 bg-[#0a66c2] text-white text-sm font-semibold px-4 py-2 rounded-lg">
               Install Free →
             </a>
           </motion.div>
