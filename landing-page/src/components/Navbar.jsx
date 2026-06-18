@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 
+const CHROME_URL = 'https://chromewebstore.google.com/detail/hggehcjcbnfpdglbildpaiidhigfcnbb'
+
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -22,44 +24,42 @@ export default function Navbar() {
       initial={{ y: -60, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
-      className={`fixed top-0 left-0 right-0 z-50 bg-white transition-shadow duration-300 ${scrolled ? 'shadow-md' : 'shadow-none border-b border-gray-100'}`}
+      className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+      style={{
+        background: scrolled ? 'rgba(10,15,30,0.95)' : 'rgba(10,15,30,0.8)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+      }}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <a href="#" className="flex items-center gap-2 text-xl font-bold text-gray-900">
+          <a href="#" className="flex items-center gap-2 text-xl font-bold text-white">
             <span>🟠</span>
             <span>ProPostly</span>
           </a>
 
-          {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-8">
             {links.map((l) => (
-              <a
-                key={l.label}
-                href={l.href}
-                className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-              >
+              <a key={l.label} href={l.href} className="text-sm font-medium text-slate-400 hover:text-white transition-colors">
                 {l.label}
               </a>
             ))}
           </div>
 
-          {/* CTA */}
           <div className="hidden md:block">
             <a
-              href="https://chromewebstore.google.com/detail/hggehcjcbnfpdglbildpaiidhigfcnbb"
+              href={CHROME_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 bg-[#0a66c2] hover:bg-[#004182] text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+              className="inline-flex items-center gap-1 text-sm font-semibold px-4 py-2 rounded-lg transition-all"
+              style={{ background: '#22d3ee', color: '#0a0f1e' }}
             >
               Install Free →
             </a>
           </div>
 
-          {/* Mobile hamburger */}
           <button
-            className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            className="md:hidden p-2 rounded-md text-slate-400 hover:text-white transition-colors"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle menu"
           >
@@ -75,29 +75,19 @@ export default function Navbar() {
           </button>
         </div>
 
-        {/* Mobile menu */}
         {menuOpen && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="md:hidden border-t border-gray-100 py-4 space-y-3"
+            className="md:hidden border-t py-4 space-y-3"
+            style={{ borderColor: 'rgba(255,255,255,0.06)' }}
           >
             {links.map((l) => (
-              <a
-                key={l.label}
-                href={l.href}
-                className="block text-sm font-medium text-gray-600 hover:text-gray-900 py-1 transition-colors"
-                onClick={() => setMenuOpen(false)}
-              >
+              <a key={l.label} href={l.href} className="block text-sm font-medium text-slate-400 hover:text-white py-1 transition-colors" onClick={() => setMenuOpen(false)}>
                 {l.label}
               </a>
             ))}
-            <a
-              href="https://chromewebstore.google.com/detail/hggehcjcbnfpdglbildpaiidhigfcnbb"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 bg-[#0a66c2] hover:bg-[#004182] text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
-            >
+            <a href={CHROME_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm font-semibold px-4 py-2 rounded-lg" style={{ background: '#22d3ee', color: '#0a0f1e' }}>
               Install Free →
             </a>
           </motion.div>
