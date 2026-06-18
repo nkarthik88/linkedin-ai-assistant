@@ -333,14 +333,10 @@ export default function ProductDemo() {
 
         {/* 3D Browser mockup */}
         <div
-          style={{ perspective: '1400px' }}
           className="max-w-4xl mx-auto"
         >
           <motion.div
             style={{
-              rotateY: -6,
-              rotateX: 4,
-              transformStyle: 'preserve-3d',
               borderRadius: '1rem',
               overflow: 'hidden',
               background: '#fff',
