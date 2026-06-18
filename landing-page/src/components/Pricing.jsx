@@ -52,7 +52,7 @@ const plans = [
     features: [
       'Unlimited all 3 Reddit features',
       'Anti-ban protection on every post',
-      'Increase karma using Comment Reply',
+      '⬆️ Grow karma via Post Generator & Comment Reply',
       'LinkedIn stays at free limits',
     ],
   },
