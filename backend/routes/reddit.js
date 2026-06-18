@@ -8,7 +8,7 @@ const router = Router();
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const REDDIT_MODEL = "google/gemini-2.0-flash-001";
+const REDDIT_MODEL = "google/gemini-2.0-flash-exp:free";
 
 const HUMAN_REDDIT_RULES = `Write like a real person texting a friend who happens to be on Reddit. Casual, direct, imperfect. Use contractions (it's, don't, can't, I've). Take a clear stance — never be neutral. Admit a mistake or struggle somewhere in the post. Vulnerability earns karma. No sales pitches, no community contribution theater. Just a real person sharing something real.`;
 
