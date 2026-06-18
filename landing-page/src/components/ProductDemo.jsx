@@ -218,10 +218,10 @@ const REDDIT_STEPS = [
   {
     feature: 'Post Generator',
     icon: '📝',
-    tag: '🛡️ Anti-ban',
+    tag: '🧠 Sounds Human · ⬆️ Karma',
     url: 'reddit.com/r/entrepreneur',
     PageBg: RedditPostPage,
-    output: '✅ Anti-ban check passed! Draft: "6 months ago I had $0 and no network. Here\'s the exact cold outreach template that got me my first 50 B2B customers (steal it)..."',
+    output: '✅ Sounds 100% human! Draft: "6 months ago I had $0 and no network. Here\'s the exact cold outreach template that got me my first 50 B2B customers (steal it)..." — Upvotes incoming 🚀',
   },
   {
     feature: 'Subreddit Finder',
@@ -234,10 +234,10 @@ const REDDIT_STEPS = [
   {
     feature: 'Comment Reply',
     icon: '💬',
-    tag: '3 Personas',
+    tag: '⬆️ Grows Karma · Sounds Human',
     url: 'reddit.com/r/Entrepreneur',
     PageBg: RedditThread,
-    output: '[Mentor tone] "Great question! The fastest validation method is the Concierge MVP — manually do the service for 3 customers before building anything. You\'ll learn more in a week than 6 months of coding."',
+    output: '[Mentor tone] "Tried this myself — the Concierge MVP approach works. Do the service manually for 3 people first. You\'ll learn more in a week than 6 months of building." → Karma +47 in 2 hrs 🔥',
   },
 ]
 
