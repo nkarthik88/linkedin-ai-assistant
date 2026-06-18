@@ -511,7 +511,6 @@ export default function ProductDemo() {
             />
           ))}
         </div>
-        <p className="text-center text-xs text-gray-400 mt-3">Drag your mouse over the demo to rotate it in 3D</p>
       </div>
     </section>
   )
