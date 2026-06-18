@@ -8,6 +8,7 @@ const router = Router();
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const REDDIT_MODEL = "google/gemini-2.0-flash-001";
 
 const HUMAN_REDDIT_RULES = `Write like a real person texting a friend who happens to be on Reddit. Casual, direct, imperfect. Use contractions (it's, don't, can't, I've). Take a clear stance — never be neutral. Admit a mistake or struggle somewhere in the post. Vulnerability earns karma. No sales pitches, no community contribution theater. Just a real person sharing something real.`;
 
@@ -103,7 +104,7 @@ router.post(
     const { topic, subreddit, tone, template, isPromoting, analysisContext } = req.body;
     if (!topic) return res.status(400).json({ error: "topic is required" });
 
-    const model = getModelForPlan("free");
+    const model = REDDIT_MODEL;
 
     const TEMPLATE_FORMATS = {
       Lesson:   'FORMAT — Lesson: Start with "I spent [time] on [topic]." then contrast what you expected vs what actually happened. End with the key takeaway.',
@@ -192,7 +193,7 @@ router.post(
       return res.status(400).json({ error: "topPosts array is required" });
     }
 
-    const model = getModelForPlan("free");
+    const model = REDDIT_MODEL;
 
     const systemPrompt = `You are a Reddit community analyst. Analyze top posts from a subreddit and identify writing patterns that get upvotes.
 
@@ -284,7 +285,7 @@ router.post(
       return res.status(400).json({ error: "Could not extract enough content from that URL" });
     }
 
-    const model = getModelForPlan("free");
+    const model = REDDIT_MODEL;
 
     const systemPrompt = `You are a Reddit ghostwriter. Transform website or product content into 3 authentic Reddit posts (max 200 words each) that read like they were written by a real person, not a marketer.
 ${HUMAN_WRITING_RULES}
@@ -342,7 +343,7 @@ router.post(
     const { commentText, postContext, persona = "mentor" } = req.body;
     if (!commentText) return res.status(400).json({ error: "commentText is required" });
 
-    const model = getModelForPlan("free");
+    const model = REDDIT_MODEL;
 
     const personaInstructions = {
       mentor: `Reply as a helpful, experienced community member who explains concepts clearly and adds real value. Sound like a knowledgeable peer, not a teacher or marketer. Share what you know from experience. Helpful, warm, genuinely useful.`,
@@ -406,7 +407,7 @@ router.post(
     const { niche } = req.body;
     if (!niche) return res.status(400).json({ error: "niche is required" });
 
-    const model = getModelForPlan("free");
+    const model = REDDIT_MODEL;
 
     const systemPrompt = `You are a Reddit strategy expert. Suggest 10-15 real subreddits for a given niche.
 
@@ -465,7 +466,7 @@ router.post(
       return res.status(400).json({ error: "postTitle and postBody are required" });
     }
 
-    const model = getModelForPlan("free");
+    const model = REDDIT_MODEL;
 
     const systemPrompt = `You are a Reddit anti-spam expert. Score a Reddit post for ban risk (0-100).
 
@@ -510,7 +511,7 @@ router.post(
     const { draft, subreddit } = req.body;
     if (!draft) return res.status(400).json({ error: "draft is required" });
 
-    const model = getModelForPlan("free");
+    const model = REDDIT_MODEL;
 
     const systemPrompt = `You are a Reddit viral ghostwriter. Transform the draft into ONE viral Reddit post${subreddit ? ` specifically for ${subreddit}` : ""}.${subreddit ? ` Follow that subreddit's culture and norms exactly.` : ""}
 
