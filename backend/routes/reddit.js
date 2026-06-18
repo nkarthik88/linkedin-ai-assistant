@@ -49,7 +49,7 @@ async function callOpenRouter(model, systemPrompt, userPrompt, jsonMode = true) 
   const body = {
     model,
     temperature: 0.85,
-    max_tokens: 1200,
+    max_tokens: 2500,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
@@ -86,9 +86,14 @@ async function callOpenRouter(model, systemPrompt, userPrompt, jsonMode = true) 
 }
 
 function safeParseJSON(content) {
-  // Strip markdown code fences Gemini sometimes wraps responses in
-  const cleaned = content.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
-  return JSON.parse(cleaned);
+  // Strip markdown code fences
+  let cleaned = content.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+  // Try direct parse first
+  try { return JSON.parse(cleaned); } catch {}
+  // Extract first {...} block from anywhere in the response
+  const match = cleaned.match(/\{[\s\S]*\}/);
+  if (match) return JSON.parse(match[0]);
+  throw new Error("No JSON found in response");
 }
 
 function validateUserId(req, res) {
