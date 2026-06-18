@@ -2,10 +2,31 @@ import { motion } from 'framer-motion'
 
 const CHROME_URL = 'https://chromewebstore.google.com/detail/hggehcjcbnfpdglbildpaiidhigfcnbb'
 
+const browsers = [
+  { name: 'Chrome', icon: '🟡' },
+  { name: 'Brave', icon: '🦁' },
+  { name: 'Opera', icon: '🔴' },
+  { name: 'Vivaldi', icon: '🎵' },
+]
+
 const steps = [
-  { number: '1', icon: '🔧', title: 'Install free from Chrome Store', desc: 'One click. No account needed to start.' },
-  { number: '2', icon: '🌐', title: 'Browse LinkedIn or Reddit', desc: 'ProPostly appears automatically on any page.' },
-  { number: '3', icon: '✨', title: 'Click ProPostly and generate!', desc: 'AI-written content in seconds. Edit, copy, post.' },
+  {
+    number: '1',
+    icon: '🔧',
+    title: 'Install free from Chrome Store',
+    desc: 'One click. No account needed to start.',
+    extra: (
+      <div className="flex flex-wrap justify-center gap-2 mt-3">
+        {browsers.map((b) => (
+          <span key={b.name} className="inline-flex items-center gap-1 text-xs text-gray-500 bg-white border border-gray-200 rounded-full px-2.5 py-1 font-medium">
+            <span>{b.icon}</span> {b.name}
+          </span>
+        ))}
+      </div>
+    ),
+  },
+  { number: '2', icon: '🌐', title: 'Browse LinkedIn or Reddit', desc: 'ProPostly appears automatically on any LinkedIn profile, post, or Reddit thread.' },
+  { number: '3', icon: '✨', title: 'Click ProPostly and generate!', desc: 'AI-written content in seconds. Edit, copy, post — done.' },
 ]
 
 export default function HowItWorks() {
@@ -35,6 +56,7 @@ export default function HowItWorks() {
               </div>
               <h3 className="text-base font-bold text-gray-900 mb-2">{step.title}</h3>
               <p className="text-sm text-gray-500 leading-relaxed">{step.desc}</p>
+              {step.extra || null}
             </motion.div>
           ))}
         </div>
