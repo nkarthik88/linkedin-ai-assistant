@@ -11,7 +11,49 @@ const actions = [
   { text: 'comment replies', color: '#ff4500' },
 ]
 
-const browsers = ['Chrome', 'Brave', 'Opera', 'Vivaldi']
+const browsers = [
+  {
+    name: 'Chrome',
+    url: CHROME_URL,
+    svg: (
+      <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none">
+        <circle cx="12" cy="12" r="10" fill="#fff" stroke="#e5e7eb" strokeWidth="0.5"/>
+        <circle cx="12" cy="12" r="4.2" fill="#4285F4"/>
+        <path d="M12 7.8h8.5a10 10 0 0 0-17-1.1z" fill="#EA4335"/>
+        <path d="M20.5 7.8H12l-4.25 7.35A10 10 0 0 0 20.5 7.8z" fill="#FBBC05"/>
+        <path d="M7.75 15.15 3.5 7.8a10 10 0 0 0 8.2 14.15z" fill="#34A853"/>
+      </svg>
+    ),
+  },
+  {
+    name: 'Brave',
+    url: CHROME_URL,
+    svg: (
+      <svg viewBox="0 0 24 24" className="w-5 h-5" fill="#FB542B">
+        <path d="M20.92 9.13l.27-1.35-.93-.85.19-1.36-1.27-.53-.46-1.29-1.38.07-.92-1.02-1.3.52L12 2.5l-3.12.82-1.3-.52-.92 1.02-1.38-.07-.46 1.29-1.27.53.19 1.36-.93.85.27 1.35-.56 1.23.56 1.23s.38 2.55 2.41 4.58c2.04 2.04 4.72 3.52 4.72 3.52s2.68-1.48 4.72-3.52c2.03-2.03 2.41-4.58 2.41-4.58l.56-1.23z"/>
+      </svg>
+    ),
+  },
+  {
+    name: 'Opera',
+    url: CHROME_URL,
+    svg: (
+      <svg viewBox="0 0 24 24" className="w-5 h-5" fill="#FF1B2D">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 17.5c-2.07 0-3.93-1.04-5.08-2.64A7.46 7.46 0 0 1 4.5 12c0-1.71.57-3.28 1.52-4.54C7.14 5.95 9.01 4.5 12 4.5s4.86 1.45 5.98 2.96A7.46 7.46 0 0 1 19.5 12a7.46 7.46 0 0 1-1.42 4.36C16.93 18.46 14.07 19.5 12 19.5z"/>
+      </svg>
+    ),
+  },
+  {
+    name: 'Vivaldi',
+    url: CHROME_URL,
+    svg: (
+      <svg viewBox="0 0 24 24" className="w-5 h-5" fill="#EF3939">
+        <path d="M12 2L3 7v10l9 5 9-5V7L12 2zm0 2.5l6.5 3.6v7.3L12 19l-6.5-3.6V8.1L12 4.5z"/>
+        <path d="M12 8l-4 7h8l-4-7z" fill="#EF3939"/>
+      </svg>
+    ),
+  },
+]
 
 export default function Hero() {
   const [idx, setIdx] = useState(0)
@@ -85,10 +127,19 @@ export default function Hero() {
             </a>
           </div>
 
-          <div className="flex items-center justify-center gap-4 flex-wrap">
-            <span className="text-sm text-gray-400">Works on all Chromium browsers:</span>
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <span className="text-sm text-gray-400">Works on:</span>
             {browsers.map((b) => (
-              <span key={b} className="text-sm text-gray-500">{b}</span>
+              <a
+                key={b.name}
+                href={b.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-full px-3 py-1.5 transition-colors font-medium"
+              >
+                {b.svg}
+                {b.name}
+              </a>
             ))}
           </div>
         </motion.div>
