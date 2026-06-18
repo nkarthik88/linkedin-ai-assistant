@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 // Typewriter hook
 function useTypewriter(text, active, speed = 28) {
@@ -246,8 +246,6 @@ export default function ProductDemo() {
   const [platform, setPlatform] = useState('linkedin')
   const [stepIdx, setStepIdx] = useState(0)
   const [phase, setPhase] = useState('idle') // idle | generating | done
-  const cardRef = useRef(null)
-
   const steps = platform === 'linkedin' ? LINKEDIN_STEPS : REDDIT_STEPS
   const step = steps[stepIdx]
   const color = platform === 'linkedin' ? '#0a66c2' : '#ff4500'
@@ -281,20 +279,6 @@ export default function ProductDemo() {
     return () => clearTimeout(t)
   }, [phase, step.output, steps.length])
 
-  // 3D mouse tilt — default resting angle so it always looks 3D
-  const mouseX = useMotionValue(-60)   // resting at offset = slightly right
-  const mouseY = useMotionValue(-40)
-  const rotateY = useSpring(useTransform(mouseX, [-200, 200], [18, -18]), { stiffness: 80, damping: 18 })
-  const rotateX = useSpring(useTransform(mouseY, [-200, 200], [-12, 12]), { stiffness: 80, damping: 18 })
-
-  const handleMouseMove = (e) => {
-    if (!cardRef.current) return
-    const rect = cardRef.current.getBoundingClientRect()
-    mouseX.set(e.clientX - (rect.left + rect.width / 2))
-    mouseY.set(e.clientY - (rect.top + rect.height / 2))
-  }
-  // Return to default resting angle on leave
-  const handleMouseLeave = () => { mouseX.set(-60); mouseY.set(-40) }
 
   const PageBg = step.PageBg
 
@@ -349,16 +333,13 @@ export default function ProductDemo() {
 
         {/* 3D Browser mockup */}
         <div
-          ref={cardRef}
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
           style={{ perspective: '1400px' }}
           className="max-w-4xl mx-auto"
         >
           <motion.div
             style={{
-              rotateY,
-              rotateX,
+              rotateY: -6,
+              rotateX: 4,
               transformStyle: 'preserve-3d',
               borderRadius: '1rem',
               overflow: 'hidden',
