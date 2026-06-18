@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 
 // Replace this with your Loom embed URL when available
 // e.g. 'https://www.loom.com/embed/YOUR_VIDEO_ID'
-const LOOM_EMBED_URL = null
+const LOOM_EMBED_URL = 'https://www.loom.com/embed/66c84013e4b24c4c9d93c2d7f79bbb97'
 
 export default function VideoSection() {
   const [playing, setPlaying] = useState(false)
