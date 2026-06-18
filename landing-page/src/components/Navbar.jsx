@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const CHROME_URL = 'https://chromewebstore.google.com/detail/hggehcjcbnfpdglbildpaiidhigfcnbb'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [logoIdx, setLogoIdx] = useState(0)
+  const logos = ['💼', '🟠']
+
+  useEffect(() => {
+    const t = setInterval(() => setLogoIdx((i) => (i + 1) % logos.length), 2000)
+    return () => clearInterval(t)
+  }, [])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10)
@@ -29,7 +36,20 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <a href="#" className="flex items-center gap-2 text-xl font-bold text-gray-900">
-            <span>🟠</span>
+            <span className="relative inline-block w-6 h-6 overflow-hidden">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={logoIdx}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -20, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  {logos[logoIdx]}
+                </motion.span>
+              </AnimatePresence>
+            </span>
             <span>ProPostly</span>
           </a>
 
