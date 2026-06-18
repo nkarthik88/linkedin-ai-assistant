@@ -4,11 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 const CHROME_URL = 'https://chromewebstore.google.com/detail/hggehcjcbnfpdglbildpaiidhigfcnbb'
 
 const actions = [
-  { text: 'write posts', color: '#0a66c2' },
-  { text: 'find leads', color: '#0a66c2' },
-  { text: 'send DMs', color: '#0a66c2' },
-  { text: 'reply fast', color: '#ff4500' },
-  { text: 'grow faster', color: '#ff4500' },
+  { text: 'LinkedIn posts', color: '#0a66c2' },
+  { text: 'Reddit threads', color: '#ff4500' },
+  { text: 'personalized DMs', color: '#0a66c2' },
+  { text: 'lead outreach', color: '#0a66c2' },
+  { text: 'comment replies', color: '#ff4500' },
 ]
 
 const browsers = ['Chrome', 'Brave', 'Opera', 'Vivaldi']
@@ -35,34 +35,37 @@ export default function Hero() {
             <span>AI-Powered Chrome Extension</span>
           </div>
 
-          {/* Headline with animated word */}
-          <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 leading-tight mb-6">
-            Stop staring at a
+          {/* Headline */}
+          <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 leading-tight mb-4">
+            One click.
             <br />
-            blank screen.
+            AI writes it.
             <br />
-            <span className="inline-flex items-center gap-3">
-              Just{' '}
-              <span className="relative inline-block min-w-[280px] text-left">
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={idx}
-                    initial={{ opacity: 0, y: 24 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -24 }}
-                    transition={{ duration: 0.35, ease: 'easeOut' }}
-                    className="inline-block font-extrabold"
-                    style={{ color: actions[idx].color }}
-                  >
-                    {actions[idx].text}
-                  </motion.span>
-                </AnimatePresence>
-              </span>
-            </span>
+            <span className="text-gray-400 font-semibold text-4xl sm:text-5xl">You take the credit.</span>
           </h1>
 
-          <p className="text-xl text-gray-500 mb-10 leading-relaxed max-w-2xl mx-auto">
-            ProPostly lives inside your browser. One click on LinkedIn or Reddit — and your AI writes it for you.
+          {/* Animated use-case line */}
+          <div className="flex items-center justify-center gap-3 mb-6 text-2xl sm:text-3xl font-bold h-12 overflow-hidden">
+            <span className="text-gray-700">AI for your</span>
+            <span className="relative inline-block min-w-[300px] text-left">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={idx}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -30 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  className="inline-block"
+                  style={{ color: actions[idx].color }}
+                >
+                  {actions[idx].text}
+                </motion.span>
+              </AnimatePresence>
+            </span>
+          </div>
+
+          <p className="text-lg text-gray-500 mb-10 leading-relaxed max-w-xl mx-auto">
+            ProPostly lives inside your browser. Open LinkedIn or Reddit, click once — and your content is ready to post.
           </p>
 
           <div className="flex flex-wrap justify-center gap-3 mb-8">
