@@ -74,7 +74,7 @@ export default function Hero() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-sm font-medium px-3 py-1.5 rounded-full mb-6">
             <span>✨</span>
-            <span>AI-Powered Chrome Extension</span>
+            <span>Free Chrome Extension for LinkedIn &amp; Reddit</span>
           </div>
 
           {/* Headline */}
